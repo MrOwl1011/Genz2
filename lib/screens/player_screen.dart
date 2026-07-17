@@ -542,6 +542,8 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   @override
   Widget build(BuildContext context) {
+    final appDirection = Directionality.of(context);
+
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) async {
@@ -567,12 +569,15 @@ class _PlayerScreenState extends State<PlayerScreen>
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
-                    _indicatorMessage,
-                    style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  child: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(
+                      _indicatorMessage,
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -589,7 +594,7 @@ class _PlayerScreenState extends State<PlayerScreen>
             if (_isLocked) _buildLockOverlay(),
 
             // ── Controls Overlay ──
-            if (_showControls && !_isLocked) _buildControlsOverlay(),
+            if (_showControls && !_isLocked) _buildControlsOverlay(appDirection),
 
             // ── Loading / Error / Buffering States ──
             if (_isInitializing) _buildLoading(),
@@ -715,27 +720,30 @@ class _PlayerScreenState extends State<PlayerScreen>
   // ─── Double Tap Zones ──────────────────────────────────────────────────────
 
   Widget _buildDoubleTapZones() {
-    return Row(
-      children: [
-        // Left half — double tap to rewind
-        Expanded(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _toggleControls,
-            onDoubleTap: _onDoubleTapLeft,
-            child: const SizedBox.expand(),
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Row(
+        children: [
+          // Left half — double tap to rewind
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _toggleControls,
+              onDoubleTap: _onDoubleTapLeft,
+              child: const SizedBox.expand(),
+            ),
           ),
-        ),
-        // Right half — double tap to forward
-        Expanded(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _toggleControls,
-            onDoubleTap: _onDoubleTapRight,
-            child: const SizedBox.expand(),
+          // Right half — double tap to forward
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _toggleControls,
+              onDoubleTap: _onDoubleTapRight,
+              child: const SizedBox.expand(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -821,78 +829,84 @@ class _PlayerScreenState extends State<PlayerScreen>
   // CONTROLS OVERLAY
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildControlsOverlay() {
+  Widget _buildControlsOverlay(TextDirection appDirection) {
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 250),
       opacity: _showControls ? 1.0 : 0.0,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xBB000000),
-              Colors.transparent,
-              Colors.transparent,
-              Color(0xBB000000),
-            ],
-            stops: [0.0, 0.25, 0.75, 1.0],
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xBB000000),
+                Colors.transparent,
+                Colors.transparent,
+                Color(0xBB000000),
+              ],
+              stops: [0.0, 0.25, 0.75, 1.0],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── Top Bar ──
-              _buildTopBar(),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // ── Top Bar ──
+                _buildTopBar(),
 
-              Expanded(
-                child: Row(
-                  children: [
-                    // Brightness Sidebar
-                    _buildVerticalSlider(
-                      value: _currentBrightness,
-                      icon: Icons.brightness_6_rounded,
-                      onChanged: (val) {
-                        setState(() => _currentBrightness = val);
-                        ScreenBrightness().setScreenBrightness(val);
-                        _resetHideTimer();
-                      },
-                    ),
-
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Spacer(),
-                          _buildCenterTitle(),
-                          const Spacer(),
-                          _buildCenterControls(),
-                          const Spacer(),
-                        ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      // Brightness Sidebar
+                      _buildVerticalSlider(
+                        value: _currentBrightness,
+                        icon: Icons.brightness_6_rounded,
+                        onChanged: (val) {
+                          setState(() => _currentBrightness = val);
+                          ScreenBrightness().setScreenBrightness(val);
+                          _resetHideTimer();
+                        },
                       ),
-                    ),
 
-                    // Volume Sidebar
-                    _buildVerticalSlider(
-                      value: _currentVolume,
-                      icon: Icons.volume_up_rounded,
-                      onChanged: (val) {
-                        setState(() => _currentVolume = val);
-                        VolumeController.instance.setVolume(val);
-                        VolumeController.instance.showSystemUI = false;
-                        _resetHideTimer();
-                      },
-                    ),
-                  ],
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Spacer(),
+                            Directionality(
+                              textDirection: appDirection,
+                              child: _buildCenterTitle(),
+                            ),
+                            const Spacer(),
+                            _buildCenterControls(),
+                            const Spacer(),
+                          ],
+                        ),
+                      ),
+
+                      // Volume Sidebar
+                      _buildVerticalSlider(
+                        value: _currentVolume,
+                        icon: Icons.volume_up_rounded,
+                        onChanged: (val) {
+                          setState(() => _currentVolume = val);
+                          VolumeController.instance.setVolume(val);
+                          VolumeController.instance.showSystemUI = false;
+                          _resetHideTimer();
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              // ── Seek Bar ──
-              if (!widget.isLive) _buildSeekBar(),
+                // ── Seek Bar ──
+                if (!widget.isLive) _buildSeekBar(),
 
-              // ── Bottom Controls ──
-              _buildBottomControls(),
-            ],
+                // ── Bottom Controls ──
+                _buildBottomControls(),
+              ],
+            ),
           ),
         ),
       ),
