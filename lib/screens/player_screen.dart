@@ -7,7 +7,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -47,10 +48,29 @@ class PlayerScreen extends StatefulWidget {
 class _PlayerScreenState extends State<PlayerScreen>
     with SingleTickerProviderStateMixin {
   // ─── Video Controller ──────────────────────────────────────────────────────
-  VideoPlayerController? _controller;
+  Player? _player;
+  VideoController? _videoController;
   bool _isInitializing = true;
+  bool _isBuffering = false;
   String? _errorMessage;
   Timer? _historyTimer;
+
+  // ─── Stream Subscriptions ─────────────────────────────────────────────────
+  StreamSubscription<bool>? _playingSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<bool>? _bufferingSubscription;
+  StreamSubscription<String>? _errorSubscription;
+  StreamSubscription<bool>? _completedSubscription;
+  StreamSubscription<int?>? _widthSubscription;
+  StreamSubscription<int?>? _heightSubscription;
+
+  // ─── Cached Player State ──────────────────────────────────────────────────
+  bool _isPlaying = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  int? _videoWidth;
+  int? _videoHeight;
 
   // ─── Controls State ────────────────────────────────────────────────────────
   bool _showControls = true;
@@ -142,30 +162,42 @@ class _PlayerScreenState extends State<PlayerScreen>
     setState(() {
       _isInitializing = true;
       _errorMessage = null;
+      _isBuffering = false;
     });
 
     try {
-      _controller = VideoPlayerController.networkUrl(
-        Uri.parse(_currentStreamUrl),
-        httpHeaders: const {'User-Agent': 'NX-IPTV/1.0'},
+      _player = Player(
+        configuration: const PlayerConfiguration(
+          bufferSize: 32 * 1024 * 1024, // 32 MB buffer for streaming
+        ),
       );
 
-      await _controller!.initialize();
+      _videoController = VideoController(_player!);
+
+      // Subscribe to player streams for reactive state updates
+      _subscribeToPlayerStreams();
+
+      // Open the media and start playback
+      await _player!.open(
+        Media(
+          _currentStreamUrl,
+          httpHeaders: const {'User-Agent': 'NX-IPTV/1.0'},
+        ),
+      );
 
       // Seek to saved position for non-live content
       if (widget.initialPositionSeconds > 0 && !widget.isLive) {
-        await _controller!.seekTo(
-          Duration(seconds: widget.initialPositionSeconds),
-        );
+        // Wait briefly for the player to be ready before seeking
+        await Future.delayed(const Duration(milliseconds: 500));
+        await _player!.seek(Duration(seconds: widget.initialPositionSeconds));
       }
 
-      await _controller!.play();
-      _controller!.addListener(_onVideoUpdate);
       _startHistoryTracker();
       _startHideTimer();
 
       if (mounted) setState(() => _isInitializing = false);
     } catch (e) {
+      debugPrint('[PlayerScreen] Playback init error: $e');
       if (mounted) {
         setState(() {
           _isInitializing = false;
@@ -175,9 +207,60 @@ class _PlayerScreenState extends State<PlayerScreen>
     }
   }
 
-  /// Listener for video player state changes — triggers UI rebuilds.
-  void _onVideoUpdate() {
-    if (mounted && !_isDraggingSeek) setState(() {});
+  /// Subscribe to all player state streams for reactive UI updates.
+  void _subscribeToPlayerStreams() {
+    _playingSubscription = _player!.stream.playing.listen((playing) {
+      if (mounted) setState(() => _isPlaying = playing);
+    });
+
+    _positionSubscription = _player!.stream.position.listen((position) {
+      if (mounted && !_isDraggingSeek) setState(() => _position = position);
+    });
+
+    _durationSubscription = _player!.stream.duration.listen((duration) {
+      if (mounted) setState(() => _duration = duration);
+    });
+
+    _bufferingSubscription = _player!.stream.buffering.listen((buffering) {
+      if (mounted) setState(() => _isBuffering = buffering);
+    });
+
+    _errorSubscription = _player!.stream.error.listen((error) {
+      if (error.isNotEmpty && mounted) {
+        debugPrint('[PlayerScreen] Playback error: $error');
+        setState(() => _errorMessage = error);
+      }
+    });
+
+    _completedSubscription = _player!.stream.completed.listen((completed) {
+      if (completed && mounted) {
+        // Auto-play next in playlist
+        if (widget.playlist != null &&
+            _currentIndex < widget.playlist!.length - 1) {
+          _playNext();
+        }
+      }
+    });
+
+    _widthSubscription = _player!.stream.width.listen((width) {
+      if (mounted) setState(() => _videoWidth = width);
+    });
+
+    _heightSubscription = _player!.stream.height.listen((height) {
+      if (mounted) setState(() => _videoHeight = height);
+    });
+  }
+
+  /// Cancel all player stream subscriptions.
+  void _cancelSubscriptions() {
+    _playingSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _bufferingSubscription?.cancel();
+    _errorSubscription?.cancel();
+    _completedSubscription?.cancel();
+    _widthSubscription?.cancel();
+    _heightSubscription?.cancel();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -198,7 +281,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   void _saveCurrentPosition() {
-    if (_controller == null || !_controller!.value.isInitialized) return;
+    if (_player == null) return;
     if (_currentIsLive ||
         _currentMediaId == null ||
         _currentMediaType == null ||
@@ -206,8 +289,8 @@ class _PlayerScreenState extends State<PlayerScreen>
       return;
     }
 
-    final position = _controller!.value.position.inSeconds;
-    final duration = _controller!.value.duration.inSeconds;
+    final position = _position.inSeconds;
+    final duration = _duration.inSeconds;
 
     if (position > 0) {
       context.read<UserPrefsProvider>().saveHistory(
@@ -247,10 +330,14 @@ class _PlayerScreenState extends State<PlayerScreen>
       _currentRawMediaData = item['rawMediaData'];
     });
 
-    _controller?.removeListener(_onVideoUpdate);
-    await _controller?.pause();
-    await _controller?.dispose();
-    _controller = null;
+    _cancelSubscriptions();
+    _historyTimer?.cancel();
+    try {
+      await _player?.stop();
+      _player?.dispose();
+    } catch (_) {}
+    _player = null;
+    _videoController = null;
 
     _initPlayer();
   }
@@ -296,22 +383,17 @@ class _PlayerScreenState extends State<PlayerScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   void _togglePlayPause() {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-    if (_controller!.value.isPlaying) {
-      _controller!.pause();
-    } else {
-      _controller!.play();
-    }
+    if (_player == null) return;
+    _player!.playOrPause();
     _resetHideTimer();
-    setState(() {});
   }
 
   void _seekRelative(int seconds) {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-    final current = _controller!.value.position;
-    final duration = _controller!.value.duration;
+    if (_player == null) return;
+    final current = _position;
+    final duration = _duration;
     final target = current + Duration(seconds: seconds);
-    _controller!.seekTo(
+    _player!.seek(
       target < Duration.zero
           ? Duration.zero
           : (target > duration ? duration : target),
@@ -320,10 +402,14 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   void _retryPlayback() {
-    _controller?.removeListener(_onVideoUpdate);
-    _controller?.pause();
-    _controller?.dispose();
-    _controller = null;
+    _cancelSubscriptions();
+    _historyTimer?.cancel();
+    try {
+      _player?.stop();
+      _player?.dispose();
+    } catch (_) {}
+    _player = null;
+    _videoController = null;
     _initPlayer();
   }
 
@@ -375,15 +461,15 @@ class _PlayerScreenState extends State<PlayerScreen>
     _leftSeekTimer?.cancel();
     _rightSeekTimer?.cancel();
     _saveCurrentPosition(); // Save exact position on exit
-    _controller?.removeListener(_onVideoUpdate);
+    _cancelSubscriptions();
     try {
-      await _controller?.pause();
-      await _controller?.setVolume(0);
+      await _player?.stop();
     } catch (_) {}
     try {
-      await _controller?.dispose();
+      _player?.dispose();
     } catch (_) {}
-    _controller = null;
+    _player = null;
+    _videoController = null;
   }
 
   @override
@@ -415,8 +501,8 @@ class _PlayerScreenState extends State<PlayerScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   String get _qualityLabel {
-    if (_controller == null || !_controller!.value.isInitialized) return '';
-    final h = _controller!.value.size.height.toInt();
+    final h = _videoHeight;
+    if (h == null || h == 0) return '';
     final label = h >= 1080
         ? '1080P'
         : h >= 720
@@ -440,7 +526,13 @@ class _PlayerScreenState extends State<PlayerScreen>
       case 3:
         return 4 / 3;
       default: // Fit — natural aspect ratio
-        return _controller?.value.aspectRatio;
+        if (_videoWidth != null &&
+            _videoHeight != null &&
+            _videoWidth! > 0 &&
+            _videoHeight! > 0) {
+          return _videoWidth! / _videoHeight!;
+        }
+        return 16 / 9;
     }
   }
 
@@ -499,8 +591,9 @@ class _PlayerScreenState extends State<PlayerScreen>
             // ── Controls Overlay ──
             if (_showControls && !_isLocked) _buildControlsOverlay(),
 
-            // ── Loading / Error States ──
+            // ── Loading / Error / Buffering States ──
             if (_isInitializing) _buildLoading(),
+            if (_isBuffering && !_isInitializing) _buildBuffering(),
             if (_errorMessage != null) _buildError(_errorMessage!),
           ],
         ),
@@ -511,7 +604,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   // ─── Video Layer ───────────────────────────────────────────────────────────
 
   Widget _buildVideoLayer() {
-    if (_controller == null || !_controller!.value.isInitialized) {
+    if (_videoController == null) {
       return Container(color: Colors.black);
     }
 
@@ -524,9 +617,12 @@ class _PlayerScreenState extends State<PlayerScreen>
         child: FittedBox(
           fit: BoxFit.fill,
           child: SizedBox(
-            width: _controller!.value.size.width,
-            height: _controller!.value.size.height,
-            child: VideoPlayer(_controller!),
+            width: (_videoWidth ?? 1920).toDouble(),
+            height: (_videoHeight ?? 1080).toDouble(),
+            child: Video(
+              controller: _videoController!,
+              controls: NoVideoControls,
+            ),
           ),
         ),
       );
@@ -534,7 +630,10 @@ class _PlayerScreenState extends State<PlayerScreen>
       videoWidget = Center(
         child: AspectRatio(
           aspectRatio: aspectRatio ?? 16 / 9,
-          child: VideoPlayer(_controller!),
+          child: Video(
+            controller: _videoController!,
+            controls: NoVideoControls,
+          ),
         ),
       );
     }
@@ -926,7 +1025,6 @@ class _PlayerScreenState extends State<PlayerScreen>
   // ─── Center Controls (Rewind / Play / Forward) ─────────────────────────────
 
   Widget _buildCenterControls() {
-    final isPlaying = _controller != null && _controller!.value.isPlaying;
     final hasPlaylist = widget.playlist != null && widget.playlist!.length > 1;
 
     return Row(
@@ -967,7 +1065,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               ],
             ),
             child: Icon(
-              isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+              _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
               color: Colors.white,
               size: 38,
             ),
@@ -997,8 +1095,8 @@ class _PlayerScreenState extends State<PlayerScreen>
   // ─── Seek Bar ──────────────────────────────────────────────────────────────
 
   Widget _buildSeekBar() {
-    final position = _controller?.value.position ?? Duration.zero;
-    final duration = _controller?.value.duration ?? Duration.zero;
+    final position = _position;
+    final duration = _duration;
     final totalMs = duration.inMilliseconds.toDouble();
     final currentMs = position.inMilliseconds.toDouble();
     final progress = totalMs > 0 ? (currentMs / totalMs).clamp(0.0, 1.0) : 0.0;
@@ -1048,7 +1146,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                 onChangeEnd: (val) {
                   _isDraggingSeek = false;
                   final targetMs = (val * totalMs).toInt();
-                  _controller?.seekTo(Duration(milliseconds: targetMs));
+                  _player?.seek(Duration(milliseconds: targetMs));
                   _startHideTimer();
                 },
               ),
@@ -1164,7 +1262,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     final currentIdx = speeds.indexOf(_playbackSpeed);
     final nextIdx = (currentIdx + 1) % speeds.length;
     setState(() => _playbackSpeed = speeds[nextIdx]);
-    _controller?.setPlaybackSpeed(_playbackSpeed);
+    _player?.setRate(_playbackSpeed);
     _showQuickToast('Speed: ${_playbackSpeed}x');
   }
 
@@ -1198,7 +1296,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         isLive: widget.isLive,
         onPlaybackSpeedChanged: (speed) {
           setState(() => _playbackSpeed = speed);
-          _controller?.setPlaybackSpeed(speed);
+          _player?.setRate(speed);
         },
         onAspectRatioChanged: (index) {
           setState(() => _aspectRatioIndex = index);
@@ -1208,7 +1306,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Loading & Error States
+  // Loading, Buffering & Error States
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildLoading() {
@@ -1232,6 +1330,26 @@ class _PlayerScreenState extends State<PlayerScreen>
               style: GoogleFonts.outfit(color: Colors.white54, fontSize: 14),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBuffering() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const SizedBox(
+          width: 36,
+          height: 36,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE50914)),
+            strokeWidth: 3,
+          ),
         ),
       ),
     );

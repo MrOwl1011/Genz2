@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
 import '../providers/user_prefs_provider.dart';
@@ -27,8 +27,8 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
 
   // Mini player state
   XtreamLiveStream? _currentChannel;
-  VideoPlayerController? _videoController;
-  ChewieController? _chewieController;
+  Player? _player;
+  VideoController? _videoController;
   bool _isPlayerLoading = false;
 
   @override
@@ -45,27 +45,21 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   }
 
   void _disposePlayer() {
-    final chewie = _chewieController;
-    final video = _videoController;
+    final player = _player;
 
     if (mounted) {
       setState(() {
-        _chewieController = null;
+        _player = null;
         _videoController = null;
       });
     } else {
-      _chewieController = null;
+      _player = null;
       _videoController = null;
     }
 
     try {
-      chewie?.dispose();
-    } catch (_) {}
-
-    try {
-      video?.pause();
-      video?.setVolume(0);
-      video?.dispose();
+      player?.stop();
+      player?.dispose();
     } catch (_) {}
   }
 
@@ -127,28 +121,21 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
         content.password,
       );
 
-      _videoController = VideoPlayerController.networkUrl(
-        Uri.parse(url),
-        httpHeaders: const {'User-Agent': 'NX-IPTV/1.0'},
-      );
+      _player = Player();
+      _videoController = VideoController(_player!);
 
-      await _videoController!.initialize();
-
-      _chewieController = ChewieController(
-        videoPlayerController: _videoController!,
-        autoPlay: true,
-        looping: true,
-        allowFullScreen: false,
-        allowMuting: true,
-        showControlsOnInitialize: false,
-        isLive: true,
-        showControls: false, // We handle controls ourselves for the mini player
+      await _player!.open(
+        Media(
+          url,
+          httpHeaders: const {'User-Agent': 'NX-IPTV/1.0'},
+        ),
       );
 
       if (mounted) {
         setState(() => _isPlayerLoading = false);
       }
     } catch (e) {
+      debugPrint('[ChannelsScreen] Mini player error: $e');
       if (mounted) {
         setState(() {
           _isPlayerLoading = false;
@@ -355,10 +342,10 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                                       ),
                                     ),
                                   )
-                                : _chewieController != null
+                                : _videoController != null
                                 ? Stack(
                                     children: [
-                                      Chewie(controller: _chewieController!),
+                                      Video(controller: _videoController!, controls: NoVideoControls),
                                       // Channel name overlay
                                       Positioned(
                                         top: 8,
