@@ -265,10 +265,6 @@ class UserPrefsProvider extends ChangeNotifier {
   int getHistoryPositionMilliseconds(String id) {
     try {
       final item = _history.firstWhere((item) => item.id == id);
-      // If watched more than 95%, start over
-      if (item.durationMilliseconds > 0 && item.positionMilliseconds >= item.durationMilliseconds - 10000) {
-        return 0;
-      }
       return item.positionMilliseconds;
     } catch (_) {
       return 0;

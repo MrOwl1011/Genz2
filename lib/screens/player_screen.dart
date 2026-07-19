@@ -78,6 +78,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   Timer? _hideTimer;
   bool _isDraggingSeek = false;
   double _dragSeekValue = 0.0;
+  int _lastSaveTime = 0;
 
   // ─── Settings State ────────────────────────────────────────────────────────
   double _playbackSpeed = 1.0;
@@ -142,7 +143,8 @@ class _PlayerScreenState extends State<PlayerScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.detached) {
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
       _saveCurrentPosition();
     }
   }
@@ -187,7 +189,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       // Subscribe to player streams for reactive state updates
       _subscribeToPlayerStreams();
 
-      // Open the media, but wait to play until seek is done
+      // Open the media strictly without playing to prevent overriding position
       await _player!.open(
         Media(
           _currentStreamUrl,
@@ -196,11 +198,13 @@ class _PlayerScreenState extends State<PlayerScreen>
         play: false,
       );
 
-      // Seek to saved position for non-live content
+      // Restore exact position for non-live content
       if (!_currentIsLive) {
         int targetPos = 0;
         if (_currentMediaId != null && mounted) {
           targetPos = context.read<UserPrefsProvider>().getHistoryPositionMilliseconds(_currentMediaId!);
+          debugPrint('[Player History] Episode ID Loaded: $_currentMediaId');
+          debugPrint('[Player History] Episode ID Saved: $_currentMediaId');
         }
         
         if (targetPos == 0 && _currentIndex == widget.initialIndex) {
@@ -208,21 +212,42 @@ class _PlayerScreenState extends State<PlayerScreen>
         }
 
         if (targetPos > 0) {
-          // Wait for player initialization before restoring position
-          int waits = 0;
-          while (_duration.inMilliseconds == 0 && waits < 40 && mounted) {
+          debugPrint('[Player History] Saved Position: $targetPos ms');
+          debugPrint('[Player History] Loaded Position: $targetPos ms');
+          
+          // Wait for player to be fully initialized and report a duration
+          int durationWaits = 0;
+          while (_duration.inMilliseconds == 0 && durationWaits < 100 && mounted) {
             await Future.delayed(const Duration(milliseconds: 50));
-            waits++;
+            durationWaits++;
           }
-          debugPrint('[Player History] Restoring position to: $targetPos ms');
+          
+          debugPrint('[Player History] Player Initialized: ${_duration.inMilliseconds > 0}');
+
+          // Issue the exact seek
+          debugPrint('[Player History] Seek Requested: $targetPos ms');
           await _player!.seek(Duration(milliseconds: targetPos));
-          debugPrint('[Player History] Actual position after seek: ${_player!.state.position.inMilliseconds} ms');
+          debugPrint('[Player History] Seek Completed: $targetPos ms');
+
+          // Strict polling loop to verify the engine actually jumped to the position
+          int seekWaits = 0;
+          while (seekWaits < 100 && mounted) {
+            final currentPos = _player!.state.position.inMilliseconds;
+            // Allow a 1.5 second variance (keyframes can snap position slightly)
+            if ((currentPos - targetPos).abs() <= 1500 || currentPos >= targetPos) {
+              break;
+            }
+            await Future.delayed(const Duration(milliseconds: 50));
+            seekWaits++;
+          }
+
+          debugPrint('[Player History] Current Position After Seek: ${_player!.state.position.inMilliseconds} ms');
         }
       }
       
+      // ONLY start playback after the seek verification completes
       await _player!.play();
 
-      _startHistoryTracker();
       _startHideTimer();
 
       if (mounted) setState(() => _isInitializing = false);
@@ -244,7 +269,15 @@ class _PlayerScreenState extends State<PlayerScreen>
     });
 
     _positionSubscription = _player!.stream.position.listen((position) {
-      if (mounted && !_isDraggingSeek) setState(() => _position = position);
+      if (mounted && !_isDraggingSeek) {
+        setState(() => _position = position);
+        // Continuously update position (throttle to avoid UI jank)
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (now - _lastSaveTime > 3000) {
+          _saveCurrentPosition();
+          _lastSaveTime = now;
+        }
+      }
     });
 
     _durationSubscription = _player!.stream.duration.listen((duration) {
@@ -294,21 +327,8 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // History Tracking — saves progress every 15 seconds
+  // History Tracking (Save Logic)
   // ═══════════════════════════════════════════════════════════════════════════
-
-  void _startHistoryTracker() {
-    if (_currentIsLive ||
-        _currentMediaId == null ||
-        _currentMediaType == null ||
-        _currentRawMediaData == null) {
-      return;
-    }
-
-    _historyTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      _saveCurrentPosition();
-    });
-  }
 
   void _saveCurrentPosition() {
     if (_player == null || !mounted) return;
