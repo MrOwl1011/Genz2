@@ -544,9 +544,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 4),
                     // Progress bar
-                    if (item.durationSeconds > 0)
+                    if (item.durationMilliseconds > 0)
                       LinearProgressIndicator(
-                        value: (item.positionSeconds / item.durationSeconds)
+                        value: (item.positionMilliseconds / item.durationMilliseconds)
                             .clamp(0.0, 1.0),
                         backgroundColor: Colors.white24,
                         valueColor: const AlwaysStoppedAnimation<Color>(
