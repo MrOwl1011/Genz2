@@ -200,17 +200,23 @@ class _PlayerScreenState extends State<PlayerScreen>
       if (!_currentIsLive) {
         int targetPos = 0;
         if (_currentMediaId != null && mounted) {
-          targetPos = context.read<UserPrefsProvider>().getHistoryPosition(_currentMediaId!);
+          targetPos = context.read<UserPrefsProvider>().getHistoryPositionMilliseconds(_currentMediaId!);
         }
         
         if (targetPos == 0 && _currentIndex == widget.initialIndex) {
-          targetPos = widget.initialPositionSeconds;
+          targetPos = widget.initialPositionSeconds * 1000;
         }
 
         if (targetPos > 0) {
-          // Wait briefly for the player to be ready before seeking
-          await Future.delayed(const Duration(milliseconds: 500));
-          await _player!.seek(Duration(seconds: targetPos));
+          // Wait for player initialization before restoring position
+          int waits = 0;
+          while (_duration.inMilliseconds == 0 && waits < 40 && mounted) {
+            await Future.delayed(const Duration(milliseconds: 50));
+            waits++;
+          }
+          debugPrint('[Player History] Restoring position to: $targetPos ms');
+          await _player!.seek(Duration(milliseconds: targetPos));
+          debugPrint('[Player History] Actual position after seek: ${_player!.state.position.inMilliseconds} ms');
         }
       }
       
@@ -313,8 +319,8 @@ class _PlayerScreenState extends State<PlayerScreen>
       return;
     }
 
-    final position = _position.inSeconds;
-    final duration = _duration.inSeconds;
+    final position = _position.inMilliseconds;
+    final duration = _duration.inMilliseconds;
 
     if (position > 0) {
       context.read<UserPrefsProvider>().saveHistory(
@@ -322,8 +328,8 @@ class _PlayerScreenState extends State<PlayerScreen>
         title: _currentTitle,
         posterUrl: _currentCoverUrl ?? '',
         type: _currentMediaType!,
-        positionSeconds: position,
-        durationSeconds: duration,
+        positionMilliseconds: position,
+        durationMilliseconds: duration,
         rawData: _currentRawMediaData!,
       );
     }
@@ -362,6 +368,12 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (!mounted) return;
 
     final item = widget.playlist![index];
+
+    debugPrint('[Player Navigation] Current Episode ID: $_currentMediaId');
+    debugPrint('[Player Navigation] Target Episode ID: ${item['mediaId']}');
+    debugPrint('[Player Navigation] Current stream URL: $_currentStreamUrl');
+    debugPrint('[Player Navigation] New stream URL: ${item['url']}');
+
     setState(() {
       _currentIndex = index;
       _currentStreamUrl = item['url'];
@@ -1072,7 +1084,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 60),
       child: Text(
-        widget.title,
+        _currentTitle,
         textAlign: TextAlign.center,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,

@@ -44,8 +44,8 @@ class HistoryItem {
   final String title;
   final String posterUrl;
   final MediaType type;
-  final int positionSeconds;
-  final int durationSeconds;
+  final int positionMilliseconds;
+  final int durationMilliseconds;
   final Map<String, dynamic> rawData;
   final DateTime lastWatched;
 
@@ -54,8 +54,8 @@ class HistoryItem {
     required this.title,
     required this.posterUrl,
     required this.type,
-    required this.positionSeconds,
-    required this.durationSeconds,
+    required this.positionMilliseconds,
+    required this.durationMilliseconds,
     required this.rawData,
     required this.lastWatched,
   });
@@ -65,8 +65,8 @@ class HistoryItem {
         'title': title,
         'posterUrl': posterUrl,
         'type': type.name,
-        'positionSeconds': positionSeconds,
-        'durationSeconds': durationSeconds,
+        'positionMilliseconds': positionMilliseconds,
+        'durationMilliseconds': durationMilliseconds,
         'rawData': rawData,
         'lastWatched': lastWatched.toIso8601String(),
       };
@@ -77,8 +77,8 @@ class HistoryItem {
       title: json['title'],
       posterUrl: json['posterUrl'],
       type: MediaType.values.firstWhere((e) => e.name == json['type']),
-      positionSeconds: json['positionSeconds'],
-      durationSeconds: json['durationSeconds'] ?? 0,
+      positionMilliseconds: json['positionMilliseconds'] ?? (json['positionSeconds'] != null ? (json['positionSeconds'] as int) * 1000 : 0),
+      durationMilliseconds: json['durationMilliseconds'] ?? (json['durationSeconds'] != null ? (json['durationSeconds'] as int) * 1000 : 0),
       rawData: json['rawData'],
       lastWatched: DateTime.parse(json['lastWatched']),
     );
@@ -211,8 +211,8 @@ class UserPrefsProvider extends ChangeNotifier {
     required String title,
     required String posterUrl,
     required MediaType type,
-    required int positionSeconds,
-    required int durationSeconds,
+    required int positionMilliseconds,
+    required int durationMilliseconds,
     required Map<String, dynamic> rawData,
   }) {
     // Remove if already exists to move it to the top
@@ -235,8 +235,8 @@ class UserPrefsProvider extends ChangeNotifier {
       title: title,
       posterUrl: posterUrl,
       type: type,
-      positionSeconds: positionSeconds,
-      durationSeconds: durationSeconds,
+      positionMilliseconds: positionMilliseconds,
+      durationMilliseconds: durationMilliseconds,
       rawData: rawData,
       lastWatched: DateTime.now(),
     ));
@@ -253,10 +253,23 @@ class UserPrefsProvider extends ChangeNotifier {
     try {
       final item = _history.firstWhere((item) => item.id == id);
       // If watched more than 95%, start over
-      if (item.durationSeconds > 0 && item.positionSeconds >= item.durationSeconds - 10) {
+      if (item.durationMilliseconds > 0 && item.positionMilliseconds >= item.durationMilliseconds - 10000) {
         return 0;
       }
-      return item.positionSeconds;
+      return (item.positionMilliseconds / 1000).floor();
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  int getHistoryPositionMilliseconds(String id) {
+    try {
+      final item = _history.firstWhere((item) => item.id == id);
+      // If watched more than 95%, start over
+      if (item.durationMilliseconds > 0 && item.positionMilliseconds >= item.durationMilliseconds - 10000) {
+        return 0;
+      }
+      return item.positionMilliseconds;
     } catch (_) {
       return 0;
     }
