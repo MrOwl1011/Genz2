@@ -229,6 +229,15 @@ class _PlayerScreenState extends State<PlayerScreen>
           // or reset to the first keyframe because the codec is not fully initialized.
           await _player!.play();
 
+          // Wait until the player actually starts progressing (position > 0)
+          // This guarantees that the native engine is fully prepared and actively playing,
+          // so it won't reset our seek back to 0.
+          int playWaits = 0;
+          while (_player!.state.position.inMilliseconds == 0 && playWaits < 40 && mounted) {
+            await Future.delayed(const Duration(milliseconds: 50));
+            playWaits++;
+          }
+
           // Issue the exact seek
           debugPrint('[Player History] Seek Requested: $targetPos ms');
           await _player!.seek(Duration(milliseconds: targetPos));
