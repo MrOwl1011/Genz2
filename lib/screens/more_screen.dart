@@ -193,11 +193,6 @@ class MoreScreen extends StatelessWidget {
                   value: userPrefs.autoPlayNextEpisode,
                   onChanged: (val) => userPrefs.setAutoPlayNextEpisode(val),
                 ),
-                _buildThemeColorRow(
-                  context,
-                  userPrefs: userPrefs,
-                  isArabic: isArabic,
-                ),
               ]),
 
               const SizedBox(height: 36),
@@ -467,94 +462,23 @@ class MoreScreen extends StatelessWidget {
         children: [
           Icon(icon, color: primaryColor, size: 20),
           const SizedBox(width: 12),
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              color: Colors.white60,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.outfit(
+                color: Colors.white60,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          const Spacer(),
-          Switch(
+          Switch.adaptive(
             value: value,
             onChanged: onChanged,
             activeColor: primaryColor,
             inactiveTrackColor: Colors.white12,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeColorRow(
-    BuildContext context, {
-    required UserPrefsProvider userPrefs,
-    required bool isArabic,
-  }) {
-    final primaryColor = Theme.of(context).primaryColor;
-    
-    final List<Color> colors = [
-      const Color(0xFFE50914), // Red
-      const Color(0xFFE91E63), // Pink
-      const Color(0xFF2196F3), // Blue
-      const Color(0xFF4CAF50), // Green
-      const Color(0xFF9C27B0), // Purple
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.palette_rounded, color: primaryColor, size: 20),
-              const SizedBox(width: 12),
-              Text(
-                isArabic ? 'لون التطبيق' : 'Theme Color',
-                style: GoogleFonts.outfit(
-                  color: Colors.white60,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(colors.length, (index) {
-              final isSelected = userPrefs.themeColorIndex == index;
-              final color = colors[index];
-              return GestureDetector(
-                onTap: () => userPrefs.setThemeColorIndex(index),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? Colors.white : Colors.transparent,
-                      width: 2,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.5),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            )
-                          ]
-                        : null,
-                  ),
-                  child: isSelected
-                      ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
-                      : null,
-                ),
-              );
-            }),
           ),
         ],
       ),

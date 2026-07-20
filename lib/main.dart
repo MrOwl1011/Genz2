@@ -50,29 +50,10 @@ void main() async {
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
-  static const List<Color> themeColors = [
-    Color(0xFFE50914), // Red (Default)
-    Color(0xFFE91E63), // Pink
-    Color(0xFF2196F3), // Blue
-    Color(0xFF4CAF50), // Green
-    Color(0xFF9C27B0), // Purple
-  ];
-
-  static const List<Color> themeSecondaryColors = [
-    Color(0xFF881014), // Dark Red
-    Color(0xFF880E4F), // Dark Pink
-    Color(0xFF0D47A1), // Dark Blue
-    Color(0xFF1B5E20), // Dark Green
-    Color(0xFF4A148C), // Dark Purple
-  ];
-
   @override
   Widget build(BuildContext context) {
     final userPrefs = Provider.of<UserPrefsProvider>(context);
     final locale = Locale(userPrefs.locale);
-    final int colorIndex = userPrefs.themeColorIndex;
-    final primaryColor = themeColors[colorIndex >= 0 && colorIndex < themeColors.length ? colorIndex : 0];
-    final secondaryColor = themeSecondaryColors[colorIndex >= 0 && colorIndex < themeSecondaryColors.length ? colorIndex : 0];
 
     return MaterialApp(
       title: 'NX IPTV',
@@ -90,11 +71,11 @@ class MainApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF0C0002),
-        primaryColor: primaryColor,
-        colorScheme: ColorScheme.dark(
-          primary: primaryColor,
-          secondary: secondaryColor,
-          surface: const Color(0xFF160103),
+        primaryColor: const Color(0xFFE50914),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFE50914),
+          secondary: Color(0xFF881014),
+          surface: Color(0xFF160103),
         ),
         useMaterial3: true,
       ),
