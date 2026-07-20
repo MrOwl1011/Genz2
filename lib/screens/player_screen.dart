@@ -762,7 +762,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           }
         }
       },
-      onVerticalDragUpdate: (details) async {
+      onVerticalDragUpdate: (details) {
         if (_dragStartY == null) return;
         final delta = (_dragStartY! - details.globalPosition.dy) / 200.0;
 
@@ -771,7 +771,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           if (_startBrightness != null) {
             double newBrightness = (_startBrightness! + delta).clamp(0.0, 1.0);
             try {
-              await ScreenBrightness().setScreenBrightness(newBrightness);
+              ScreenBrightness().setScreenBrightness(newBrightness);
               if (mounted) setState(() => _currentBrightness = newBrightness);
               _showIndicator(
                 Icons.brightness_6_rounded,
@@ -814,6 +814,9 @@ class _PlayerScreenState extends State<PlayerScreen>
     setState(() {
       _indicatorMessage = text;
       _showControls = false;
+    });
+    _indicatorTimer = Timer(const Duration(seconds: 1), () {
+      if (mounted) setState(() => _indicatorMessage = '');
     });
   }
 

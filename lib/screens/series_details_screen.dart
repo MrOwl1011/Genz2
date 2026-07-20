@@ -63,6 +63,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
       if (!mounted) return;
       if (result == false) {
         position = 0; // User chose "Start Over"
+        userPrefs.clearHistoryPosition(episode.id);
       }
     }
 

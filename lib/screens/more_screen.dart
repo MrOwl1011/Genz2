@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import 'login_screen.dart';
@@ -173,6 +174,53 @@ class MoreScreen extends StatelessWidget {
                 ),
               ]),
 
+              const SizedBox(height: 24),
+
+              // Help & Support
+              _buildSectionHeader(isArabic ? 'المساعدة والدعم' : 'Help & Support'),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () async {
+                  final url = Uri.parse('https://wa.me/96550507254');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white10,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.support_agent_rounded,
+                          color: Colors.white70,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isArabic ? 'تواصل معنا عبر الواتساب' : 'CONTACT US ON WHATSAPP',
+                          style: GoogleFonts.outfit(
+                            color: Colors.white70,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
 
               // Settings Section

@@ -59,6 +59,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       if (!mounted) return;
       if (result == false) {
         position = 0; // User chose "Start Over"
+        userPrefs.clearHistoryPosition(widget.movie.streamId.toString());
       }
       // result == true or null means resume from saved position
     }

@@ -287,4 +287,9 @@ class UserPrefsProvider extends ChangeNotifier {
     _history.clear();
     _saveHistory();
   }
+
+  void clearHistoryPosition(String id) {
+    _history.removeWhere((item) => item.id == id);
+    _saveHistory();
+  }
 }

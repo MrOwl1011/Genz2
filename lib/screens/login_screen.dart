@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import 'main_navigation_screen.dart';
 
@@ -341,8 +342,33 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
+                  const SizedBox(height: 24),
+                  
+                  // Contact Us Button
+                  TextButton.icon(
+                    onPressed: () async {
+                      final url = Uri.parse('https://wa.me/96550507254');
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    icon: const Icon(Icons.support_agent_rounded, color: Colors.white70, size: 20),
+                    label: Text(
+                      'Contact Us',
+                      style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.05),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: const BorderSide(color: Colors.white10),
+                      ),
+                    ),
+                  ),
+
                   // Bottom info banner
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 24),
                   Text(
                     'Xtream Codes API Authentication Player',
                     textAlign: TextAlign.center,
