@@ -224,6 +224,11 @@ class _PlayerScreenState extends State<PlayerScreen>
           
           debugPrint('[Player History] Player Initialized: ${_duration.inMilliseconds > 0}');
 
+          // CRITICAL FIX FOR ANDROID: Start playing before seeking. 
+          // If play is false, libmpv/ExoPlayer on Android may ignore the seek command 
+          // or reset to the first keyframe because the codec is not fully initialized.
+          await _player!.play();
+
           // Issue the exact seek
           debugPrint('[Player History] Seek Requested: $targetPos ms');
           await _player!.seek(Duration(milliseconds: targetPos));
@@ -245,7 +250,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         }
       }
       
-      // ONLY start playback after the seek verification completes
+      // ONLY start playback after the seek verification completes (safe to call again)
       await _player!.play();
 
       _startHideTimer();
