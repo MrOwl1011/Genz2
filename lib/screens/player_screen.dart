@@ -311,10 +311,14 @@ class _PlayerScreenState extends State<PlayerScreen>
 
     _completedSubscription = _player!.stream.completed.listen((completed) {
       if (completed && mounted) {
-        // Auto-play next in playlist
-        if (widget.playlist != null &&
-            _currentIndex < widget.playlist!.length - 1) {
-          _playNext();
+        // Auto-play next in playlist only for TV series if enabled
+        if (_currentMediaType == MediaType.series) {
+          final autoPlayEnabled = context.read<UserPrefsProvider>().autoPlayNextEpisode;
+          if (autoPlayEnabled &&
+              widget.playlist != null &&
+              _currentIndex < widget.playlist!.length - 1) {
+            _playNext();
+          }
         }
       }
     });

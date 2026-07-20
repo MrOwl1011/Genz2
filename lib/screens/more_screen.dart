@@ -80,8 +80,8 @@ class MoreScreen extends StatelessWidget {
                     Container(
                       width: 60,
                       height: 60,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF881014),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.secondary,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -111,20 +111,16 @@ class MoreScreen extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(
-                                0xFFE50914,
-                              ).withValues(alpha: 0.15),
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: const Color(
-                                  0xFFE50914,
-                                ).withValues(alpha: 0.3),
+                                color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(
                               user?.status.toUpperCase() ?? 'ACTIVE',
                               style: GoogleFonts.outfit(
-                                color: const Color(0xFFE50914),
+                                color: Theme.of(context).primaryColor,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 10,
                                 letterSpacing: 0.5,
@@ -184,10 +180,23 @@ class MoreScreen extends StatelessWidget {
               const SizedBox(height: 12),
               _buildInfoContainer([
                 _buildActionRow(
+                  context,
                   icon: Icons.language_rounded,
                   label: isArabic ? 'اللغة' : 'Language',
                   value: currentLanguageLabel,
                   onTap: () => _showLanguagePicker(context, userPrefs),
+                ),
+                _buildSwitchRow(
+                  context,
+                  icon: Icons.play_circle_filled_rounded,
+                  label: isArabic ? 'تشغيل الحلقة التالية تلقائياً' : 'Auto Play Next Episode',
+                  value: userPrefs.autoPlayNextEpisode,
+                  onChanged: (val) => userPrefs.setAutoPlayNextEpisode(val),
+                ),
+                _buildThemeColorRow(
+                  context,
+                  userPrefs: userPrefs,
+                  isArabic: isArabic,
                 ),
               ]),
 
@@ -221,16 +230,16 @@ class MoreScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.logout_rounded,
-                          color: Color(0xFFE50914),
+                          color: Theme.of(context).primaryColor,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           isArabic ? 'تسجيل الخروج' : 'LOG OUT ACCOUNT',
                           style: GoogleFonts.outfit(
-                            color: const Color(0xFFE50914),
+                            color: Theme.of(context).primaryColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                             letterSpacing: 1.5,
@@ -312,13 +321,13 @@ class MoreScreen extends StatelessWidget {
       title: Text(
         label,
         style: GoogleFonts.outfit(
-          color: isSelected ? const Color(0xFFE50914) : Colors.white,
+          color: isSelected ? Theme.of(context).primaryColor : Colors.white,
           fontWeight: FontWeight.w600,
           fontSize: 16,
         ),
       ),
       trailing: isSelected
-          ? const Icon(Icons.check_rounded, color: Color(0xFFE50914))
+          ? Icon(Icons.check_rounded, color: Theme.of(context).primaryColor)
           : null,
       onTap: () {
         userPrefs.setLocale(localeCode);
@@ -399,7 +408,8 @@ class MoreScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionRow({
+  Widget _buildActionRow(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required String value,
@@ -412,7 +422,7 @@ class MoreScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFFE50914), size: 20),
+            Icon(icon, color: Theme.of(context).primaryColor, size: 20),
             const SizedBox(width: 12),
             Text(
               label,
@@ -439,6 +449,114 @@ class MoreScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSwitchRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final primaryColor = Theme.of(context).primaryColor;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: primaryColor, size: 20),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              color: Colors.white60,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const Spacer(),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: primaryColor,
+            inactiveTrackColor: Colors.white12,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeColorRow(
+    BuildContext context, {
+    required UserPrefsProvider userPrefs,
+    required bool isArabic,
+  }) {
+    final primaryColor = Theme.of(context).primaryColor;
+    
+    final List<Color> colors = [
+      const Color(0xFFE50914), // Red
+      const Color(0xFFE91E63), // Pink
+      const Color(0xFF2196F3), // Blue
+      const Color(0xFF4CAF50), // Green
+      const Color(0xFF9C27B0), // Purple
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.palette_rounded, color: primaryColor, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                isArabic ? 'لون التطبيق' : 'Theme Color',
+                style: GoogleFonts.outfit(
+                  color: Colors.white60,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(colors.length, (index) {
+              final isSelected = userPrefs.themeColorIndex == index;
+              final color = colors[index];
+              return GestureDetector(
+                onTap: () => userPrefs.setThemeColorIndex(index),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? Colors.white : Colors.transparent,
+                      width: 2,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.5),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
+                      : null,
+                ),
+              );
+            }),
+          ),
+        ],
       ),
     );
   }

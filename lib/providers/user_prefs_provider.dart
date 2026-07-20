@@ -93,11 +93,15 @@ class UserPrefsProvider extends ChangeNotifier {
   List<FavoriteItem> _favorites = [];
   List<HistoryItem> _history = [];
   String _locale = 'en'; // Default English
+  bool _autoPlayNextEpisode = true;
+  int _themeColorIndex = 0;
 
   List<FavoriteItem> get favorites => _favorites;
   List<HistoryItem> get history => _history;
   String get locale => _locale;
   String get currentPlaylistId => _currentPlaylistId;
+  bool get autoPlayNextEpisode => _autoPlayNextEpisode;
+  int get themeColorIndex => _themeColorIndex;
 
   Future<void> setLocale(String locale) async {
     _locale = locale;
@@ -106,11 +110,29 @@ class UserPrefsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setAutoPlayNextEpisode(bool value) async {
+    _autoPlayNextEpisode = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('auto_play_next', value);
+    notifyListeners();
+  }
+
+  Future<void> setThemeColorIndex(int index) async {
+    _themeColorIndex = index;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('theme_color_index', index);
+    notifyListeners();
+  }
+
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     
     // Load Locale
     _locale = prefs.getString('app_locale') ?? 'en';
+    
+    // Load Auto Play and Theme
+    _autoPlayNextEpisode = prefs.getBool('auto_play_next') ?? true;
+    _themeColorIndex = prefs.getInt('theme_color_index') ?? 0;
     
     await _loadDataFromCurrentKeys(prefs);
   }
