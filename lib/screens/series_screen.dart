@@ -1,0 +1,329 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../models/xtream_models.dart';
+import '../providers/content_provider.dart';
+import 'series_details_screen.dart';
+
+class SeriesScreen extends StatefulWidget {
+  final XtreamCategory? category;
+  final List<XtreamSeries>? predefinedList;
+  final String? title;
+
+  const SeriesScreen({
+    super.key,
+    this.category,
+    this.predefinedList,
+    this.title,
+  });
+
+  @override
+  State<SeriesScreen> createState() => _SeriesScreenState();
+}
+
+class _SeriesScreenState extends State<SeriesScreen> {
+  List<XtreamSeries> _allSeries = [];
+  List<XtreamSeries> _filtered = [];
+  bool _isLoading = true;
+  String? _error;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSeries();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSeries() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      if (widget.predefinedList != null) {
+        if (mounted) {
+          setState(() {
+            _allSeries = widget.predefinedList!;
+            _filtered = widget.predefinedList!;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      final content = context.read<ContentProvider>();
+      final series = await content.getSeriesList(
+        categoryId: widget.category!.categoryId,
+      );
+      if (mounted) {
+        setState(() {
+          _allSeries = series;
+          _filtered = series;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceFirst('Exception: ', '');
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _onSearch(String query) {
+    setState(() {
+      _filtered = query.isEmpty
+          ? _allSeries
+          : _allSeries
+                .where(
+                  (s) => s.name.toLowerCase().contains(query.toLowerCase()),
+                )
+                .toList();
+    });
+  }
+
+  void _openSeriesDetails(XtreamSeries series) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => SeriesDetailsScreen(series: series)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF220306), Color(0xFF0C0002), Color(0xFF000000)],
+            stops: [0.0, 0.6, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 16, 24, 0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    Expanded(
+                      child: Text(
+                        (widget.title ?? widget.category?.categoryName ?? '')
+                            .toUpperCase(),
+                        style: GoogleFonts.outfit(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.white,
+                          letterSpacing: 1,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Search
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(
+                      color: const Color(0xFF200306),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearch,
+                    style: GoogleFonts.outfit(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Search series...',
+                      hintStyle: GoogleFonts.outfit(color: Colors.white30),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: Colors.white38,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Content
+              Expanded(child: _buildBody()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE50914)),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.wifi_off_rounded, color: Colors.white24, size: 56),
+            const SizedBox(height: 16),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(color: Colors.white54),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _loadSeries,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE50914),
+              ),
+              child: Text(
+                'Retry',
+                style: GoogleFonts.outfit(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_filtered.isEmpty) {
+      return Center(
+        child: Text(
+          'No series found.',
+          style: GoogleFonts.outfit(color: Colors.white38, fontSize: 16),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      physics: const BouncingScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 0.65,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: _filtered.length,
+      itemBuilder: (context, index) {
+        final series = _filtered[index];
+        return GestureDetector(
+          onTap: () => _openSeriesDetails(series),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      series.cover.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: series.cover,
+                              fit: BoxFit.cover,
+                              placeholder: (_, _) => Container(
+                                color: Colors.white10,
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.video_library,
+                                    color: Colors.white24,
+                                    size: 30,
+                                  ),
+                                ),
+                              ),
+                              errorWidget: (_, _, _) => Container(
+                                color: Colors.white10,
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.video_library,
+                                    color: Colors.white24,
+                                    size: 30,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              color: Colors.white10,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.video_library,
+                                  color: Colors.white24,
+                                  size: 30,
+                                ),
+                              ),
+                            ),
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.8),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                series.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
