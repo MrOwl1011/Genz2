@@ -3,7 +3,7 @@
 // This bypasses the flutter_vlc_player plugin's Dart-side player wrapper
 // entirely and talks to MobileVLCKit directly. The command surface and
 // event shape are intentionally small and mirror what NativeVlcKitBackend
-// (lib/services/native_vlc_kit_backend.dart) expects.
+// (in the main app: lib/services/native_vlc_kit_backend.dart) expects.
 //
 // Reference for correct VLCMediaPlayer/VLCMedia usage patterns:
 // https://github.com/solid-software/flutter_vlc_player (ios/Classes/VlcViewController.swift)
