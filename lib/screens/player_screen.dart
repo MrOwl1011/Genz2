@@ -191,7 +191,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       // Open the media strictly without playing to prevent overriding position
       await _backend!.open(
         url: _currentStreamUrl,
-        httpHeaders: const {'User-Agent': 'NX-IPTV/1.0'},
+        httpHeaders: const {'User-Agent': kIptvUserAgent},
         autoPlay: false,
       );
 

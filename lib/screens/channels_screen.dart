@@ -130,7 +130,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
 
       await backend.open(
         url: url,
-        httpHeaders: const {'User-Agent': 'NX-IPTV/1.0'},
+        httpHeaders: const {'User-Agent': kIptvUserAgent},
         autoPlay: true,
       );
 

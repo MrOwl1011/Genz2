@@ -1,5 +1,14 @@
 import 'package:flutter/widgets.dart';
 
+/// User-Agent sent on stream requests. Deliberately impersonates VLC rather
+/// than identifying as this app: a lot of Xtream reseller panels/CDNs run
+/// anti-leech rules that allowlist known player UAs (VLC is the one nearly
+/// every panel tests against) and throttle or deny range/seek requests for
+/// anything unrecognized — an unrecognized UA can present as slow starts and
+/// seeks that hang indefinitely even though the same account works fine in
+/// other players.
+const String kIptvUserAgent = 'VLC/3.0.20 LibVLC/3.0.20';
+
 /// A unified surface over a concrete video engine (Media Kit, VLC, ...) so
 /// [PlayerScreen] can drive playback without knowing which engine is active.
 ///
