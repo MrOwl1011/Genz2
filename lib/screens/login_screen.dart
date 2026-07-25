@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'NX ',
+                            'GenZ',
                             style: GoogleFonts.outfit(
                               fontSize: 50,
                               fontWeight: FontWeight.w900,
@@ -190,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           Text(
-                            'IPTV',
+                            '+',
                             style: GoogleFonts.outfit(
                               fontSize: 50,
                               fontWeight: FontWeight.w900,
@@ -203,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'AD-FREE & STREAMLINED',
+                        'YOUR ULTIMATE ENTERTAINMENT WORLD',
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

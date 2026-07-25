@@ -87,7 +87,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, isArabic ? 'الرئيسية' : 'Home', isHomeLogo: true),
+              _buildNavItem(0, isArabic ? 'الرئيسية' : 'Home', icon: Icons.home_rounded),
               _buildNavItem(1, isArabic ? 'مباشر' : 'Live', icon: Icons.sensors_rounded),
               _buildNavItem(2, isArabic ? 'أفلام' : 'Movies', icon: Icons.movie_creation_outlined),
               _buildNavItem(3, isArabic ? 'مسلسلات' : 'Series', icon: Icons.video_library_outlined),
@@ -103,7 +103,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     int index,
     String label, {
     IconData? icon,
-    bool isHomeLogo = false,
   }) {
     final isSelected = _currentIndex == index;
     final colors = context.colors;
@@ -130,22 +129,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (isHomeLogo)
-              Text(
-                'NX',
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: isSelected ? activeColor : inactiveColor,
-                ),
-              )
-            else
-              Icon(
-                icon,
-                color: isSelected ? activeColor : inactiveColor,
-                size: 22,
-              ),
+            Icon(
+              icon,
+              color: isSelected ? activeColor : inactiveColor,
+              size: 22,
+            ),
             const SizedBox(height: 4),
             Text(
               label,
