@@ -17,6 +17,7 @@ Native iOS platform view wrapping MobileVLCKit's VLCMediaPlayer directly, used o
   s.dependency 'Flutter'
   s.dependency 'MobileVLCKit'
   s.platform = :ios, '13.0'
+  s.static_framework = true
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
   s.swift_version = '5.0'
 end
