@@ -21,7 +21,10 @@ class MediaKitBackend implements PlayerBackend {
       _player.stream.duration.listen((v) => _durationCtrl.add(v)),
       _player.stream.buffering.listen((v) => _bufferingCtrl.add(v)),
       _player.stream.error.listen((v) {
-        if (v.isNotEmpty) _errorCtrl.add(v);
+        if (v.isNotEmpty) {
+          debugPrint('[MediaKitBackend] error: $v');
+          _errorCtrl.add(v);
+        }
       }),
       _player.stream.completed.listen((v) {
         if (v) _completedCtrl.add(true);
@@ -50,6 +53,7 @@ class MediaKitBackend implements PlayerBackend {
     required Map<String, String> httpHeaders,
     bool autoPlay = false,
   }) {
+    debugPrint('[MediaKitBackend] open: $url (autoPlay=$autoPlay)');
     return _player.open(
       Media(url, httpHeaders: httpHeaders),
       play: autoPlay,
@@ -80,6 +84,7 @@ class MediaKitBackend implements PlayerBackend {
 
   @override
   Future<void> dispose() async {
+    debugPrint('[MediaKitBackend] dispose');
     for (final s in _subs) {
       await s.cancel();
     }

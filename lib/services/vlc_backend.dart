@@ -7,15 +7,21 @@ import 'player_backend.dart';
 
 /// [PlayerBackend] implementation backed by `flutter_vlc_player` (libVLC).
 ///
-/// libVLC only starts initializing once its platform view has actually
-/// mounted, so [open] deliberately does the (synchronous) controller setup
-/// first and only *awaits* readiness afterwards — by the time that await
-/// suspends, [PlayerScreen] has already rebuilt with [buildVideoWidget] in
-/// the tree, which is what triggers the native view (and therefore VLC) to
-/// come up. This mirrors how `media_kit`'s headless `Player` becomes usable
-/// as soon as `open()` resolves, so callers don't need engine-specific code.
+/// The controller can accept `play`/`seekTo`/etc. calls the instant it's
+/// constructed, but libVLC itself only actually starts opening the URL once
+/// its platform view has mounted and fired `addOnInitListener` — calling a
+/// command before that can be silently dropped depending on plugin/platform
+/// version. Rather than have [open] block until that fires (which risks
+/// hanging forever with zero diagnostics if it never does, or races the
+/// widget's own mount timing), every command is queued if native init
+/// hasn't completed yet and flushed the moment it does. [open] itself
+/// returns as soon as the controller exists, matching the pattern the
+/// plugin's own examples use (build the `VlcPlayer` widget immediately;
+/// don't wait on it).
 class VlcBackend implements PlayerBackend {
   VlcPlayerController? _controller;
+  bool _isNativeReady = false;
+  final List<void Function(VlcPlayerController)> _pendingCommands = [];
 
   final _playingCtrl = StreamController<bool>.broadcast();
   final _positionCtrl = StreamController<Duration>.broadcast();
@@ -31,11 +37,46 @@ class VlcBackend implements PlayerBackend {
   bool _completedFired = false;
   int? _lastWidth;
   int? _lastHeight;
+  PlayingState? _lastLoggedState;
+
+  /// Runs [action] now if libVLC has finished initializing, otherwise
+  /// queues it to run the moment [_onNativeReady] fires.
+  void _runOrQueue(String label, void Function(VlcPlayerController) action) {
+    final controller = _controller;
+    if (controller == null) return;
+    if (_isNativeReady) {
+      debugPrint('[VlcBackend] $label (native ready)');
+      action(controller);
+    } else {
+      debugPrint('[VlcBackend] $label queued (native not ready yet)');
+      _pendingCommands.add(action);
+    }
+  }
+
+  void _onNativeReady() {
+    if (_isNativeReady) return;
+    _isNativeReady = true;
+    final controller = _controller;
+    debugPrint(
+      '[VlcBackend] native init complete, flushing ${_pendingCommands.length} queued command(s)',
+    );
+    if (controller != null) {
+      for (final command in _pendingCommands) {
+        command(controller);
+      }
+    }
+    _pendingCommands.clear();
+  }
 
   void _onControllerChanged() {
     final controller = _controller;
     if (controller == null) return;
     final value = controller.value;
+
+    if (value.playingState != _lastLoggedState) {
+      _lastLoggedState = value.playingState;
+      debugPrint('[VlcBackend] state -> ${value.playingState}');
+    }
 
     if (value.isPlaying != _wasPlaying) {
       _wasPlaying = value.isPlaying;
@@ -61,6 +102,7 @@ class VlcBackend implements PlayerBackend {
     }
 
     if (value.hasError && value.errorDescription.isNotEmpty) {
+      debugPrint('[VlcBackend] error: ${value.errorDescription}');
       _errorCtrl.add(value.errorDescription);
     }
 
@@ -79,6 +121,7 @@ class VlcBackend implements PlayerBackend {
     required Map<String, String> httpHeaders,
     bool autoPlay = false,
   }) async {
+    debugPrint('[VlcBackend] open: $url (autoPlay=$autoPlay)');
     final userAgent = httpHeaders['User-Agent'];
     final controller = VlcPlayerController.network(
       url,
@@ -89,50 +132,49 @@ class VlcBackend implements PlayerBackend {
         extras: [
           if (userAgent != null) '--http-user-agent=$userAgent',
           '--network-caching=3000',
+          // Auto-retry a dropped connection instead of surfacing it as a
+          // dead stream — matters most right after a seek, when the old
+          // byte-range request is torn down and a new one has to land.
+          '--http-reconnect',
         ],
       ),
     );
     _controller = controller;
+    _isNativeReady = false;
+    _pendingCommands.clear();
     controller.addListener(_onControllerChanged);
-
-    // Resolve once the native view finishes initializing (fires once the
-    // widget from buildVideoWidget() has mounted), with a safety-net
-    // timeout so a bad stream can't hang the caller forever — PlayerScreen
-    // surfaces playback failures via errorStream/play() afterwards anyway.
-    final ready = Completer<void>();
     controller.addOnInitListener(() {
-      if (!ready.isCompleted) ready.complete();
+      debugPrint('[VlcBackend] onInit fired for $url');
+      _onNativeReady();
     });
-    unawaited(
-      Future.delayed(const Duration(seconds: 15), () {
-        if (!ready.isCompleted) ready.complete();
-      }),
-    );
-    await ready.future;
+    // `open()` intentionally does not await native readiness — see class
+    // doc. The controller is already valid to hand to buildVideoWidget().
   }
 
   @override
-  Future<void> play() async => _controller?.play();
+  Future<void> play() async => _runOrQueue('play()', (c) => c.play());
 
   @override
-  Future<void> pause() async => _controller?.pause();
+  Future<void> pause() async => _runOrQueue('pause()', (c) => c.pause());
 
   @override
   Future<void> playOrPause() async {
     final controller = _controller;
     if (controller == null) return;
-    if (controller.value.isPlaying) {
+    if (_isNativeReady && controller.value.isPlaying) {
       await controller.pause();
     } else {
-      await controller.play();
+      _runOrQueue('playOrPause()->play()', (c) => c.play());
     }
   }
 
   @override
-  Future<void> seek(Duration position) async => _controller?.seekTo(position);
+  Future<void> seek(Duration position) async =>
+      _runOrQueue('seek($position)', (c) => c.seekTo(position));
 
   @override
-  Future<void> setRate(double rate) async => _controller?.setPlaybackSpeed(rate);
+  Future<void> setRate(double rate) async =>
+      _runOrQueue('setRate($rate)', (c) => c.setPlaybackSpeed(rate));
 
   @override
   Future<void> stop() async {
@@ -143,6 +185,8 @@ class VlcBackend implements PlayerBackend {
 
   @override
   Future<void> dispose() async {
+    debugPrint('[VlcBackend] dispose');
+    _pendingCommands.clear();
     _controller?.removeListener(_onControllerChanged);
     try {
       await _controller?.dispose();

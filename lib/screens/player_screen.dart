@@ -122,6 +122,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     // preference changes elsewhere in the app don't swap engines under a
     // live playlist.
     _engine = context.read<UserPrefsProvider>().playerEngine;
+    debugPrint('[PlayerScreen] engine: ${_engine.id}, url: ${widget.streamUrl}');
     // Initialize playlist state
     _currentIndex = widget.initialIndex;
     _currentStreamUrl = widget.streamUrl;
@@ -194,6 +195,21 @@ class _PlayerScreenState extends State<PlayerScreen>
         httpHeaders: const {'User-Agent': kIptvUserAgent},
         autoPlay: false,
       );
+
+      // Give the engine a bounded window to report signs of life (duration
+      // for VOD, or position starting to advance for live/seekless streams)
+      // before touching play/seek or revealing the player. Some engines
+      // (VLC) finish native init asynchronously after open() already
+      // returned, so without this the player could briefly show a blank
+      // black frame instead of the loading spinner while it catches up.
+      int readyWaits = 0;
+      while (_duration.inMilliseconds == 0 &&
+          _position.inMilliseconds == 0 &&
+          readyWaits < 100 &&
+          mounted) {
+        await Future.delayed(const Duration(milliseconds: 50));
+        readyWaits++;
+      }
 
       // Restore exact position for non-live content
       if (!_currentIsLive) {

@@ -134,6 +134,18 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
         autoPlay: true,
       );
 
+      // Bounded wait for the engine to report signs of life before dropping
+      // the loading indicator — see PlayerScreen._initPlayer for why (VLC's
+      // native init can finish after open() already returned).
+      int readyWaits = 0;
+      while (backend.duration.inMilliseconds == 0 &&
+          backend.position.inMilliseconds == 0 &&
+          readyWaits < 100 &&
+          mounted) {
+        await Future.delayed(const Duration(milliseconds: 50));
+        readyWaits++;
+      }
+
       if (mounted) {
         setState(() => _isPlayerLoading = false);
       }

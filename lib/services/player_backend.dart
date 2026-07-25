@@ -19,6 +19,12 @@ abstract class PlayerBackend {
   /// Starts loading [url]. Does not start playback unless [autoPlay] is
   /// true; callers that need to seek before the first frame renders should
   /// keep this false and call [play] once they are ready.
+  ///
+  /// [open] resolving does *not* guarantee the engine is ready to accept
+  /// commands yet (some engines finish initializing asynchronously after
+  /// their video widget mounts) — [play], [pause] and [seek] must be safe
+  /// to call immediately after [open] returns regardless, queuing internally
+  /// if needed.
   Future<void> open({
     required String url,
     required Map<String, String> httpHeaders,
