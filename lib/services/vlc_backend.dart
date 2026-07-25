@@ -21,6 +21,9 @@ import 'player_backend.dart';
 class VlcBackend implements PlayerBackend {
   VlcPlayerController? _controller;
   bool _isNativeReady = false;
+  bool _disposed = false;
+  bool _everReceivedAnyValue = false;
+  Timer? _watchdog;
   final List<void Function(VlcPlayerController)> _pendingCommands = [];
 
   final _playingCtrl = StreamController<bool>.broadcast();
@@ -54,6 +57,7 @@ class VlcBackend implements PlayerBackend {
   }
 
   void _onNativeReady() {
+    _watchdog?.cancel();
     if (_isNativeReady) return;
     _isNativeReady = true;
     final controller = _controller;
@@ -72,6 +76,13 @@ class VlcBackend implements PlayerBackend {
     final controller = _controller;
     if (controller == null) return;
     final value = controller.value;
+
+    if (!_everReceivedAnyValue) {
+      _everReceivedAnyValue = true;
+      debugPrint(
+        '[VlcBackend] first value callback received (state=${value.playingState})',
+      );
+    }
 
     if (value.playingState != _lastLoggedState) {
       _lastLoggedState = value.playingState;
@@ -126,26 +137,44 @@ class VlcBackend implements PlayerBackend {
     final controller = VlcPlayerController.network(
       url,
       autoPlay: autoPlay,
-      hwAcc: HwAcc.auto,
+      // HW-accelerated decode via VideoToolbox has a known history of
+      // failing silently on iOS (no error, no frames, no callback) for
+      // specific streams/devices. Disabled until confirmed safe — trade a
+      // little CPU for actually seeing the video.
+      hwAcc: HwAcc.disabled,
       allowBackgroundPlayback: true,
       options: VlcPlayerOptions(
         extras: [
           if (userAgent != null) '--http-user-agent=$userAgent',
           '--network-caching=3000',
-          // Auto-retry a dropped connection instead of surfacing it as a
-          // dead stream — matters most right after a seek, when the old
-          // byte-range request is torn down and a new one has to land.
-          '--http-reconnect',
         ],
       ),
     );
     _controller = controller;
     _isNativeReady = false;
+    _everReceivedAnyValue = false;
     _pendingCommands.clear();
     controller.addListener(_onControllerChanged);
     controller.addOnInitListener(() {
       debugPrint('[VlcBackend] onInit fired for $url');
       _onNativeReady();
+    });
+
+    // Watchdog: if libVLC never calls back at all — no onInit, no value
+    // change, nothing — surface that as a real error instead of leaving the
+    // screen sitting there with controls but no video and no explanation.
+    _watchdog?.cancel();
+    _watchdog = Timer(const Duration(seconds: 12), () {
+      if (_disposed || _isNativeReady) return;
+      debugPrint(
+        '[VlcBackend] watchdog: no onInit/value callback within 12s for $url '
+        '(everReceivedAnyValue=$_everReceivedAnyValue)',
+      );
+      _errorCtrl.add(
+        'VLC did not respond while opening this stream (no native callback '
+        'within 12s). This usually means the native VLC engine failed to '
+        'initialize on this device.',
+      );
     });
     // `open()` intentionally does not await native readiness — see class
     // doc. The controller is already valid to hand to buildVideoWidget().
@@ -186,6 +215,8 @@ class VlcBackend implements PlayerBackend {
   @override
   Future<void> dispose() async {
     debugPrint('[VlcBackend] dispose');
+    _disposed = true;
+    _watchdog?.cancel();
     _pendingCommands.clear();
     _controller?.removeListener(_onControllerChanged);
     try {

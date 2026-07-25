@@ -80,6 +80,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _isDraggingSeek = false;
   double _dragSeekValue = 0.0;
   int _lastSaveTime = 0;
+  Timer? _seekWatchdogTimer;
 
   // ─── Settings State ────────────────────────────────────────────────────────
   double _playbackSpeed = 1.0;
@@ -492,12 +493,32 @@ class _PlayerScreenState extends State<PlayerScreen>
     final current = _position;
     final duration = _duration;
     final target = current + Duration(seconds: seconds);
-    _backend!.seek(
-      target < Duration.zero
-          ? Duration.zero
-          : (target > duration ? duration : target),
-    );
+    final clampedTarget = target < Duration.zero
+        ? Duration.zero
+        : (target > duration ? duration : target);
+    _backend!.seek(clampedTarget);
+    _watchSeek(clampedTarget);
     _resetHideTimer();
+  }
+
+  /// A manual seek (seek bar drag, double-tap ±10s) doesn't otherwise get
+  /// any timeout/feedback if the engine hangs on it — unlike the history
+  /// resume-seek in [_initPlayer], which already polls with a bound. This
+  /// gives the same kind of bounded visibility here: if playback hasn't
+  /// caught up to roughly where we asked it to go within a few seconds,
+  /// say so instead of leaving the screen looking frozen with no clue why.
+  void _watchSeek(Duration target) {
+    _seekWatchdogTimer?.cancel();
+    _seekWatchdogTimer = Timer(const Duration(seconds: 8), () {
+      if (!mounted || _backend == null) return;
+      final drift = (_backend!.position.inMilliseconds - target.inMilliseconds).abs();
+      if (drift > 3000) {
+        debugPrint(
+          '[PlayerScreen] seek watchdog: still ${drift}ms from target after 8s',
+        );
+        _showQuickToast('Still seeking… this stream may be slow to respond.');
+      }
+    });
   }
 
   void _retryPlayback() async {
@@ -568,6 +589,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     _hideTimer?.cancel();
     _leftSeekTimer?.cancel();
     _rightSeekTimer?.cancel();
+    _seekWatchdogTimer?.cancel();
     _saveCurrentPosition(); // Save exact position on exit
     _cancelSubscriptions();
     try {
@@ -1276,7 +1298,9 @@ class _PlayerScreenState extends State<PlayerScreen>
                 onChangeEnd: (val) {
                   _isDraggingSeek = false;
                   final targetMs = (val * totalMs).toInt();
-                  _backend?.seek(Duration(milliseconds: targetMs));
+                  final target = Duration(milliseconds: targetMs);
+                  _backend?.seek(target);
+                  _watchSeek(target);
                   _startHideTimer();
                 },
               ),
