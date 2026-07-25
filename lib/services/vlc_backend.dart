@@ -7,23 +7,22 @@ import 'player_backend.dart';
 
 /// [PlayerBackend] implementation backed by `flutter_vlc_player` (libVLC).
 ///
-/// This intentionally mirrors the plugin's own documented usage as closely
-/// as possible: construct the controller with `autoPlay: false`, hand it
-/// straight to the `VlcPlayer` widget, and call `play`/`seekTo`/etc.
-/// directly with no custom readiness gate in front of them. An earlier
-/// version of this class tried to be clever and queue commands until
-/// `addOnInitListener` fired before running them — that callback turned out
-/// not to fire reliably in this app's usage, which meant every command sat
-/// in the queue forever and nothing ever played, on both Android and iOS.
-/// Direct calls plus [PlayerScreen]'s own bounded wait-and-poll loop (real
-/// seconds of `Future.delayed`, giving the native side plenty of time to
-/// come up before `play()`/`seek()` are ever called) is simpler and matches
-/// what the plugin's README shows working.
+/// Calling `play`/`seekTo`/etc. before libVLC finishes initializing throws
+/// (`play() was called on an uninitialized VlcPlayerController` — confirmed
+/// in testing, not theoretical), so every command is queued until the
+/// controller reports `value.isInitialized == true` and flushed the moment
+/// it does. Readiness is read off `controller.value` via the normal
+/// `addListener` mechanism (the same one driving every other stream in this
+/// class), not the plugin's separate `addOnInitListener` callback — that
+/// callback didn't fire reliably in practice and left every command queued
+/// forever with nothing ever playing on either platform.
 class VlcBackend implements PlayerBackend {
   VlcPlayerController? _controller;
   bool _disposed = false;
   bool _everReceivedAnyValue = false;
+  bool _wasInitialized = false;
   Timer? _watchdog;
+  final List<void Function(VlcPlayerController)> _pendingCommands = [];
 
   final _playingCtrl = StreamController<bool>.broadcast();
   final _positionCtrl = StreamController<Duration>.broadcast();
@@ -41,6 +40,23 @@ class VlcBackend implements PlayerBackend {
   int? _lastHeight;
   PlayingState? _lastLoggedState;
 
+  /// Runs [action] now if libVLC has finished initializing, otherwise
+  /// queues it to run the instant [_onControllerChanged] observes
+  /// `value.isInitialized` flip to true. Calling straight through before
+  /// that point throws (confirmed: "play() was called on an uninitialized
+  /// VlcPlayerController"), so every command goes through this.
+  void _runOrQueue(String label, void Function(VlcPlayerController) action) {
+    final controller = _controller;
+    if (controller == null) return;
+    if (controller.value.isInitialized) {
+      debugPrint('[VlcBackend] $label (initialized)');
+      action(controller);
+    } else {
+      debugPrint('[VlcBackend] $label queued (not initialized yet)');
+      _pendingCommands.add(action);
+    }
+  }
+
   void _onControllerChanged() {
     final controller = _controller;
     if (controller == null) return;
@@ -50,8 +66,21 @@ class VlcBackend implements PlayerBackend {
       _everReceivedAnyValue = true;
       _watchdog?.cancel();
       debugPrint(
-        '[VlcBackend] first value callback received (state=${value.playingState})',
+        '[VlcBackend] first value callback received '
+        '(state=${value.playingState}, isInitialized=${value.isInitialized})',
       );
+    }
+
+    if (value.isInitialized && !_wasInitialized) {
+      _wasInitialized = true;
+      debugPrint(
+        '[VlcBackend] isInitialized -> true, flushing ${_pendingCommands.length} queued command(s)',
+      );
+      final commands = List<void Function(VlcPlayerController)>.from(_pendingCommands);
+      _pendingCommands.clear();
+      for (final command in commands) {
+        command(controller);
+      }
     }
 
     if (value.playingState != _lastLoggedState) {
@@ -118,6 +147,8 @@ class VlcBackend implements PlayerBackend {
     );
     _controller = controller;
     _everReceivedAnyValue = false;
+    _wasInitialized = false;
+    _pendingCommands.clear();
     controller.addListener(_onControllerChanged);
 
     // Watchdog: if libVLC never calls back at all — not a single value
@@ -138,36 +169,29 @@ class VlcBackend implements PlayerBackend {
   }
 
   @override
-  Future<void> play() async {
-    debugPrint('[VlcBackend] play()');
-    await _controller?.play();
-  }
+  Future<void> play() async => _runOrQueue('play()', (c) => c.play());
 
   @override
-  Future<void> pause() async {
-    debugPrint('[VlcBackend] pause()');
-    await _controller?.pause();
-  }
+  Future<void> pause() async => _runOrQueue('pause()', (c) => c.pause());
 
   @override
   Future<void> playOrPause() async {
     final controller = _controller;
     if (controller == null) return;
-    if (controller.value.isPlaying) {
+    if (controller.value.isInitialized && controller.value.isPlaying) {
       await controller.pause();
     } else {
-      await controller.play();
+      _runOrQueue('playOrPause()->play()', (c) => c.play());
     }
   }
 
   @override
-  Future<void> seek(Duration position) async {
-    debugPrint('[VlcBackend] seek($position)');
-    await _controller?.seekTo(position);
-  }
+  Future<void> seek(Duration position) async =>
+      _runOrQueue('seek($position)', (c) => c.seekTo(position));
 
   @override
-  Future<void> setRate(double rate) async => _controller?.setPlaybackSpeed(rate);
+  Future<void> setRate(double rate) async =>
+      _runOrQueue('setRate($rate)', (c) => c.setPlaybackSpeed(rate));
 
   @override
   Future<void> stop() async {
@@ -181,6 +205,7 @@ class VlcBackend implements PlayerBackend {
     debugPrint('[VlcBackend] dispose');
     _disposed = true;
     _watchdog?.cancel();
+    _pendingCommands.clear();
     _controller?.removeListener(_onControllerChanged);
     try {
       await _controller?.dispose();
