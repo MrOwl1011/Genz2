@@ -2,13 +2,14 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 
 /// Identifies a selectable video playback engine.
-enum PlayerEngine { mediaKit, vlc }
+enum PlayerEngine { mediaKit, vlc, nativePlayer }
 
 /// Every engine the app knows how to build, in the order they should be
 /// shown to the user. Add a new backend + a case here to offer more engines.
 const List<PlayerEngine> kAllPlayerEngines = [
   PlayerEngine.mediaKit,
   PlayerEngine.vlc,
+  PlayerEngine.nativePlayer,
 ];
 
 extension PlayerEngineX on PlayerEngine {
@@ -18,6 +19,8 @@ extension PlayerEngineX on PlayerEngine {
         return 'media_kit';
       case PlayerEngine.vlc:
         return 'vlc';
+      case PlayerEngine.nativePlayer:
+        return 'native_player';
     }
   }
 
@@ -27,6 +30,8 @@ extension PlayerEngineX on PlayerEngine {
         return 'Media Kit';
       case PlayerEngine.vlc:
         return 'VLC';
+      case PlayerEngine.nativePlayer:
+        return 'Native Player';
     }
   }
 
@@ -36,6 +41,8 @@ extension PlayerEngineX on PlayerEngine {
         return 'ميديا كيت';
       case PlayerEngine.vlc:
         return 'في إل سي';
+      case PlayerEngine.nativePlayer:
+        return 'المشغل الأصلي';
     }
   }
 
@@ -45,6 +52,9 @@ extension PlayerEngineX on PlayerEngine {
         return 'Fast libmpv engine. Recommended on Android, Windows, macOS and Linux.';
       case PlayerEngine.vlc:
         return 'VLC-powered engine. Recommended on iOS and for streams other engines struggle with.';
+      case PlayerEngine.nativePlayer:
+        return 'AVPlayer on iOS/macOS, ExoPlayer on Android. Excellent HLS support; '
+            'may not play raw MPEG-TS streams some providers use.';
     }
   }
 
@@ -54,18 +64,28 @@ extension PlayerEngineX on PlayerEngine {
         return 'محرك سريع (libmpv). مناسب لأندرويد وويندوز وماك ولينكس.';
       case PlayerEngine.vlc:
         return 'محرك مدعوم من VLC. مستحسن لنظام iOS وللبثوث الصعبة.';
+      case PlayerEngine.nativePlayer:
+        return 'AVPlayer على iOS/macOS، وExoPlayer على أندرويد. دعم ممتاز لـ HLS، وقد لا يعمل مع بعض بثوث MPEG-TS.';
     }
   }
 
   /// Whether this engine can actually run on the platform the app is on.
   bool get isSupported {
-    if (kIsWeb) return this == PlayerEngine.mediaKit;
-    if (defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.android) {
-      return true;
+    switch (this) {
+      case PlayerEngine.mediaKit:
+        // Ships everywhere except web.
+        return !kIsWeb;
+      case PlayerEngine.vlc:
+        if (kIsWeb) return false;
+        return defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android;
+      case PlayerEngine.nativePlayer:
+        // video_player officially supports Android, iOS, macOS and web.
+        if (kIsWeb) return true;
+        return defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.macOS;
     }
-    // Windows, macOS, Linux: only the libmpv-backed engine ships there.
-    return this == PlayerEngine.mediaKit;
   }
 }
 
