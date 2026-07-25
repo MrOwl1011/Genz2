@@ -14,7 +14,6 @@ import 'package:volume_controller/volume_controller.dart';
 import '../providers/user_prefs_provider.dart';
 import '../services/player_backend.dart';
 import '../services/player_backend_factory.dart';
-import '../services/player_engine.dart';
 
 class PlayerScreen extends StatefulWidget {
   final String streamUrl;
@@ -49,7 +48,6 @@ class PlayerScreen extends StatefulWidget {
 class _PlayerScreenState extends State<PlayerScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // ─── Video Controller ──────────────────────────────────────────────────────
-  late final PlayerEngine _engine;
   PlayerBackend? _backend;
   bool _isInitializing = true;
   bool _isBuffering = false;
@@ -72,6 +70,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   Duration _duration = Duration.zero;
   int? _videoWidth;
   int? _videoHeight;
+  Duration? _lastRawPosition;
+  bool _inSeekGracePeriod = false;
+  Timer? _seekGraceTimer;
 
   // ─── Controls State ────────────────────────────────────────────────────────
   bool _showControls = true;
@@ -119,11 +120,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Engine is fixed for the lifetime of this screen so mid-session
-    // preference changes elsewhere in the app don't swap engines under a
-    // live playlist.
-    _engine = context.read<UserPrefsProvider>().playerEngine;
-    debugPrint('[PlayerScreen] engine: ${_engine.id}, url: ${widget.streamUrl}');
+    debugPrint('[PlayerScreen] url: ${widget.streamUrl}');
     // Initialize playlist state
     _currentIndex = widget.initialIndex;
     _currentStreamUrl = widget.streamUrl;
@@ -185,7 +182,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     });
 
     try {
-      _backend = createPlayerBackend(_engine);
+      _backend = createPlayerBackend();
 
       // Subscribe to backend streams for reactive state updates
       _subscribeToBackendStreams();
@@ -293,12 +290,50 @@ class _PlayerScreenState extends State<PlayerScreen>
   /// Subscribe to all backend state streams for reactive UI updates.
   void _subscribeToBackendStreams() {
     _playingSubscription = _backend!.playingStream.listen((playing) {
-      if (mounted) setState(() => _isPlaying = playing);
+      if (mounted) {
+        setState(() {
+          _isPlaying = playing;
+          // Playback started — the video is live, so definitely not
+          // "initializing" any more. This is the primary fix for the
+          // loading spinner getting stuck: _isInitializing is cleared
+          // the instant the engine confirms it is playing, regardless
+          // of whether _initPlayer's own setState ran yet.
+          if (playing && _isInitializing) {
+            _isInitializing = false;
+          }
+          // Similarly, if the engine says "playing" but the buffering
+          // flag was never cleared, force-clear it now.
+          if (playing && _isBuffering) {
+            _isBuffering = false;
+          }
+        });
+      }
     });
 
     _positionSubscription = _backend!.positionStream.listen((position) {
       if (mounted && !_isDraggingSeek) {
-        setState(() => _position = position);
+        setState(() {
+          _position = position;
+          // Position actually moving forward is unambiguous proof playback
+          // is active. Some engines can report a stale "buffering" flag
+          // that never flips back on its own, leaving the buffering
+          // spinner stuck over an already-playing video indefinitely —
+          // this is a defensive backstop for that, regardless of engine.
+          if (_isBuffering &&
+              !_inSeekGracePeriod &&
+              _lastRawPosition != null &&
+              position > _lastRawPosition!) {
+            _isBuffering = false;
+          }
+          // Safety net: if position is advancing, the video is playing.
+          // Clear the loading overlay if it's still showing.
+          if (_isInitializing &&
+              _lastRawPosition != null &&
+              position > _lastRawPosition!) {
+            _isInitializing = false;
+          }
+        });
+        _lastRawPosition = position;
         // Continuously update position (throttle to avoid UI jank)
         final now = DateTime.now().millisecondsSinceEpoch;
         if (now - _lastSaveTime > 3000) {
@@ -508,6 +543,17 @@ class _PlayerScreenState extends State<PlayerScreen>
   /// caught up to roughly where we asked it to go within a few seconds,
   /// say so instead of leaving the screen looking frozen with no clue why.
   void _watchSeek(Duration target) {
+    // Suppress the "position is advancing so force-clear buffering" logic
+    // for a few seconds after a seek — a big forward seek can legitimately
+    // land on a position "greater than before" while still genuinely
+    // buffering, which would otherwise look identical to the stuck-spinner
+    // bug this is meant to fix.
+    _inSeekGracePeriod = true;
+    _seekGraceTimer?.cancel();
+    _seekGraceTimer = Timer(const Duration(seconds: 3), () {
+      _inSeekGracePeriod = false;
+    });
+
     _seekWatchdogTimer?.cancel();
     _seekWatchdogTimer = Timer(const Duration(seconds: 8), () {
       if (!mounted || _backend == null) return;
@@ -590,6 +636,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     _leftSeekTimer?.cancel();
     _rightSeekTimer?.cancel();
     _seekWatchdogTimer?.cancel();
+    _seekGraceTimer?.cancel();
     _saveCurrentPosition(); // Save exact position on exit
     _cancelSubscriptions();
     try {

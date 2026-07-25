@@ -1,29 +1,17 @@
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 
-import 'media_kit_backend.dart';
+import 'exoplayer_backend.dart';
 import 'native_vlc_kit_backend.dart';
 import 'player_backend.dart';
-import 'player_engine.dart';
-import 'video_player_backend.dart';
-import 'vlc_backend.dart';
 
-/// Constructs the concrete [PlayerBackend] for [engine].
+/// Constructs the [PlayerBackend] for the current platform.
 ///
-/// [PlayerEngine.vlc] is platform-conditional: iOS gets a hand-written
-/// native backend talking directly to MobileVLCKit
-/// ([NativeVlcKitBackend]), bypassing the flutter_vlc_player plugin's Dart
-/// wrapper entirely. Every other platform (Android) keeps using
-/// [VlcBackend] (flutter_vlc_player) unchanged.
-PlayerBackend createPlayerBackend(PlayerEngine engine) {
-  switch (engine) {
-    case PlayerEngine.vlc:
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-        return NativeVlcKitBackend();
-      }
-      return VlcBackend();
-    case PlayerEngine.mediaKit:
-      return MediaKitBackend();
-    case PlayerEngine.nativePlayer:
-      return VideoPlayerBackend();
+/// On iOS it's a hand-written native backend talking directly to MobileVLCKit
+/// ([NativeVlcKitBackend]). On Android it uses ExoPlayer via the
+/// `video_player` package ([ExoPlayerBackend]).
+PlayerBackend createPlayerBackend() {
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+    return NativeVlcKitBackend();
   }
+  return ExoPlayerBackend();
 }

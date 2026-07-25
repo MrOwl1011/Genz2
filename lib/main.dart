@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:media_kit/media_kit.dart';
+
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/content_provider.dart';
@@ -12,7 +12,7 @@ import 'screens/playlists_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized();
+
 
   // Hide Android system bars (nav + status) for immersive IPTV experience.
   // immersiveSticky auto-re-hides after user swipe. Compatible with Android 10+.

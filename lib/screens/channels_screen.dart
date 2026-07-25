@@ -7,7 +7,6 @@ import '../providers/content_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../services/player_backend.dart';
 import '../services/player_backend_factory.dart';
-import '../services/player_engine.dart';
 import 'player_screen.dart';
 
 class ChannelsScreen extends StatefulWidget {
@@ -27,7 +26,6 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   // Mini player state
-  late final PlayerEngine _engine;
   XtreamLiveStream? _currentChannel;
   PlayerBackend? _backend;
   bool _isPlayerLoading = false;
@@ -35,7 +33,6 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   @override
   void initState() {
     super.initState();
-    _engine = context.read<UserPrefsProvider>().playerEngine;
     _loadChannels();
   }
 
