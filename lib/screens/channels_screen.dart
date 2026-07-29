@@ -173,7 +173,6 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userPrefs = context.watch<UserPrefsProvider>();
     final colors = context.colors;
 
     return PopScope(
@@ -232,7 +231,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Search + Like
+                // Search — favoriting now happens per-channel in the list below.
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Row(
@@ -287,42 +286,6 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Like/Favorite button for the current category
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: colors.ink.withValues(alpha: 0.24)),
-                        ),
-                        child: IconButton(
-                          icon: Icon(
-                            userPrefs.isFavorite(
-                                  'live_cat_${widget.category.categoryId}',
-                                )
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color:
-                                userPrefs.isFavorite(
-                                  'live_cat_${widget.category.categoryId}',
-                                )
-                                ? colors.brandPrimary
-                                : colors.ink.withValues(alpha: 0.7),
-                            size: 22,
-                          ),
-                          onPressed: () {
-                            userPrefs.toggleFavorite(
-                              id: 'live_cat_${widget.category.categoryId}',
-                              title: widget.category.categoryName,
-                              posterUrl: '',
-                              type: MediaType.live,
-                              rawData: {
-                                'category_id': widget.category.categoryId,
-                                'category_name': widget.category.categoryName,
-                              },
-                            );
-                          },
                         ),
                       ),
                     ],
@@ -581,6 +544,9 @@ class _ChannelTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final userPrefs = context.watch<UserPrefsProvider>();
+    final favoriteId = channel.streamId.toString();
+    final isFav = userPrefs.isFavorite(favoriteId);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -667,6 +633,24 @@ class _ChannelTile extends StatelessWidget {
                 ],
               ),
             ),
+            // Per-channel favorite toggle.
+            IconButton(
+              icon: Icon(
+                isFav ? Icons.favorite : Icons.favorite_border,
+                color: isFav ? colors.brandPrimary : colors.ink.withValues(alpha: 0.38),
+                size: 20,
+              ),
+              onPressed: () {
+                userPrefs.toggleFavorite(
+                  id: favoriteId,
+                  title: channel.name,
+                  posterUrl: channel.streamIcon,
+                  type: MediaType.live,
+                  rawData: channel.toJson(),
+                );
+              },
+            ),
+            const SizedBox(width: 4),
           ],
         ),
       ),

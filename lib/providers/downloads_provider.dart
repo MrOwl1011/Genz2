@@ -153,6 +153,16 @@ class DownloadsProvider extends ChangeNotifier {
 
   // ─── Transfers ──────────────────────────────────────────────────────────────
 
+  /// HLS manifests (`.m3u8`) reference separate segment files — often via
+  /// paths relative to the original server — so saving the manifest text
+  /// itself as "the download" doesn't produce anything playable offline.
+  /// Screens should use this to hide/disable the download action for such
+  /// sources rather than let it silently produce a broken file.
+  static bool isDownloadable(String sourceUrl) {
+    final path = Uri.tryParse(sourceUrl)?.path.toLowerCase() ?? sourceUrl.toLowerCase();
+    return !path.endsWith('.m3u8');
+  }
+
   String _guessExtension(String url, Map<String, dynamic> rawData) {
     final containerExt = rawData['container_extension']?.toString();
     if (containerExt != null && containerExt.isNotEmpty) return containerExt;
@@ -177,6 +187,10 @@ class DownloadsProvider extends ChangeNotifier {
   }) async {
     if (_playlistId.isEmpty) return;
     if (isDownloaded(id) || isDownloading(id)) return;
+    // Safety net — screens should already be hiding the download action for
+    // non-downloadable (HLS) sources, but don't silently write a useless
+    // file if one slips through.
+    if (!isDownloadable(sourceUrl)) return;
 
     final ownerPlaylistId = _playlistId;
     final dir = await _ensureDirFor(ownerPlaylistId);

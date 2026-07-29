@@ -268,9 +268,11 @@ class _CategoryLayoutState extends State<CategoryLayout> {
 
     final content = context.watch<ContentProvider>();
     final userPrefs = context.watch<UserPrefsProvider>();
-    final targetMediaType = widget.type == CategoryType.movie
-        ? MediaType.movie
-        : MediaType.series;
+    final targetMediaType = switch (widget.type) {
+      CategoryType.movie => MediaType.movie,
+      CategoryType.series => MediaType.series,
+      CategoryType.live => MediaType.live,
+    };
 
     List<dynamic> items = [];
 

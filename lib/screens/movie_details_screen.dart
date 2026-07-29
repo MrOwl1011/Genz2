@@ -112,6 +112,11 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     final mediaId = widget.movie.streamId.toString();
     final isFav = userPrefs.isFavorite(mediaId);
     final colors = context.colors;
+    final content = context.read<ContentProvider>();
+    final sourceUrl = widget.movie.streamUrl(content.baseUrl, content.username, content.password);
+    final canDownload = downloads.isDownloaded(mediaId) ||
+        downloads.isDownloading(mediaId) ||
+        DownloadsProvider.isDownloadable(sourceUrl);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -161,15 +166,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
             child: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 28),
               onPressed: () => Navigator.of(context).pop(),
-            ),
-          ),
-
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            right: 16,
-            child: IconButton(
-              icon: const Icon(Icons.video_library_rounded, color: Colors.white, size: 28),
-              onPressed: () {},
             ),
           ),
 
@@ -235,31 +231,44 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          GestureDetector(
-                            onTap: () => _openPlayer(context),
-                            child: Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: colors.brandPrimary,
+                          // Material+InkWell rather than a bare GestureDetector:
+                          // a GestureDetector deferring hit-testing to a
+                          // BoxShape.circle child only accepts taps inside the
+                          // inscribed circle, missing the corners of this
+                          // 72x72 box — that's what made the button feel like
+                          // it "sometimes" needed several taps. InkWell hit-
+                          // tests its full rectangular bounds regardless of
+                          // customBorder, so every tap in the square lands,
+                          // and it gives a visible ripple to confirm it did.
+                          Material(
+                            color: colors.brandPrimary,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: () => _openPlayer(context),
+                              child: const SizedBox(
+                                width: 72,
+                                height: 72,
+                                child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 48),
+                              ),
+                            ),
+                          ),
+                          if (canDownload) ...[
+                            const SizedBox(width: 16),
+                            Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 48),
+                              child: _buildDownloadButton(
+                                context,
+                                downloads,
+                                mediaId,
+                                sourceUrl,
+                                colors,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: _buildDownloadButton(
-                              context,
-                              downloads,
-                              mediaId,
-                              colors,
-                            ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
@@ -389,6 +398,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     BuildContext context,
     DownloadsProvider downloads,
     String mediaId,
+    String sourceUrl,
     AppColors colors,
   ) {
     if (downloads.isDownloaded(mediaId)) {
@@ -420,17 +430,12 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       icon: const Icon(Icons.download_rounded, color: Colors.black),
       tooltip: 'Download',
       onPressed: () {
-        final content = context.read<ContentProvider>();
         downloads.startDownload(
           id: mediaId,
           title: widget.movie.name,
           posterUrl: widget.movie.streamIcon,
           type: MediaType.movie,
-          sourceUrl: widget.movie.streamUrl(
-            content.baseUrl,
-            content.username,
-            content.password,
-          ),
+          sourceUrl: sourceUrl,
           rawData: widget.movie.toJson(),
         );
       },

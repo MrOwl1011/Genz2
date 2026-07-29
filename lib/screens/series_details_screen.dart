@@ -307,16 +307,22 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          GestureDetector(
-                            onTap: () => _playResumeOrFirst(),
-                            child: Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: colors.brandPrimary,
-                                shape: BoxShape.circle,
+                          // See the same fix in movie_details_screen.dart:
+                          // Material+InkWell hit-tests the full square, unlike
+                          // a GestureDetector deferring to a circular child
+                          // (which only accepts taps inside the inscribed
+                          // circle and drops corner taps).
+                          Material(
+                            color: colors.brandPrimary,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: () => _playResumeOrFirst(),
+                              child: const SizedBox(
+                                width: 72,
+                                height: 72,
+                                child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 48),
                               ),
-                              child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 48),
                             ),
                           ),
                         ],
@@ -554,6 +560,14 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
       );
     }
 
+    final sourceUrl = ep.streamUrl(content.baseUrl, content.username, content.password);
+    if (!DownloadsProvider.isDownloadable(sourceUrl)) {
+      // HLS (.m3u8) sources can't be saved as a single playable offline
+      // file — see DownloadsProvider.isDownloadable — so don't offer an
+      // action that would silently produce a broken "download".
+      return const SizedBox.shrink();
+    }
+
     return IconButton(
       icon: Icon(Icons.download_rounded, color: colors.ink.withValues(alpha: 0.54)),
       tooltip: 'Download',
@@ -563,7 +577,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
           title: ep.title.isNotEmpty ? ep.title : 'Episode ${ep.episodeNum}',
           posterUrl: widget.series.cover,
           type: MediaType.series,
-          sourceUrl: ep.streamUrl(content.baseUrl, content.username, content.password),
+          sourceUrl: sourceUrl,
           rawData: {
             'id': ep.id,
             'episode_num': ep.episodeNum,

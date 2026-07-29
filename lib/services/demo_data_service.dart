@@ -3,39 +3,40 @@ import 'xtream_api_service.dart';
 
 /// Fully local mock backend used for App Store / Play Store review.
 ///
-/// Reviewers are given the credentials below (server `kDemoServerUrl` +
-/// either demo account) instead of a real IPTV subscription. When those
-/// exact credentials are used, [AuthProvider] and [ContentProvider] both
-/// detect it via [DemoDataService.isDemoLogin] and serve everything from
-/// here instead of ever making a network call to `kDemoServerUrl` (which
-/// isn't a real server) — categories, listings and metadata are all static
-/// in-memory data, and playback uses public, freely licensed HLS/MP4 test
-/// streams so the player itself can still be exercised end to end.
+/// Reviewers are given the credentials below (Server: "demo" + either demo
+/// account) instead of a real IPTV subscription. When those exact
+/// credentials are used, [AuthProvider] and [ContentProvider] both detect it
+/// via [DemoDataService.isDemoLogin] and serve everything from here instead
+/// of ever making a network call to a real server — categories, listings and
+/// metadata are all static in-memory data, and playback uses public, legal
+/// HLS test streams so the player itself can still be exercised end to end
+/// (including on iOS, where playback goes through the custom VLCKit backend
+/// rather than AVPlayer — see [XtreamVodStream.streamUrl] and friends, which
+/// hand these URLs straight through unmodified via `directSource`).
 class DemoDataService {
   DemoDataService._();
 
-  /// The server address demo accounts must be entered with. Not a real
-  /// server — matching against this is what flags a login as demo mode.
-  static const String kDemoServerUrl = 'https://demo.genzplus.app';
+  /// What reviewers type into the "Server" field — not a real server;
+  /// matching against this hostname is what flags a login as demo mode.
+  static const String kDemoServerLabel = 'demo';
 
   static const Map<String, String> _demoAccounts = {
-    'demo': 'demo123',
-    'test': 'test123',
+    'demo': 'demo',
+    'test': 'test',
   };
 
   /// True if [serverUrl]/[username]/[password] exactly match one of the two
   /// published demo accounts. Used to gate demo mode everywhere it matters.
   ///
-  /// Compares hostname only (ignoring scheme/trailing slash) so reviewers
-  /// still land in demo mode even if they type the server without
-  /// "https://" or with different casing.
+  /// Compares hostname only (ignoring scheme/trailing slash/case) so
+  /// reviewers land in demo mode whether they type "demo", "http://demo", or
+  /// "DEMO".
   static bool isDemoLogin(String serverUrl, String username, String password) {
     final normalizedBase = XtreamApiService.getBaseUrl(
       XtreamApiService.normalizeUrl(serverUrl),
     );
     final host = Uri.tryParse(normalizedBase)?.host.toLowerCase() ?? '';
-    final demoHost = Uri.parse(kDemoServerUrl).host.toLowerCase();
-    if (host.isEmpty || host != demoHost) return false;
+    if (host.isEmpty || host != kDemoServerLabel) return false;
     return _demoAccounts[username.trim()] == password.trim();
   }
 
@@ -46,30 +47,18 @@ class DemoDataService {
       expiryDate: null, // shown as "Lifetime / Unlimited" in the UI
       maxConnections: 1,
       activeConnections: 0,
-      allowedOutputs: const ['m3u8', 'ts', 'mp4'],
+      allowedOutputs: const ['m3u8', 'ts'],
     );
   }
 
-  // ─── Public-domain / official test streams ─────────────────────────────────
-  // HLS (for Live TV):
-  static const _hlsBipBop =
+  // ─── Public, legal HLS test streams ─────────────────────────────────────────
+  static const _hlsLiveAkamai = 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8';
+  static const _hlsLiveAppleBipBop =
       'https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8';
-  static const _hlsAdvanced =
-      'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8';
   static const _hlsMux = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
-
-  // Progressive MP4 (for Movies/Series) — Google's publicly hosted sample
-  // clips (Creative-Commons Blender Foundation shorts + Google demo assets).
-  static const _mp4Base = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample';
-  static const _mp4BigBuckBunny = '$_mp4Base/BigBuckBunny.mp4';
-  static const _mp4ElephantsDream = '$_mp4Base/ElephantsDream.mp4';
-  static const _mp4Sintel = '$_mp4Base/Sintel.mp4';
-  static const _mp4TearsOfSteel = '$_mp4Base/TearsOfSteel.mp4';
-  static const _mp4ForBiggerBlazes = '$_mp4Base/ForBiggerBlazes.mp4';
-  static const _mp4ForBiggerEscapes = '$_mp4Base/ForBiggerEscapes.mp4';
-  static const _mp4ForBiggerFun = '$_mp4Base/ForBiggerFun.mp4';
-  static const _mp4ForBiggerJoyrides = '$_mp4Base/ForBiggerJoyrides.mp4';
-  static const _mp4ForBiggerMeltdowns = '$_mp4Base/ForBiggerMeltdowns.mp4';
+  static const _hlsSintel = 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
+  static const _hlsTearsOfSteel =
+      'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8';
 
   // ─── Live TV ─────────────────────────────────────────────────────────────
 
@@ -82,51 +71,19 @@ class DemoDataService {
   static final List<XtreamLiveStream> _liveStreams = [
     XtreamLiveStream(
       streamId: 9001,
-      name: 'Demo News 24/7',
+      name: 'Demo Live Channel 1',
       streamIcon: '',
       categoryId: 'demo_live_news',
       num: 1,
-      directSource: _hlsBipBop,
+      directSource: _hlsLiveAkamai,
     ),
     XtreamLiveStream(
       streamId: 9002,
-      name: 'Demo World News',
+      name: 'Demo Live Channel 2',
       streamIcon: '',
-      categoryId: 'demo_live_news',
+      categoryId: 'demo_live_sports',
       num: 2,
-      directSource: _hlsAdvanced,
-    ),
-    XtreamLiveStream(
-      streamId: 9003,
-      name: 'Demo Sports HD',
-      streamIcon: '',
-      categoryId: 'demo_live_sports',
-      num: 3,
-      directSource: _hlsMux,
-    ),
-    XtreamLiveStream(
-      streamId: 9004,
-      name: 'Demo Sports Extra',
-      streamIcon: '',
-      categoryId: 'demo_live_sports',
-      num: 4,
-      directSource: _hlsBipBop,
-    ),
-    XtreamLiveStream(
-      streamId: 9005,
-      name: 'Demo Entertainment',
-      streamIcon: '',
-      categoryId: 'demo_live_entertainment',
-      num: 5,
-      directSource: _hlsAdvanced,
-    ),
-    XtreamLiveStream(
-      streamId: 9006,
-      name: 'Demo Music Channel',
-      streamIcon: '',
-      categoryId: 'demo_live_entertainment',
-      num: 6,
-      directSource: _hlsMux,
+      directSource: _hlsLiveAppleBipBop,
     ),
   ];
 
@@ -144,117 +101,39 @@ class DemoDataService {
       name: 'Big Buck Bunny',
       streamIcon: '',
       categoryId: 'demo_vod_action',
-      containerExtension: 'mp4',
+      containerExtension: 'm3u8',
       plot: 'A sample demo movie used to preview playback in GenZ+.',
       genre: 'Animation',
       releaseDate: '2008-04-10',
       rating: '4.5',
       added: '1700000000',
-      directSource: _mp4BigBuckBunny,
+      directSource: _hlsMux,
     ),
     XtreamVodStream(
       streamId: 8002,
-      name: 'For Bigger Blazes',
-      streamIcon: '',
-      categoryId: 'demo_vod_action',
-      containerExtension: 'mp4',
-      plot: 'A sample demo clip used to preview playback in GenZ+.',
-      genre: 'Action',
-      releaseDate: '2014-01-01',
-      rating: '4.0',
-      added: '1700000100',
-      directSource: _mp4ForBiggerBlazes,
-    ),
-    XtreamVodStream(
-      streamId: 8003,
-      name: 'For Bigger Escapes',
-      streamIcon: '',
-      categoryId: 'demo_vod_action',
-      containerExtension: 'mp4',
-      plot: 'A sample demo clip used to preview playback in GenZ+.',
-      genre: 'Action',
-      releaseDate: '2014-01-02',
-      rating: '3.9',
-      added: '1700000200',
-      directSource: _mp4ForBiggerEscapes,
-    ),
-    XtreamVodStream(
-      streamId: 8004,
-      name: 'For Bigger Fun',
-      streamIcon: '',
-      categoryId: 'demo_vod_comedy',
-      containerExtension: 'mp4',
-      plot: 'A sample demo clip used to preview playback in GenZ+.',
-      genre: 'Comedy',
-      releaseDate: '2014-01-03',
-      rating: '4.2',
-      added: '1700000300',
-      directSource: _mp4ForBiggerFun,
-    ),
-    XtreamVodStream(
-      streamId: 8005,
-      name: 'For Bigger Joyrides',
-      streamIcon: '',
-      categoryId: 'demo_vod_comedy',
-      containerExtension: 'mp4',
-      plot: 'A sample demo clip used to preview playback in GenZ+.',
-      genre: 'Comedy',
-      releaseDate: '2014-01-04',
-      rating: '4.1',
-      added: '1700000400',
-      directSource: _mp4ForBiggerJoyrides,
-    ),
-    XtreamVodStream(
-      streamId: 8006,
-      name: 'For Bigger Meltdowns',
-      streamIcon: '',
-      categoryId: 'demo_vod_comedy',
-      containerExtension: 'mp4',
-      plot: 'A sample demo clip used to preview playback in GenZ+.',
-      genre: 'Comedy',
-      releaseDate: '2014-01-05',
-      rating: '3.8',
-      added: '1700000500',
-      directSource: _mp4ForBiggerMeltdowns,
-    ),
-    XtreamVodStream(
-      streamId: 8007,
-      name: 'Elephants Dream',
-      streamIcon: '',
-      categoryId: 'demo_vod_drama',
-      containerExtension: 'mp4',
-      plot: 'A sample demo movie used to preview playback in GenZ+.',
-      genre: 'Drama',
-      releaseDate: '2006-03-24',
-      rating: '4.3',
-      added: '1700000600',
-      directSource: _mp4ElephantsDream,
-    ),
-    XtreamVodStream(
-      streamId: 8008,
       name: 'Sintel',
       streamIcon: '',
-      categoryId: 'demo_vod_drama',
-      containerExtension: 'mp4',
+      categoryId: 'demo_vod_comedy',
+      containerExtension: 'm3u8',
       plot: 'A sample demo movie used to preview playback in GenZ+.',
       genre: 'Drama',
       releaseDate: '2010-09-30',
       rating: '4.7',
-      added: '1700000700',
-      directSource: _mp4Sintel,
+      added: '1700000100',
+      directSource: _hlsSintel,
     ),
     XtreamVodStream(
-      streamId: 8009,
+      streamId: 8003,
       name: 'Tears of Steel',
       streamIcon: '',
       categoryId: 'demo_vod_drama',
-      containerExtension: 'mp4',
+      containerExtension: 'm3u8',
       plot: 'A sample demo movie used to preview playback in GenZ+.',
       genre: 'Sci-Fi',
       releaseDate: '2012-09-26',
       rating: '4.4',
-      added: '1700000800',
-      directSource: _mp4TearsOfSteel,
+      added: '1700000200',
+      directSource: _hlsTearsOfSteel,
     ),
   ];
 
@@ -310,17 +189,9 @@ class DemoDataService {
             id: 'demo_7001_s1e1',
             episodeNum: 1,
             title: 'Episode 1',
-            containerExtension: 'mp4',
+            containerExtension: 'm3u8',
             season: 1,
-            directSource: _mp4BigBuckBunny,
-          ),
-          XtreamEpisode(
-            id: 'demo_7001_s1e2',
-            episodeNum: 2,
-            title: 'Episode 2',
-            containerExtension: 'mp4',
-            season: 1,
-            directSource: _mp4ForBiggerFun,
+            directSource: _hlsMux,
           ),
         ],
       },
@@ -332,18 +203,10 @@ class DemoDataService {
           XtreamEpisode(
             id: 'demo_7002_s1e1',
             episodeNum: 1,
-            title: 'Episode 1',
-            containerExtension: 'mp4',
-            season: 1,
-            directSource: _mp4ForBiggerJoyrides,
-          ),
-          XtreamEpisode(
-            id: 'demo_7002_s1e2',
-            episodeNum: 2,
             title: 'Episode 2',
-            containerExtension: 'mp4',
+            containerExtension: 'm3u8',
             season: 1,
-            directSource: _mp4ForBiggerMeltdowns,
+            directSource: _hlsSintel,
           ),
         ],
       },
@@ -355,20 +218,10 @@ class DemoDataService {
           XtreamEpisode(
             id: 'demo_7003_s1e1',
             episodeNum: 1,
-            title: 'Episode 1',
-            containerExtension: 'mp4',
+            title: 'Episode 3',
+            containerExtension: 'm3u8',
             season: 1,
-            directSource: _mp4ElephantsDream,
-          ),
-        ],
-        2: [
-          XtreamEpisode(
-            id: 'demo_7003_s2e1',
-            episodeNum: 1,
-            title: 'Episode 1',
-            containerExtension: 'mp4',
-            season: 2,
-            directSource: _mp4TearsOfSteel,
+            directSource: _hlsTearsOfSteel,
           ),
         ],
       },

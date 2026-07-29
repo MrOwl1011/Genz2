@@ -52,103 +52,118 @@ class _ResumeDialog extends StatelessWidget {
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icon
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: colors.brandPrimary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.play_circle_outline_rounded,
-                  color: colors.brandPrimary,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Title
-              Text(
-                'Resume Playback?',
-                style: GoogleFonts.outfit(
-                  color: colors.ink,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Subtitle with formatted time
-              Text(
-                'You stopped at ${_formatTime(positionSeconds)}',
-                style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.54), fontSize: 14),
-              ),
-              const SizedBox(height: 24),
-
-              // Resume button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  icon: const Icon(
-                    Icons.play_arrow_rounded,
-                    color: Colors.white,
-                    size: 22,
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Icon
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: colors.brandPrimary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.play_circle_outline_rounded,
+                      color: colors.brandPrimary,
+                      size: 32,
+                    ),
                   ),
-                  label: Text(
-                    'Resume',
+                  const SizedBox(height: 16),
+
+                  // Title
+                  Text(
+                    'Resume Playback?',
                     style: GoogleFonts.outfit(
-                      color: Colors.white,
+                      color: colors.ink,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.brandPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
+                  const SizedBox(height: 8),
 
-              // Start Over button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  icon: Icon(
-                    Icons.replay_rounded,
-                    color: colors.ink.withValues(alpha: 0.6),
-                    size: 20,
+                  // Subtitle with formatted time
+                  Text(
+                    'You stopped at ${_formatTime(positionSeconds)}',
+                    style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.54), fontSize: 14),
                   ),
-                  label: Text(
-                    'Start Over',
-                    style: GoogleFonts.outfit(
-                      color: colors.ink.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                  const SizedBox(height: 24),
+
+                  // Resume button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      icon: const Icon(
+                        Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                      label: Text(
+                        'Resume',
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colors.brandPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                     ),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: colors.ink.withValues(alpha: 0.24)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 10),
+
+                  // Start Over button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      icon: Icon(
+                        Icons.replay_rounded,
+                        color: colors.ink.withValues(alpha: 0.6),
+                        size: 20,
+                      ),
+                      label: Text(
+                        'Start Over',
+                        style: GoogleFonts.outfit(
+                          color: colors.ink.withValues(alpha: 0.6),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colors.ink.withValues(alpha: 0.24)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+            // Close button — same effect as tapping the barrier (dismiss,
+            // treated as "resume" by callers per showResumeDialog's contract).
+            Positioned(
+              top: 4,
+              right: 4,
+              child: IconButton(
+                icon: Icon(Icons.close_rounded, color: colors.ink.withValues(alpha: 0.54)),
+                onPressed: () => Navigator.of(context).pop(),
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ],
         ),
       ),
     );
