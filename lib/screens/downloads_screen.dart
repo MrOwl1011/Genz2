@@ -151,7 +151,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   children: [
                     _buildTab(0, 'Downloading (${downloads.downloading.length})'),
-                    _buildTab(1, 'Downloads (${downloads.completedDownloads.length})'),
+                    _buildTab(
+                      1,
+                      'Downloads (${downloads.completedDownloads.length + downloads.failedDownloads.length})',
+                    ),
                   ],
                 ),
               ),
@@ -275,7 +278,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   }
 
   Widget _buildCompletedList(DownloadsProvider downloads, AppColors colors) {
-    final items = downloads.completedDownloads;
+    // Failed transfers have nowhere else to appear once there's no
+    // redownload button — surface them here (delete-only, no offline
+    // playback) so they're never invisible/stuck.
+    final items = [...downloads.completedDownloads, ...downloads.failedDownloads];
     if (items.isEmpty) return _buildEmpty('No downloads yet.', colors);
 
     return ListView.builder(
@@ -283,8 +289,9 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
+        final isFailed = item.status == DownloadStatus.failed;
         return GestureDetector(
-          onTap: () => _openOffline(item),
+          onTap: isFailed ? null : () => _openOffline(item),
           child: Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(12),
@@ -308,19 +315,15 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _formatBytes(item.totalBytes),
+                        isFailed ? 'Download failed' : _formatBytes(item.totalBytes),
                         style: GoogleFonts.outfit(
-                          color: colors.ink.withValues(alpha: 0.54),
+                          color: isFailed ? colors.error : colors.ink.withValues(alpha: 0.54),
                           fontSize: 12,
+                          fontWeight: isFailed ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
                     ],
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.refresh_rounded, color: colors.ink.withValues(alpha: 0.7)),
-                  tooltip: 'Redownload',
-                  onPressed: () => downloads.redownload(item.id),
                 ),
                 IconButton(
                   icon: Icon(Icons.delete_outline_rounded, color: colors.error),

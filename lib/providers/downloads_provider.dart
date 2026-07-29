@@ -34,6 +34,9 @@ class DownloadsProvider extends ChangeNotifier {
   List<DownloadItem> get completedDownloads =>
       _downloads.where((d) => d.status == DownloadStatus.completed).toList();
 
+  List<DownloadItem> get failedDownloads =>
+      _downloads.where((d) => d.status == DownloadStatus.failed).toList();
+
   bool isDownloaded(String id) =>
       _downloads.any((d) => d.id == id && d.status == DownloadStatus.completed);
 

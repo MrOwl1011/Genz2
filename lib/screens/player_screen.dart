@@ -131,6 +131,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   Timer? _leftSeekTimer;
   Timer? _rightSeekTimer;
 
+  // ─── First-Run Gesture Tutorial ─────────────────────────────────────────────
+  bool _showTutorial = false;
+
   @override
   void initState() {
     super.initState();
@@ -156,6 +159,20 @@ class _PlayerScreenState extends State<PlayerScreen>
     WakelockPlus.enable(); // Keep screen awake
     _initPlayer();
     _initVolumeAndBrightness();
+
+    // Shown at most once ever, device-wide — see markPlayerTutorialSeen().
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final userPrefs = context.read<UserPrefsProvider>();
+      if (!userPrefs.hasSeenPlayerTutorial) {
+        setState(() => _showTutorial = true);
+      }
+    });
+  }
+
+  void _dismissTutorial() {
+    setState(() => _showTutorial = false);
+    context.read<UserPrefsProvider>().markPlayerTutorialSeen();
   }
 
   @override
@@ -792,6 +809,9 @@ class _PlayerScreenState extends State<PlayerScreen>
             if (_isInitializing) _buildLoading(),
             if (_isBuffering && !_isInitializing) _buildBuffering(),
             if (_errorMessage != null) _buildError(_errorMessage!),
+
+            // ── First-Run Gesture Tutorial (topmost, blocks interaction) ──
+            if (_showTutorial) _buildGestureTutorial(),
           ],
         ),
       ),
@@ -1126,7 +1146,8 @@ class _PlayerScreenState extends State<PlayerScreen>
         children: [
           Icon(icon, color: Colors.white, size: 24),
           const SizedBox(height: 8),
-          Expanded(
+          SizedBox(
+            height: 160, // Medium-length bar rather than filling the screen.
             child: RotatedBox(
               quarterTurns: -1,
               child: SliderTheme(
@@ -1663,6 +1684,111 @@ class _PlayerScreenState extends State<PlayerScreen>
           ),
         ),
       ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // First-Run Gesture Tutorial
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildGestureTutorial() {
+    return Positioned.fill(
+      child: GestureDetector(
+        // Absorb every gesture so it can't leak through to seek/controls
+        // underneath — only the Skip button below dismisses this.
+        behavior: HitTestBehavior.opaque,
+        onTap: () {},
+        onVerticalDragStart: (_) {},
+        onDoubleTap: () {},
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.78),
+          child: SafeArea(
+            child: Column(
+              children: [
+                const Spacer(),
+                Text(
+                  'Control Brightness & Volume',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                IntrinsicHeight(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _buildTutorialHalf(
+                          icon: Icons.brightness_6_rounded,
+                          label: 'Swipe up or down here\nto adjust brightness',
+                        ),
+                      ),
+                      Container(width: 1, color: Colors.white24),
+                      Expanded(
+                        child: _buildTutorialHalf(
+                          icon: Icons.volume_up_rounded,
+                          label: 'Swipe up or down here\nto adjust volume',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: ElevatedButton(
+                    onPressed: _dismissTutorial,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE50914),
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: Text(
+                      'Skip',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTutorialHalf({required IconData icon, required String label}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.keyboard_arrow_up_rounded, color: Colors.white70, size: 26),
+        const SizedBox(height: 2),
+        Icon(icon, color: Colors.white, size: 40),
+        const SizedBox(height: 2),
+        Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70, size: 26),
+        const SizedBox(height: 14),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            height: 1.4,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -98,6 +98,9 @@ class UserPrefsProvider extends ChangeNotifier {
   // System is offered as a picker choice but is never the default, so nobody's
   // view silently flips to light because their OS happens to be in light mode.
   ThemeMode _themeMode = ThemeMode.dark;
+  // Device-level (not playlist-scoped) — the gesture tutorial is about the
+  // player UI itself, not any one account's data.
+  bool _hasSeenPlayerTutorial = false;
 
   List<FavoriteItem> get favorites => _favorites;
   List<HistoryItem> get history => _history;
@@ -105,6 +108,7 @@ class UserPrefsProvider extends ChangeNotifier {
   String get currentPlaylistId => _currentPlaylistId;
   bool get autoPlayNextEpisode => _autoPlayNextEpisode;
   ThemeMode get themeMode => _themeMode;
+  bool get hasSeenPlayerTutorial => _hasSeenPlayerTutorial;
 
   Future<void> setLocale(String locale) async {
     _locale = locale;
@@ -127,6 +131,14 @@ class UserPrefsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> markPlayerTutorialSeen() async {
+    if (_hasSeenPlayerTutorial) return;
+    _hasSeenPlayerTutorial = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_player_tutorial', true);
+    notifyListeners();
+  }
+
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -135,6 +147,10 @@ class UserPrefsProvider extends ChangeNotifier {
 
     // Load Auto Play
     _autoPlayNextEpisode = prefs.getBool('auto_play_next') ?? true;
+
+    // Load whether the player's brightness/volume gesture tutorial was
+    // already dismissed once (device-level, shown at most once ever).
+    _hasSeenPlayerTutorial = prefs.getBool('has_seen_player_tutorial') ?? false;
 
     // Load Theme Mode
     final savedThemeMode = prefs.getString('theme_mode');
