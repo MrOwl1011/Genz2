@@ -88,6 +88,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   int _aspectRatioIndex = 0; // 0=Fit, 1=Fill, 2=16:9, 3=4:3
   static const List<String> _aspectRatioLabels = ['Fit', 'Fill', '16:9', '4:3'];
 
+  // ─── Manual Rotate State ───────────────────────────────────────────────────
+  bool _isRotated = false;
+
   // ─── Swipe Controls (Brightness/Volume) ────────────────────────────────────
   double? _dragStartY;
   double? _startVolume;
@@ -1105,18 +1108,18 @@ class _PlayerScreenState extends State<PlayerScreen>
   }) {
     return Container(
       width: 60,
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.white, size: 28),
-          const SizedBox(height: 16),
+          Icon(icon, color: Colors.white, size: 24),
+          const SizedBox(height: 8),
           Expanded(
             child: RotatedBox(
               quarterTurns: -1,
               child: SliderTheme(
                 data: SliderThemeData(
-                  trackHeight: 4,
+                  trackHeight: 6,
                   activeTrackColor: Theme.of(context).primaryColor,
                   inactiveTrackColor: Colors.white24,
                   thumbColor: Colors.white,
@@ -1129,7 +1132,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             '${(value * 100).toInt()}%',
             style: GoogleFonts.outfit(
@@ -1410,11 +1413,11 @@ class _PlayerScreenState extends State<PlayerScreen>
 
           const Spacer(),
 
-          // Fullscreen indicator (already in fullscreen)
+          // Rotate video (flips between the two landscape orientations)
           _buildControlButton(
-            icon: Icons.fullscreen_rounded,
-            onTap: () {}, // Already fullscreen
-            tooltip: 'Fullscreen',
+            icon: Icons.screen_rotation_rounded,
+            onTap: _rotateVideo,
+            tooltip: 'Rotate',
           ),
         ],
       ),
@@ -1456,6 +1459,25 @@ class _PlayerScreenState extends State<PlayerScreen>
       _aspectRatioIndex = (_aspectRatioIndex + 1) % _aspectRatioLabels.length;
     });
     _showQuickToast('Aspect Ratio: ${_aspectRatioLabels[_aspectRatioIndex]}');
+  }
+
+  /// Manually flips the video between the two landscape orientations —
+  /// useful when the device is held upside-down relative to what the OS
+  /// last locked onto and won't re-flip on its own. Forces a single target
+  /// orientation just long enough for the OS to apply it, then re-widens
+  /// the allowed set so normal sensor auto-rotation keeps working afterwards.
+  void _rotateVideo() async {
+    setState(() => _isRotated = !_isRotated);
+    await SystemChrome.setPreferredOrientations([
+      _isRotated ? DeviceOrientation.landscapeRight : DeviceOrientation.landscapeLeft,
+    ]);
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (mounted) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
   }
 
   void _cyclePlaybackSpeed() {

@@ -205,11 +205,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'YOUR ULTIMATE ENTERTAINMENT WORLD',
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
                         style: GoogleFonts.outfit(
-                          fontSize: 12,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: colors.ink.withValues(alpha: 0.38),
-                          letterSpacing: 4,
+                          letterSpacing: 2,
                         ),
                       ),
                     ],
@@ -386,18 +389,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(20),
                         side: BorderSide(color: colors.ink.withValues(alpha: 0.1)),
                       ),
-                    ),
-                  ),
-
-                  // Bottom info banner
-                  const SizedBox(height: 24),
-                  Text(
-                    'Xtream Codes API Authentication Player',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(
-                      fontSize: 11,
-                      color: colors.ink.withValues(alpha: 0.24),
-                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
