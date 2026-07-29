@@ -1,5 +1,5 @@
 import '../models/xtream_models.dart';
-import 'xtream_api_service.dart';
+import 'xtream_api_service.dart' show XtreamUser;
 
 /// Fully local mock backend used for App Store / Play Store review.
 ///
@@ -25,19 +25,28 @@ class DemoDataService {
     'test': 'test',
   };
 
-  /// True if [serverUrl]/[username]/[password] exactly match one of the two
+  /// True if [serverUrl]/[username]/[password] match one of the two
   /// published demo accounts. Used to gate demo mode everywhere it matters.
   ///
-  /// Compares hostname only (ignoring scheme/trailing slash/case) so
-  /// reviewers land in demo mode whether they type "demo", "http://demo", or
-  /// "DEMO".
+  /// Deliberately case- and whitespace-insensitive on all three fields —
+  /// mobile keyboards routinely auto-capitalize the first letter of a short
+  /// word like "demo"/"test" in a text field, and since these are published
+  /// review credentials (not a real secret), there's no reason to let a
+  /// keyboard quirk silently fall through to a real (and doomed) network
+  /// login attempt instead of demo mode.
   static bool isDemoLogin(String serverUrl, String username, String password) {
-    final normalizedBase = XtreamApiService.getBaseUrl(
-      XtreamApiService.normalizeUrl(serverUrl),
-    );
-    final host = Uri.tryParse(normalizedBase)?.host.toLowerCase() ?? '';
-    if (host.isEmpty || host != kDemoServerLabel) return false;
-    return _demoAccounts[username.trim()] == password.trim();
+    // Strip an optional scheme and anything after the host ourselves rather
+    // than routing through XtreamApiService.normalizeUrl/getBaseUrl + Uri —
+    // this keeps the demo check self-contained and easy to reason about for
+    // a plain single-word "host" like "demo".
+    final trimmedServer = serverUrl.trim().toLowerCase();
+    final withoutScheme = trimmedServer.replaceFirst(RegExp(r'^https?://'), '');
+    final host = withoutScheme.split(RegExp(r'[/:?#]')).first;
+    if (host != kDemoServerLabel) return false;
+
+    final normalizedUsername = username.trim().toLowerCase();
+    final normalizedPassword = password.trim().toLowerCase();
+    return _demoAccounts[normalizedUsername] == normalizedPassword;
   }
 
   static XtreamUser buildDemoUser(String username) {
