@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/playlist_model.dart';
+import '../services/demo_data_service.dart';
 import '../services/xtream_api_service.dart';
 import 'downloads_provider.dart';
 import 'user_prefs_provider.dart';
@@ -38,8 +39,31 @@ class AuthProvider extends ChangeNotifier {
   String get playlistId =>
       base64Encode(utf8.encode('${_serverUrl}_$_username'));
 
+  /// True when the currently active session is one of the published demo
+  /// accounts (App Store / Play Store review) — see [DemoDataService].
+  bool get isDemoMode => DemoDataService.isDemoLogin(_serverUrl, _username, _password);
+
   AuthProvider(this.userPrefs, this.downloads) {
     checkAutoLogin();
+  }
+
+  /// Authenticates against the real Xtream server, unless [serverUrl]/
+  /// [username]/[password] match a published demo account — in which case
+  /// no network call is made at all and a fabricated demo user is returned
+  /// instead. See [DemoDataService].
+  Future<XtreamUser> _authenticate({
+    required String serverUrl,
+    required String username,
+    required String password,
+  }) async {
+    if (DemoDataService.isDemoLogin(serverUrl, username, password)) {
+      return DemoDataService.buildDemoUser(username.trim());
+    }
+    return _apiService.authenticate(
+      serverUrl: serverUrl,
+      username: username,
+      password: password,
+    );
   }
 
   /// Get the list of all saved playlists
@@ -256,7 +280,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
 
       try {
-        _user = await _apiService.authenticate(
+        _user = await _authenticate(
           serverUrl: _serverUrl,
           username: _username,
           password: _password,
@@ -305,7 +329,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final authenticatedUser = await _apiService.authenticate(
+      final authenticatedUser = await _authenticate(
         serverUrl: url,
         username: user,
         password: pass,

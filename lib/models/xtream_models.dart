@@ -29,6 +29,7 @@ class XtreamLiveStream {
   final int num;
   final String epgChannelId;
   final bool tvArchive;
+  final String directSource;
 
   XtreamLiveStream({
     required this.streamId,
@@ -38,6 +39,7 @@ class XtreamLiveStream {
     required this.num,
     this.epgChannelId = '',
     this.tvArchive = false,
+    this.directSource = '',
   });
 
   factory XtreamLiveStream.fromJson(Map<String, dynamic> json) {
@@ -49,10 +51,15 @@ class XtreamLiveStream {
       num: int.tryParse(json['num']?.toString() ?? '0') ?? 0,
       epgChannelId: json['epg_channel_id']?.toString() ?? '',
       tvArchive: (json['tv_archive'] == 1 || json['tv_archive'] == true),
+      directSource: json['direct_source']?.toString() ?? '',
     );
   }
 
+  /// Some panels (and our own demo mode) provide a ready-to-play URL
+  /// directly rather than expecting the standard Xtream path to be built —
+  /// honor it when present instead of constructing `.../live/user/pass/id.m3u8`.
   String streamUrl(String baseUrl, String username, String password) {
+    if (directSource.isNotEmpty) return directSource;
     return '$baseUrl/live/$username/$password/$streamId.m3u8';
   }
 
@@ -149,7 +156,10 @@ class XtreamVodStream {
     };
   }
 
+  /// Honors a provided direct URL (real panels sometimes set this; our demo
+  /// mode always does) instead of building the standard Xtream VOD path.
   String streamUrl(String baseUrl, String username, String password) {
+    if (directSource.isNotEmpty) return directSource;
     final ext = containerExtension.isNotEmpty ? containerExtension : 'mp4';
     return '$baseUrl/movie/$username/$password/$streamId.$ext';
   }
@@ -238,6 +248,7 @@ class XtreamEpisode {
   final String customSid;
   final int added;
   final int season;
+  final String directSource;
 
   XtreamEpisode({
     required this.id,
@@ -248,6 +259,7 @@ class XtreamEpisode {
     this.customSid = '',
     this.added = 0,
     required this.season,
+    this.directSource = '',
   });
 
   factory XtreamEpisode.fromJson(Map<String, dynamic> json) {
@@ -260,10 +272,14 @@ class XtreamEpisode {
       customSid: json['custom_sid']?.toString() ?? '',
       added: int.tryParse(json['added']?.toString() ?? '0') ?? 0,
       season: int.tryParse(json['season']?.toString() ?? '0') ?? 0,
+      directSource: json['direct_source']?.toString() ?? '',
     );
   }
 
+  /// See [XtreamVodStream.streamUrl] — same direct-URL override, used by our
+  /// demo mode to point at real test streams instead of a fake Xtream path.
   String streamUrl(String baseUrl, String username, String password) {
+    if (directSource.isNotEmpty) return directSource;
     final ext = containerExtension.isNotEmpty ? containerExtension : 'mp4';
     return '$baseUrl/series/$username/$password/$id.$ext';
   }
