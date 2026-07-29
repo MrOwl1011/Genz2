@@ -89,7 +89,19 @@ class _PlayerScreenState extends State<PlayerScreen>
   static const List<String> _aspectRatioLabels = ['Fit', 'Fill', '16:9', '4:3'];
 
   // ─── Manual Rotate State ───────────────────────────────────────────────────
-  bool _isRotated = false;
+  // -1 = not yet forced (following the initial landscape-both default).
+  // Cycles Vertical → Horizontal Right → Horizontal Left → Vertical → ...
+  int _rotationIndex = -1;
+  static const List<DeviceOrientation> _rotationOrientations = [
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.landscapeRight,
+    DeviceOrientation.landscapeLeft,
+  ];
+  static const List<String> _rotationLabels = [
+    'Vertical',
+    'Horizontal Right',
+    'Horizontal Left',
+  ];
 
   // ─── Swipe Controls (Brightness/Volume) ────────────────────────────────────
   double? _dragStartY;
@@ -1413,11 +1425,13 @@ class _PlayerScreenState extends State<PlayerScreen>
 
           const Spacer(),
 
-          // Rotate video (flips between the two landscape orientations)
+          // Rotate video — cycles Vertical / Horizontal Right / Horizontal Left
           _buildControlButton(
             icon: Icons.screen_rotation_rounded,
             onTap: _rotateVideo,
-            tooltip: 'Rotate',
+            tooltip: _rotationIndex == -1
+                ? 'Rotate'
+                : 'Rotate: ${_rotationLabels[_rotationIndex]}',
           ),
         ],
       ),
@@ -1461,23 +1475,18 @@ class _PlayerScreenState extends State<PlayerScreen>
     _showQuickToast('Aspect Ratio: ${_aspectRatioLabels[_aspectRatioIndex]}');
   }
 
-  /// Manually flips the video between the two landscape orientations —
-  /// useful when the device is held upside-down relative to what the OS
-  /// last locked onto and won't re-flip on its own. Forces a single target
-  /// orientation just long enough for the OS to apply it, then re-widens
-  /// the allowed set so normal sensor auto-rotation keeps working afterwards.
-  void _rotateVideo() async {
-    setState(() => _isRotated = !_isRotated);
-    await SystemChrome.setPreferredOrientations([
-      _isRotated ? DeviceOrientation.landscapeRight : DeviceOrientation.landscapeLeft,
+  /// Cycles the forced screen orientation through all three usable sides —
+  /// Vertical → Horizontal Right → Horizontal Left → back to Vertical —
+  /// locking the display to exactly that orientation regardless of how the
+  /// device is physically held, until the user taps again.
+  void _rotateVideo() {
+    setState(() {
+      _rotationIndex = (_rotationIndex + 1) % _rotationOrientations.length;
+    });
+    SystemChrome.setPreferredOrientations([
+      _rotationOrientations[_rotationIndex],
     ]);
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (mounted) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-    }
+    _showQuickToast('Rotated: ${_rotationLabels[_rotationIndex]}');
   }
 
   void _cyclePlaybackSpeed() {

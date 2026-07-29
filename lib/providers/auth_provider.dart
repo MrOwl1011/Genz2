@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/playlist_model.dart';
 import '../services/xtream_api_service.dart';
+import 'downloads_provider.dart';
 import 'user_prefs_provider.dart';
 
 class AuthProvider extends ChangeNotifier {
   final XtreamApiService _apiService = XtreamApiService();
   final UserPrefsProvider userPrefs;
+  final DownloadsProvider downloads;
 
   bool _isLoading = false;
   bool _isInitializing = true; // Added for initial app startup
@@ -36,7 +38,7 @@ class AuthProvider extends ChangeNotifier {
   String get playlistId =>
       base64Encode(utf8.encode('${_serverUrl}_$_username'));
 
-  AuthProvider(this.userPrefs) {
+  AuthProvider(this.userPrefs, this.downloads) {
     checkAutoLogin();
   }
 
@@ -104,6 +106,7 @@ class AuthProvider extends ChangeNotifier {
 
     // Switch the independent data context
     await userPrefs.setPlaylistId(playlistId);
+    await downloads.setPlaylistId(playlistId);
   }
 
   /// Save a playlist to the stored list
@@ -165,6 +168,7 @@ class AuthProvider extends ChangeNotifier {
       final newId = base64Encode(utf8.encode('${url}_$username'));
       if (oldId != newId) {
         await userPrefs.migratePlaylistData(oldId, newId);
+        await downloads.migratePlaylistData(oldId, newId);
       }
     }
   }
@@ -202,9 +206,10 @@ class AuthProvider extends ChangeNotifier {
     playlists.removeWhere((p) => p['url'] == url && p['username'] == username);
     await prefs.setString('saved_playlists', jsonEncode(playlists));
 
-    // Clean up local data (history, favorites) for this playlist
+    // Clean up local data (history, favorites, downloads) for this playlist
     final targetPlaylistId = base64Encode(utf8.encode('${url}_$username'));
     await userPrefs.deletePlaylistData(targetPlaylistId);
+    await downloads.deletePlaylistData(targetPlaylistId);
 
     if (playlists.isEmpty) {
       _hasSavedPlaylists = false;

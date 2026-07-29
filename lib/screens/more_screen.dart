@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
+import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import 'downloads_screen.dart';
 import 'login_screen.dart';
 
 class MoreScreen extends StatelessWidget {
@@ -26,8 +28,10 @@ class MoreScreen extends StatelessWidget {
     final auth = Provider.of<AuthProvider>(context);
     final user = auth.user;
     final userPrefs = Provider.of<UserPrefsProvider>(context);
+    final downloads = Provider.of<DownloadsProvider>(context);
     final isArabic = userPrefs.locale == 'ar';
     final colors = context.colors;
+    final downloadsCount = downloads.completedDownloads.length + downloads.downloading.length;
 
     // Calculate days left
     String daysLeftText;
@@ -253,6 +257,16 @@ class MoreScreen extends StatelessWidget {
               _buildSectionHeader(isArabic ? 'الإعدادات' : 'Settings', colors),
               const SizedBox(height: 12),
               _buildInfoContainer(colors, [
+                _buildActionRow(
+                  context,
+                  colors,
+                  icon: Icons.download_rounded,
+                  label: isArabic ? 'التنزيلات' : 'Downloads',
+                  value: '$downloadsCount',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const DownloadsScreen()),
+                  ),
+                ),
                 _buildActionRow(
                   context,
                   colors,

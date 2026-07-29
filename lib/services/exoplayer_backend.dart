@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:video_player/video_player.dart';
@@ -110,14 +111,26 @@ class ExoPlayerBackend implements PlayerBackend {
   }) async {
     debugPrint('[ExoPlayerBackend] open: $url (autoPlay=$autoPlay)');
 
-    final controller = VideoPlayerController.networkUrl(
-      Uri.parse(url),
-      httpHeaders: httpHeaders,
-      videoPlayerOptions: VideoPlayerOptions(
-        mixWithOthers: false,
-        allowBackgroundPlayback: true,
-      ),
-    );
+    // Downloaded media is opened via a `file://` URI (see DownloadsProvider)
+    // — those need the local-file constructor instead of the network one,
+    // which would otherwise try to treat the path as an HTTP data source.
+    final uri = Uri.parse(url);
+    final controller = uri.isScheme('file')
+        ? VideoPlayerController.file(
+            File.fromUri(uri),
+            videoPlayerOptions: VideoPlayerOptions(
+              mixWithOthers: false,
+              allowBackgroundPlayback: true,
+            ),
+          )
+        : VideoPlayerController.networkUrl(
+            uri,
+            httpHeaders: httpHeaders,
+            videoPlayerOptions: VideoPlayerOptions(
+              mixWithOthers: false,
+              allowBackgroundPlayback: true,
+            ),
+          );
     _controller = controller;
     _initialized = false;
     _pendingCommands.clear();

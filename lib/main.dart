@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/content_provider.dart';
+import 'providers/downloads_provider.dart';
 import 'providers/user_prefs_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
@@ -21,12 +22,14 @@ void main() async {
 
   final userPrefs = UserPrefsProvider();
   await userPrefs.init();
+  final downloads = DownloadsProvider();
 
     runApp(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => AuthProvider(userPrefs)),
+          ChangeNotifierProvider(create: (_) => AuthProvider(userPrefs, downloads)),
           ChangeNotifierProvider.value(value: userPrefs),
+          ChangeNotifierProvider.value(value: downloads),
         ChangeNotifierProxyProvider<AuthProvider, ContentProvider>(
           create: (_) => ContentProvider(),
           update: (_, auth, content) {

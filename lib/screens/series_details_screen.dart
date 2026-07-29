@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
+import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/resume_dialog.dart';
@@ -50,11 +51,21 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
   }
 
   /// Plays an episode with resume dialog support.
-  /// Shows a dialog if saved position > 30 seconds.
+  /// Shows a dialog if saved position > 30 seconds. Transparently prefers
+  /// the downloaded local copy over the network stream, for this episode
+  /// and any other downloaded episode in the auto-play-next playlist.
   void _playEpisode(XtreamEpisode episode) async {
     final content = context.read<ContentProvider>();
     final userPrefs = context.read<UserPrefsProvider>();
-    final url = episode.streamUrl(content.baseUrl, content.username, content.password);
+    final downloads = context.read<DownloadsProvider>();
+
+    String urlFor(XtreamEpisode ep) {
+      final localPath = downloads.isDownloaded(ep.id) ? downloads.itemFor(ep.id)?.filePath : null;
+      if (localPath != null) return Uri.file(localPath).toString();
+      return ep.streamUrl(content.baseUrl, content.username, content.password);
+    }
+
+    final url = urlFor(episode);
 
     int position = userPrefs.getHistoryPosition(episode.id);
 
@@ -83,7 +94,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
             initialIndex = playlist.length;
           }
           playlist.add({
-            'url': ep.streamUrl(content.baseUrl, content.username, content.password),
+            'url': urlFor(ep),
             'title': 'S${ep.season} E${ep.episodeNum} - ${ep.title}',
             'coverUrl': widget.series.cover,
             'isLive': false,
@@ -251,7 +262,9 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // Play/Like/Download Buttons (Overlapping top edge)
+                  // Play/Like Buttons (Overlapping top edge) — download is
+                  // handled per-episode below instead of once for the whole
+                  // series.
                   Positioned(
                     top: -36,
                     left: 0,
@@ -304,17 +317,6 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 48),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.download_rounded, color: Colors.black),
-                              onPressed: () {}, // Download button
                             ),
                           ),
                         ],
@@ -444,6 +446,8 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     final List<Widget> items = [];
     final sortedSeasons = _seriesInfo!.episodes.keys.toList()..sort();
     final userPrefs = context.read<UserPrefsProvider>(); // read history for progress
+    final content = context.read<ContentProvider>();
+    final downloads = context.watch<DownloadsProvider>();
 
     for (final season in sortedSeasons) {
       final episodes = _seriesInfo!.episodes[season]!;
@@ -498,12 +502,83 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
             subtitle: position > 0
                 ? Text('Watched ${position ~/ 60}m', style: TextStyle(color: colors.brandPrimary, fontSize: 12))
                 : null,
-            trailing: Icon(Icons.play_circle_fill_rounded, color: colors.ink.withValues(alpha: 0.54)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildEpisodeDownloadButton(context, downloads, content, ep, colors),
+                const SizedBox(width: 4),
+                Icon(Icons.play_circle_fill_rounded, color: colors.ink.withValues(alpha: 0.54)),
+              ],
+            ),
             onTap: () => _playEpisode(ep),
           ),
         );
       }
     }
     return items;
+  }
+
+  /// Per-episode download control: plain download icon → progress spinner
+  /// (tap to cancel) while in flight → "Play Offline" once complete,
+  /// reverting to the plain download icon again if it's deleted.
+  Widget _buildEpisodeDownloadButton(
+    BuildContext context,
+    DownloadsProvider downloads,
+    ContentProvider content,
+    XtreamEpisode ep,
+    AppColors colors,
+  ) {
+    if (downloads.isDownloaded(ep.id)) {
+      return IconButton(
+        icon: const Icon(Icons.offline_pin_rounded),
+        color: colors.brandPrimary,
+        tooltip: 'Play Offline',
+        onPressed: () => _playEpisode(ep),
+      );
+    }
+
+    if (downloads.isDownloading(ep.id)) {
+      final item = downloads.itemFor(ep.id)!;
+      return IconButton(
+        icon: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            value: item.totalBytes > 0 ? item.progress : null,
+            valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
+          ),
+        ),
+        tooltip: 'Cancel Download',
+        onPressed: () => downloads.cancelDownload(ep.id),
+      );
+    }
+
+    return IconButton(
+      icon: Icon(Icons.download_rounded, color: colors.ink.withValues(alpha: 0.54)),
+      tooltip: 'Download',
+      onPressed: () {
+        downloads.startDownload(
+          id: ep.id,
+          title: ep.title.isNotEmpty ? ep.title : 'Episode ${ep.episodeNum}',
+          posterUrl: widget.series.cover,
+          type: MediaType.series,
+          sourceUrl: ep.streamUrl(content.baseUrl, content.username, content.password),
+          rawData: {
+            'id': ep.id,
+            'episode_num': ep.episodeNum,
+            'title': ep.title,
+            'container_extension': ep.containerExtension,
+            'info': ep.info,
+            'custom_sid': ep.customSid,
+            'added': ep.added,
+            'season': ep.season,
+            'series_id': widget.series.seriesId,
+            'series_name': widget.series.name,
+            'series_cover': widget.series.cover,
+          },
+        );
+      },
+    );
   }
 }

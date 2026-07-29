@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
+import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/resume_dialog.dart';
@@ -46,13 +47,23 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   /// Opens the player with resume dialog support.
-  /// Shows a dialog if saved position > 30 seconds.
-  void _openPlayer(BuildContext context) async {
+  /// Shows a dialog if saved position > 30 seconds. Pass [offline] to play
+  /// back the downloaded local copy instead of streaming from the server.
+  void _openPlayer(BuildContext context, {bool offline = false}) async {
     final content = context.read<ContentProvider>();
     final userPrefs = context.read<UserPrefsProvider>();
-    final url = widget.movie.streamUrl(content.baseUrl, content.username, content.password);
+    final mediaId = widget.movie.streamId.toString();
 
-    int position = userPrefs.getHistoryPosition(widget.movie.streamId.toString());
+    String url;
+    if (offline) {
+      final filePath = context.read<DownloadsProvider>().itemFor(mediaId)?.filePath;
+      if (filePath == null) return;
+      url = Uri.file(filePath).toString();
+    } else {
+      url = widget.movie.streamUrl(content.baseUrl, content.username, content.password);
+    }
+
+    int position = userPrefs.getHistoryPosition(mediaId);
 
     // Show resume dialog if position > 30 seconds
     if (position > 30) {
@@ -97,7 +108,9 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     final duration = _vodInfo?.duration ?? '';
 
     final userPrefs = context.watch<UserPrefsProvider>();
-    final isFav = userPrefs.isFavorite(widget.movie.streamId.toString());
+    final downloads = context.watch<DownloadsProvider>();
+    final mediaId = widget.movie.streamId.toString();
+    final isFav = userPrefs.isFavorite(mediaId);
     final colors = context.colors;
 
     return Scaffold(
@@ -240,9 +253,11 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                               color: Colors.white,
                               shape: BoxShape.circle,
                             ),
-                            child: IconButton(
-                              icon: const Icon(Icons.download_rounded, color: Colors.black),
-                              onPressed: () {}, // Download button
+                            child: _buildDownloadButton(
+                              context,
+                              downloads,
+                              mediaId,
+                              colors,
                             ),
                           ),
                         ],
@@ -363,6 +378,62 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// The circular button near the play button: a plain download icon while
+  /// nothing has been fetched yet, a progress spinner (tap to cancel) while
+  /// a transfer is in flight, or "Play Offline" once it has finished —
+  /// reverting back to the plain download icon if the download is deleted.
+  Widget _buildDownloadButton(
+    BuildContext context,
+    DownloadsProvider downloads,
+    String mediaId,
+    AppColors colors,
+  ) {
+    if (downloads.isDownloaded(mediaId)) {
+      return IconButton(
+        icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.black),
+        tooltip: 'Play Offline',
+        onPressed: () => _openPlayer(context, offline: true),
+      );
+    }
+
+    if (downloads.isDownloading(mediaId)) {
+      final item = downloads.itemFor(mediaId)!;
+      return IconButton(
+        icon: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            value: item.totalBytes > 0 ? item.progress : null,
+            valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
+          ),
+        ),
+        tooltip: 'Cancel Download',
+        onPressed: () => downloads.cancelDownload(mediaId),
+      );
+    }
+
+    return IconButton(
+      icon: const Icon(Icons.download_rounded, color: Colors.black),
+      tooltip: 'Download',
+      onPressed: () {
+        final content = context.read<ContentProvider>();
+        downloads.startDownload(
+          id: mediaId,
+          title: widget.movie.name,
+          posterUrl: widget.movie.streamIcon,
+          type: MediaType.movie,
+          sourceUrl: widget.movie.streamUrl(
+            content.baseUrl,
+            content.username,
+            content.password,
+          ),
+          rawData: widget.movie.toJson(),
+        );
+      },
     );
   }
 }
