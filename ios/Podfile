@@ -39,5 +39,12 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      # Xcode's newer sandboxed build scripts choke on rsync-copying vendored
+      # binary frameworks with symlinks (e.g. MobileVLCKit) during Archive —
+      # disable sandboxing for the Pods project the same way it's already
+      # off for the main Runner target.
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+    end
   end
 end
