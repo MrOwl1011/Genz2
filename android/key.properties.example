@@ -1,0 +1,14 @@
+# Copy this file to android/key.properties (which is gitignored) and fill
+# in real values before building a release APK/AAB for the Play Store.
+#
+# Generate a keystore first, e.g.:
+#   keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA \
+#     -keysize 2048 -validity 10000 -alias upload
+#
+# Keep the keystore file and these passwords out of version control and
+# back them up somewhere safe — losing them means you can no longer publish
+# updates to an app already on the Play Store under the same key.
+storePassword=yourStorePassword
+keyPassword=yourKeyPassword
+keyAlias=upload
+storeFile=/absolute/path/to/upload-keystore.jks
