@@ -207,10 +207,26 @@ class _PlayerScreenState extends State<PlayerScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Future<void> _initPlayer() async {
+    // Clear the previous item's cached playback state before opening the new
+    // one. These only ever get written from backend stream events, so without
+    // an explicit reset they still hold the *previous* episode's values here —
+    // which makes the readiness wait below (`_duration == 0 && _position == 0`)
+    // fall straight through on every switch instead of giving the freshly
+    // opened engine time to settle. VLCKit then receives play() while it is
+    // still tearing down/reloading media and ends up parked in a stopped
+    // state: play button showing, no timeline, no video.
+    _seekGraceTimer?.cancel();
+    _inSeekGracePeriod = false;
     setState(() {
       _isInitializing = true;
       _errorMessage = null;
       _isBuffering = false;
+      _position = Duration.zero;
+      _duration = Duration.zero;
+      _isPlaying = false;
+      _videoWidth = null;
+      _videoHeight = null;
+      _lastRawPosition = null;
     });
 
     try {
