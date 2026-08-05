@@ -4,6 +4,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:provider/provider.dart';
+import 'core/hive/hive_boxes.dart';
+import 'features/profiles/presentation/providers/profile_provider.dart';
+import 'features/sync/services/sync_manager.dart';
 import 'providers/auth_provider.dart';
 import 'providers/content_provider.dart';
 import 'providers/downloads_provider.dart';
@@ -12,6 +15,7 @@ import 'screens/downloads_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/playlists_screen.dart';
+import 'features/profiles/presentation/screens/profile_picker_screen.dart';
 import 'services/connectivity_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
@@ -24,16 +28,21 @@ void main() async {
   // itself while watching and restores this mode on exit.
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
+  await HiveBoxes.init();
+  SyncManager.instance.start();
+
   final userPrefs = UserPrefsProvider();
   await userPrefs.init();
   final downloads = DownloadsProvider();
+  final profileProvider = ProfileProvider(userPrefs);
 
     runApp(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => AuthProvider(userPrefs, downloads)),
+          ChangeNotifierProvider(create: (_) => AuthProvider(userPrefs, downloads, profileProvider)),
           ChangeNotifierProvider.value(value: userPrefs),
           ChangeNotifierProvider.value(value: downloads),
+          ChangeNotifierProvider.value(value: profileProvider),
         ChangeNotifierProxyProvider<AuthProvider, ContentProvider>(
           create: (_) => ContentProvider(),
           update: (_, auth, content) {
@@ -137,6 +146,7 @@ class _AuthRootHandlerState extends State<AuthRootHandler> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
+    final profileProvider = context.watch<ProfileProvider>();
     final colors = context.colors;
 
     Widget content;
@@ -166,7 +176,10 @@ class _AuthRootHandlerState extends State<AuthRootHandler> {
         ),
       );
     } else if (auth.isAuthenticated) {
-      content = const MainNavigationScreen();
+      // Demo-mode sessions (App Store/Play Store review accounts) skip the
+      // profile system entirely — see AuthProvider._connectBackendAndProfiles.
+      final needsProfilePick = !auth.isDemoMode && !profileProvider.hasActiveProfile;
+      content = needsProfilePick ? const ProfilePickerScreen() : const MainNavigationScreen();
     } else if (auth.hasSavedPlaylists) {
       content = const PlaylistsScreen();
     } else {

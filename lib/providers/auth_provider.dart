@@ -1,8 +1,13 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/account_id.dart';
+import '../features/profiles/presentation/providers/profile_provider.dart';
+import '../features/sync/services/sync_manager.dart';
 import '../models/playlist_model.dart';
+import '../services/backend_api_service.dart';
 import '../services/demo_data_service.dart';
+import '../services/device_id_service.dart';
 import '../services/xtream_api_service.dart';
 import 'downloads_provider.dart';
 import 'user_prefs_provider.dart';
@@ -11,6 +16,7 @@ class AuthProvider extends ChangeNotifier {
   final XtreamApiService _apiService = XtreamApiService();
   final UserPrefsProvider userPrefs;
   final DownloadsProvider downloads;
+  final ProfileProvider profileProvider;
 
   bool _isLoading = false;
   bool _isInitializing = true; // Added for initial app startup
@@ -39,12 +45,122 @@ class AuthProvider extends ChangeNotifier {
   String get playlistId =>
       base64Encode(utf8.encode('${_serverUrl}_$_username'));
 
+  /// SHA256(normalize(server_url) + normalize(username)) — the identity used
+  /// by the profile/sync backend. Deliberately separate from [playlistId]
+  /// above (different formula, different purpose) — see core/account_id.dart.
+  String get accountId => computeAccountId(_serverUrl, _username);
+
+  String? _deviceToken;
+  /// Bearer token for the profile/sync backend, null whenever it couldn't be
+  /// reached (offline, not yet deployed, etc.) — every consumer of this must
+  /// treat null as "operate in local-only/cached mode", never as an error.
+  String? get deviceToken => _deviceToken;
+
   /// True when the currently active session is one of the published demo
   /// accounts (App Store / Play Store review) — see [DemoDataService].
   bool get isDemoMode => DemoDataService.isDemoLogin(_serverUrl, _username, _password);
 
-  AuthProvider(this.userPrefs, this.downloads) {
+  AuthProvider(this.userPrefs, this.downloads, this.profileProvider) {
     checkAutoLogin();
+  }
+
+  String get _platformName {
+    if (kIsWeb) return 'web';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.android:
+        return 'android';
+      case TargetPlatform.macOS:
+        return 'macos';
+      case TargetPlatform.windows:
+        return 'windows';
+      case TargetPlatform.linux:
+        return 'linux';
+      default:
+        return 'unknown';
+    }
+  }
+
+  String get _deviceDisplayName {
+    if (kIsWeb) return 'Web Browser';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return 'iPhone/iPad';
+      case TargetPlatform.android:
+        return 'Android Device';
+      case TargetPlatform.macOS:
+        return 'Mac';
+      case TargetPlatform.windows:
+        return 'Windows PC';
+      case TargetPlatform.linux:
+        return 'Linux PC';
+      default:
+        return 'Device';
+    }
+  }
+
+  /// Registers this device with the profile/sync backend and loads the
+  /// account's profile list — called after every successful Xtream login
+  /// (explicit or auto-login), never blocking that login's own success:
+  /// a failure here (backend down, not deployed yet, offline) is caught and
+  /// left non-fatal, matching this feature's offline-first requirement — the
+  /// existing Xtream-only login flow must keep working regardless.
+  ///
+  /// Skipped entirely for demo-mode logins (App Store/Play Store review
+  /// accounts) — those are a fabricated, network-free session by design (see
+  /// [DemoDataService]) and reviewers should see exactly the same app they
+  /// always have, with no new profile-picker step in the way.
+  Future<void> _connectBackendAndProfiles() async {
+    if (isDemoMode) return;
+
+    try {
+      final result = await BackendApiService().login(
+        serverUrl: _serverUrl,
+        username: _username,
+        password: _password,
+        deviceId: DeviceIdService.getOrCreate(),
+        deviceName: _deviceDisplayName,
+        platform: _platformName,
+      );
+      _deviceToken = result.deviceToken;
+    } on BackendApiException catch (e) {
+      _deviceToken = null;
+      debugPrint('[AuthProvider] backend connect failed (non-fatal): $e');
+    }
+
+    SyncManager.instance.updateSession(accountId: accountId, deviceToken: _deviceToken);
+    await profileProvider.loadForAccount(accountId, _deviceToken);
+
+    if (profileProvider.profiles.isEmpty) {
+      // First time ever for this account — brand new user, or an existing
+      // pre-profiles-feature user upgrading. Create a default profile
+      // (works fully offline — see ProfileRepository) and, if this device
+      // has legacy playlistId-scoped local favorites/history, migrate it in
+      // rather than losing it. Deliberately does NOT auto-select the new
+      // profile here — the very first time, the "Who's Watching?" picker
+      // still shows it and the user taps it themselves, matching normal
+      // Netflix-style behavior.
+      await profileProvider.createProfile(name: 'Profile 1', avatar: 'purple');
+      if (profileProvider.profiles.isNotEmpty) {
+        await userPrefs.migrateLegacyPlaylistDataToProfile(
+          playlistId,
+          accountId,
+          profileProvider.profiles.first.profileId,
+        );
+      }
+    } else {
+      // Every subsequent login/app-launch: resume whichever profile was
+      // active last time, so the picker only appears on first-ever use or
+      // when the user explicitly switches via More — not on every single
+      // app restart. Without this, ProfileProvider.activeProfile (a plain
+      // in-memory field) reset on every fresh process, silently landing back
+      // on unscoped legacy storage until the user manually re-picked —
+      // easy to mistake for favorites/history having disappeared, when they
+      // were actually sitting untouched in both local storage and the
+      // backend the whole time.
+      profileProvider.tryRestoreLastProfile();
+    }
   }
 
   /// Authenticates against the real Xtream server, unless [serverUrl]/
@@ -294,6 +410,7 @@ class AuthProvider extends ChangeNotifier {
           _username,
           _password,
         );
+        await _connectBackendAndProfiles();
       } catch (e) {
         _isAuthenticated = false;
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -348,6 +465,7 @@ class AuthProvider extends ChangeNotifier {
         oldUrl: oldUrl,
         oldUsername: oldUser,
       );
+      await _connectBackendAndProfiles();
 
       return true;
     } catch (e) {
@@ -376,7 +494,10 @@ class AuthProvider extends ChangeNotifier {
 
     _user = null;
     _isAuthenticated = false;
+    _deviceToken = null;
     _isLoading = false;
+    profileProvider.reset();
+    SyncManager.instance.updateSession(accountId: null, deviceToken: null);
     notifyListeners();
   }
 

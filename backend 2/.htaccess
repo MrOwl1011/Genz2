@@ -1,0 +1,21 @@
+# Phase 0 hardening for the backend root.
+#
+# Per-directory blocks for /sql and /lib live in their own .htaccess files
+# (sql/.htaccess, lib/.htaccess) — that's the more reliable way to deny an
+# entire directory on both old (2.2) and modern (2.4) Apache, rather than
+# trying to path-match subdirectories from here.
+
+Options -Indexes
+
+# config.php only ever needs to be `require`d by other PHP files in this
+# project — it produces no output and defines no route, but there's no
+# reason it should ever be reachable directly over HTTP either.
+<Files "config.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>

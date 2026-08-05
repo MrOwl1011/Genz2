@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../main.dart';
 import '../models/playlist_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
 import 'login_screen.dart';
-import 'main_navigation_screen.dart';
 import 'playlist_history_screen.dart';
 
 class PlaylistsScreen extends StatefulWidget {
@@ -95,8 +95,10 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
       Navigator.of(context).pop(); // dismiss loading dialog
 
       if (success) {
+        // Through AuthRootHandler, not straight to MainNavigationScreen —
+        // see the matching comment in login_screen.dart's _handleLogin().
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+          MaterialPageRoute(builder: (_) => const AuthRootHandler()),
           (route) => false,
         );
       } else {

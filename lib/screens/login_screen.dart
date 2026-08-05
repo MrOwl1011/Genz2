@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../main.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
-import 'main_navigation_screen.dart';
 import 'playlists_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -84,9 +84,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (mounted) {
       if (success) {
-        // Use pushAndRemoveUntil to reset the stack
+        // Route back through AuthRootHandler rather than straight to
+        // MainNavigationScreen — it reactively picks ProfilePickerScreen vs
+        // MainNavigationScreen based on ProfileProvider.hasActiveProfile,
+        // which right after a login is almost always false (a profile
+        // hasn't been chosen yet — see AuthProvider._connectBackendAndProfiles,
+        // which deliberately doesn't auto-select one). Jumping straight to
+        // MainNavigationScreen skipped the profile picker entirely, and for
+        // an account with existing profiles, skipped profile-scoped storage
+        // too (UserPrefsProvider never got told which profile to use).
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+          MaterialPageRoute(builder: (context) => const AuthRootHandler()),
           (route) => false,
         );
       } else {
@@ -144,11 +152,12 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = Provider.of<AuthProvider>(context);
     final colors = context.colors;
 
-    // If auto-logged in, navigate automatically
+    // If auto-logged in, navigate automatically — through AuthRootHandler,
+    // same reasoning as _handleLogin() above.
     if (auth.isAuthenticated && !auth.isLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+          MaterialPageRoute(builder: (context) => const AuthRootHandler()),
         );
       });
     }
@@ -225,14 +234,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Playlist Name Input
-                        _buildInputField(
-                          controller: _nameController,
-                          label: 'Playlist Name',
-                          hint: 'e.g. My Home TV',
-                          icon: Icons.tv_rounded,
-                        ),
-                        const SizedBox(height: 20),
+                        // Playlist Name field intentionally removed from the
+                        // UI — Netflix-style profiles (added inside the app)
+                        // now cover per-viewer naming, so asking for a
+                        // playlist name up front is redundant. _nameController
+                        // is still populated (silently) in initState() with
+                        // the existing name when editing a saved playlist, or
+                        // left empty for a fresh login — AuthProvider.login()
+                        // already falls back to "My Playlist" for an empty
+                        // name, so this doesn't lose anything, it just stops
+                        // asking.
 
                         // Server URL Input
                         _buildInputField(

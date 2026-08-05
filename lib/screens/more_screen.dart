@@ -6,6 +6,10 @@ import '../providers/auth_provider.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../features/devices/presentation/screens/devices_screen.dart';
+import '../features/profiles/presentation/providers/profile_provider.dart';
+import '../features/profiles/presentation/screens/profile_picker_screen.dart';
+import '../features/profiles/presentation/widgets/profile_avatar_tile.dart';
 import 'downloads_screen.dart';
 import 'login_screen.dart';
 
@@ -29,6 +33,7 @@ class MoreScreen extends StatelessWidget {
     final user = auth.user;
     final userPrefs = Provider.of<UserPrefsProvider>(context);
     final downloads = Provider.of<DownloadsProvider>(context);
+    final profileProvider = Provider.of<ProfileProvider>(context);
     final isArabic = userPrefs.locale == 'ar';
     final colors = context.colors;
     final downloadsCount = downloads.completedDownloads.length + downloads.downloading.length;
@@ -156,6 +161,69 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
+
+              // Viewer Profile — Netflix-style profiles (separate from the
+              // Xtream account card above). Skipped for demo-mode sessions,
+              // which never connect to the profile/sync backend at all (see
+              // AuthProvider._connectBackendAndProfiles).
+              if (!auth.isDemoMode) ...[
+                _buildSectionHeader(isArabic ? 'الملف الشخصي' : 'Viewer Profile', colors),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProfilePickerScreen(isEmbedded: true)),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: colors.border, width: 1.5),
+                    ),
+                    child: Row(
+                      children: [
+                        if (profileProvider.activeProfile != null)
+                          ProfileAvatarTile(
+                            profile: profileProvider.activeProfile,
+                            size: 44,
+                            showLabel: false,
+                          )
+                        else
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: colors.brandPrimary.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.person_rounded, color: colors.brandPrimary, size: 22),
+                          ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                profileProvider.activeProfile?.name ??
+                                    (isArabic ? 'اختر ملفاً شخصياً' : 'Select a profile'),
+                                style: GoogleFonts.outfit(color: colors.ink, fontWeight: FontWeight.w600, fontSize: 15),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isArabic ? 'إدارة أو تبديل الملفات الشخصية' : 'Switch, add, edit or delete profiles',
+                                style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.5), fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: colors.ink.withValues(alpha: 0.38)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // Account Details Info Panel
               _buildSectionHeader(
@@ -293,6 +361,20 @@ class MoreScreen extends StatelessWidget {
                   value: userPrefs.autoPlayNextEpisode,
                   onChanged: (val) => userPrefs.setAutoPlayNextEpisode(val),
                 ),
+                // Demo-mode sessions never connect to the profile/sync
+                // backend (see AuthProvider._connectBackendAndProfiles), so
+                // there's never a meaningful device list to show reviewers.
+                if (!auth.isDemoMode)
+                  _buildActionRow(
+                    context,
+                    colors,
+                    icon: Icons.devices_rounded,
+                    label: isArabic ? 'الأجهزة' : 'Devices',
+                    value: '',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const DevicesScreen()),
+                    ),
+                  ),
               ]),
 
               const SizedBox(height: 36),
