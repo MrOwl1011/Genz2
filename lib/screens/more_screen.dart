@@ -6,7 +6,6 @@ import '../providers/auth_provider.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
-import '../features/devices/presentation/screens/devices_screen.dart';
 import '../features/profiles/presentation/providers/profile_provider.dart';
 import '../features/profiles/presentation/screens/profile_picker_screen.dart';
 import '../features/profiles/presentation/widgets/profile_avatar_tile.dart';
@@ -361,20 +360,6 @@ class MoreScreen extends StatelessWidget {
                   value: userPrefs.autoPlayNextEpisode,
                   onChanged: (val) => userPrefs.setAutoPlayNextEpisode(val),
                 ),
-                // Demo-mode sessions never connect to the profile/sync
-                // backend (see AuthProvider._connectBackendAndProfiles), so
-                // there's never a meaningful device list to show reviewers.
-                if (!auth.isDemoMode)
-                  _buildActionRow(
-                    context,
-                    colors,
-                    icon: Icons.devices_rounded,
-                    label: isArabic ? 'الأجهزة' : 'Devices',
-                    value: '',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const DevicesScreen()),
-                    ),
-                  ),
               ]),
 
               const SizedBox(height: 36),

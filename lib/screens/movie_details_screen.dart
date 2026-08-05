@@ -69,11 +69,14 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     if (position > 30) {
       final result = await showResumeDialog(context, position);
       if (!mounted) return;
+      if (result == null) {
+        return; // dismissed via X or outside tap — cancelled, don't open the player
+      }
       if (result == false) {
         position = 0; // User chose "Start Over"
         userPrefs.clearHistoryPosition(widget.movie.streamId.toString());
       }
-      // result == true or null means resume from saved position
+      // result == true means resume from saved position
     }
 
     Navigator.of(context).push(

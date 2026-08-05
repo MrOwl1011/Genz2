@@ -7,7 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 
 /// Shows a resume dialog and returns `true` to resume, `false` to start over,
-/// or `null` if dismissed (treated as resume by default).
+/// or `null` if dismissed via the X button or tapping outside — callers must
+/// treat `null` as "cancelled, don't open the player at all", not as resume.
 Future<bool?> showResumeDialog(BuildContext context, int positionSeconds) {
   return showDialog<bool>(
     context: context,
@@ -153,7 +154,8 @@ class _ResumeDialog extends StatelessWidget {
               ),
             ),
             // Close button — same effect as tapping the barrier (dismiss,
-            // treated as "resume" by callers per showResumeDialog's contract).
+            // returns null, treated by callers as "cancelled" per
+            // showResumeDialog's contract).
             Positioned(
               top: 4,
               right: 4,

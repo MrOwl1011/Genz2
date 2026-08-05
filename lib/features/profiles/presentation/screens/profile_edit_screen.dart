@@ -21,7 +21,6 @@ class ProfileEditScreen extends StatefulWidget {
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late final TextEditingController _nameController;
   late String _selectedAvatar;
-  late bool _isKids;
   bool _isSaving = false;
 
   bool get _isEditing => widget.existingProfile != null;
@@ -31,7 +30,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.existingProfile?.name ?? '');
     _selectedAvatar = widget.existingProfile?.avatar ?? kAvatarColorKeys.first;
-    _isKids = widget.existingProfile?.isKids ?? false;
     _nameController.addListener(() => setState(() {}));
   }
 
@@ -65,9 +63,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             widget.existingProfile!.profileId,
             name: name,
             avatar: _selectedAvatar,
-            isKids: _isKids,
           )
-        : await provider.createProfile(name: name, avatar: _selectedAvatar, isKids: _isKids);
+        : await provider.createProfile(name: name, avatar: _selectedAvatar);
 
     if (!mounted) return;
     setState(() => _isSaving = false);
@@ -189,7 +186,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       ProfileAvatarTile(
                         previewAvatarKey: _selectedAvatar,
                         previewName: _nameController.text,
-                        previewIsKids: _isKids,
                         size: 110,
                         showLabel: false,
                       ),
@@ -241,33 +237,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             ProfileAvatarTile(
                               previewAvatarKey: key,
                               previewName: _nameController.text,
-                              previewIsKids: _isKids,
                               size: 48,
                               showLabel: false,
                               selected: _selectedAvatar == key,
                               onTap: () => setState(() => _selectedAvatar = key),
                             ),
                         ],
-                      ),
-                      const SizedBox(height: 24),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: SwitchListTile(
-                          value: _isKids,
-                          onChanged: (v) => setState(() => _isKids = v),
-                          activeThumbColor: colors.brandPrimary,
-                          contentPadding: EdgeInsets.zero,
-                          title: Text('Kids Profile', style: GoogleFonts.outfit(color: colors.ink, fontWeight: FontWeight.w600)),
-                          subtitle: Text(
-                            'Shows a kid-friendly icon',
-                            style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.5), fontSize: 12),
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 32),
                       SizedBox(

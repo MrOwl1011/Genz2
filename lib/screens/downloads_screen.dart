@@ -37,6 +37,9 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     if (position > 30) {
       final result = await showResumeDialog(context, position);
       if (!mounted) return;
+      if (result == null) {
+        return; // dismissed via X or outside tap — cancelled, don't open the player
+      }
       if (result == false) {
         position = 0;
         userPrefs.clearHistoryPosition(item.id);

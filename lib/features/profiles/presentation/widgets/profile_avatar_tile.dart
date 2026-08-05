@@ -49,7 +49,6 @@ class ProfileAvatarTile extends StatelessWidget {
   final ProfileEntity? profile;
   final String? previewAvatarKey;
   final String? previewName;
-  final bool previewIsKids;
   final double size;
   final bool selected;
   final bool showLabel;
@@ -60,7 +59,6 @@ class ProfileAvatarTile extends StatelessWidget {
     this.profile,
     this.previewAvatarKey,
     this.previewName,
-    this.previewIsKids = false,
     this.size = 88,
     this.selected = false,
     this.showLabel = true,
@@ -72,7 +70,6 @@ class ProfileAvatarTile extends StatelessWidget {
     final colors = context.colors;
     final avatarKey = profile?.avatar ?? previewAvatarKey!;
     final name = profile?.name ?? previewName ?? '';
-    final isKids = profile?.isKids ?? previewIsKids;
     final color = avatarColorForKey(avatarKey, colors);
     final initial = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
 
@@ -97,16 +94,14 @@ class ProfileAvatarTile extends StatelessWidget {
                   : null,
             ),
             alignment: Alignment.center,
-            child: isKids
-                ? Icon(Icons.child_care_rounded, color: Colors.white, size: size * 0.5)
-                : Text(
-                    initial,
-                    style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontSize: size * 0.4,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            child: Text(
+              initial,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: size * 0.4,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           if (showLabel && name.isNotEmpty) ...[
             const SizedBox(height: 8),
