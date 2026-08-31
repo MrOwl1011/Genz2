@@ -31,11 +31,16 @@ through anything new you haven't tried yet and share what you get.
 1. cPanel → **phpMyAdmin**.
 2. Select the database you just created.
 3. **Import** tab → choose file → `backend/sql/schema.sql` → Go.
-4. You should end up with 9 tables: `accounts`, `profiles`, `favorites`,
-   `history`, `devices`, `device_tokens`, `admins`, `sync_log`, `rate_limits`.
-   (Only `accounts`, `devices`, `device_tokens`, and `rate_limits` are
-   actually used by anything in Phase 0 — the rest exist now because they're
-   part of the foundational schema, but stay empty until later phases.)
+4. You should end up with 10 tables: `accounts`, `profiles`, `favorites`,
+   `history`, `devices`, `device_tokens`, `admins`, `sync_log`,
+   `pairing_codes`, `rate_limits`.
+
+**Already deployed from before the anonymous-accounts change?** Don't
+re-import `schema.sql` over live data — instead run
+`backend/sql/migrate_v2_anonymous_accounts.sql` once (same Import tab). It's
+idempotent (safe to run more than once) and only widens two columns to
+nullable plus adds the new `pairing_codes` table; it doesn't touch existing
+rows.
 
 ## 3. Upload the backend files
 
@@ -46,10 +51,10 @@ places to put it:
 - **A subdomain** (cleaner): create `api.yourdomain.com` in cPanel → **Domains**,
   pointed at a new folder (e.g. `api`), then upload the contents of `backend/`
   directly into that folder's root. The login endpoint then ends up at
-  `https://api.yourdomain.com/api/account/login.php`.
+  `https://api.yourdomain.com/api/account/register.php`.
 - **A subfolder of your main site** (simpler, no subdomain needed): upload the
   contents of `backend/` into `public_html/backend/`. The endpoint is then at
-  `https://yourdomain.com/backend/api/account/login.php`.
+  `https://yourdomain.com/backend/api/account/register.php`.
 
 Either way, the relative structure inside must stay exactly as it is in this
 repo (`api/`, `lib/`, `sql/`, `config.php`, `.htaccess` files all siblings).
@@ -87,18 +92,20 @@ cPanel → **Select PHP Version** (sometimes called "MultiPHP Manager"):
 
 ## 6. Test it
 
-Replace the placeholders below with your real values (a real Xtream
-server/username/password, the API key you set in step 4, and the URL you
-deployed to), then run:
+`login.php` no longer exists — it took an Xtream server/username/password and
+authenticated against a user's own streaming service, which is exactly what
+Apple's Guideline 5.6 rejection flagged (see the account_id.php doc comment
+in `lib/account_id.php` for the full reasoning). It's been replaced by
+`register.php`, which never sees any Xtream credential at all — it just
+hands out an opaque, random account and a device token.
+
+Replace `YOUR_DEPLOYED_URL` and `YOUR_API_KEY` below, then run:
 
 ```bash
-curl -i -X POST "https://YOUR_DEPLOYED_URL/api/account/login.php" \
+curl -i -X POST "https://YOUR_DEPLOYED_URL/api/account/register.php" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: YOUR_API_KEY" \
   -d '{
-    "server_url": "http://example.com",
-    "username": "your_xtream_username",
-    "password": "your_xtream_password",
     "device_id": "11111111-1111-1111-1111-111111111111",
     "device_name": "Test Curl",
     "platform": "test"
@@ -118,20 +125,46 @@ curl -i -X POST "https://YOUR_DEPLOYED_URL/api/account/login.php" \
   "error": null
 }
 ```
-`profiles` being an empty array is expected in this phase — that's not a bug,
-just a stub for the profiles endpoint a later phase adds.
+`profiles` is an empty array for a brand-new account — expected, not a bug.
 
 **Expected failure responses** you might hit while testing:
 - Wrong/missing `X-Api-Key` → HTTP 401, `error.code: "INVALID_API_KEY"`.
-- Wrong Xtream username/password → HTTP 401, `error.code: "XTREAM_AUTH_FAILED"`.
-- Unreachable/invalid server_url → HTTP 401, `error.code: "XTREAM_AUTH_FAILED"`,
-  with a message explaining why (couldn't reach it, invalid scheme, etc).
-- More than 10 attempts within an hour from the same IP → HTTP 429,
-  `error.code: "RATE_LIMITED"`.
+- Missing `device_id`/`device_name`/`platform` → HTTP 400, `error.code:
+  "INVALID_BODY"`.
+- More than 10 attempts within an hour from the same device_id, or 60/hour
+  from the same IP → HTTP 429, `error.code: "RATE_LIMITED"`.
 
 Please run this and paste back exactly what you get (including the HTTP
 status line from `-i`) — especially if it's anything other than the success
 shape above, since that's the fastest way for me to tell what's wrong.
+
+### The other account endpoints
+
+All three require the `device_token` from `register.php` as
+`Authorization: Bearer <device_token>`, plus the same `X-Api-Key` header.
+
+- **`POST /api/account/pairing_code.php`** — no body. Returns
+  `{"code": "AB23CD45", "expires_at": "..."}`, an 8-character code valid for
+  15 minutes, multi-use within that window. Shown in Settings → "Show my
+  sync code" in the app.
+  ```bash
+  curl -i -X POST "https://YOUR_DEPLOYED_URL/api/account/pairing_code.php" \
+    -H "X-Api-Key: YOUR_API_KEY" \
+    -H "Authorization: Bearer YOUR_DEVICE_TOKEN"
+  ```
+- **`POST /api/account/join.php`** — `{"code": "AB23CD45"}`. Moves *this*
+  device onto the account the code was issued for and mints it a fresh
+  token; the response shape matches `register.php`'s. An expired/wrong code
+  is `error.code: "INVALID_CODE"` (404).
+- **`POST /api/account/migrate_legacy.php`** — `{"server_url": "...",
+  "username": "..."}`. One-time bridge for accounts created before this
+  change: recomputes the old SHA256(server_url+username) account_id
+  server-side and, if it finds a match, folds its profiles/devices/tokens
+  into the caller's new anonymous account. Returns `{"migrated": false}` for
+  anyone who never had a legacy account — that's the expected response for
+  every brand-new install, not an error. The app calls this automatically
+  once per fresh registration when it still has a saved server_url/username
+  locally, so you shouldn't normally need to call it by hand.
 
 ## Admin panel
 
@@ -154,6 +187,45 @@ of its profiles and devices; clear an individual profile's favorites/history
 Consider deleting `admin/setup.php` after you've created your admin account,
 or at least don't leave the URL lying around — it's inert once an admin
 exists, but there's no reason to keep it reachable either.
+
+## `demo-iptv/` — the App Store / Play Store review account
+
+This is a separate, self-contained thing from the rest of `backend/` — it
+doesn't touch the database, `config.php`, or the account/profile/sync API
+above at all. It's a tiny real Xtream Codes–compatible server
+(`demo-iptv/player_api.php`), used only to give App Store/Play Store
+reviewers a real account to log into.
+
+**Why it exists**: the app used to detect a magic `server=demo` login and
+swap in fake, fully local data on the client instead of ever calling a real
+server — reviewers saw a different app than real users. Apple rejected that
+under Guideline 5.6 (Developer Code of Conduct) for exactly what it was.
+That client-side branch has been deleted. This folder replaces it with a
+*real* server speaking the *real* Xtream protocol — the app has zero
+special-casing left for it. The only thing "demo" about the account is that
+its content is a handful of openly-licensed public test videos (Blender
+Foundation's Big Buck Bunny/Sintel, Apple's own published HLS test stream,
+Mux's public test stream — see the doc comment in `demo-iptv/demo_content.php`
+for exact sources/licenses), not a real IPTV lineup.
+
+**Deploy**: upload the `demo-iptv/` folder the same way as the rest of
+`backend/` (step 3 above) — e.g. into `api.shitaa.online/demo-iptv/` if
+you're using the same subdomain as the main backend. No `config.php`
+editing needed; it has no dependencies on the rest of this folder.
+
+**Give these to App Review** (Sign-In Information / Notes in App Store
+Connect, and the equivalent in Play Console's "Sign in details"):
+- Server URL: `https://api.shitaa.online/demo-iptv` (adjust the host to
+  wherever you actually uploaded it)
+- Username: `demo`
+- Password: `demo`
+
+**Test it yourself first** — log into the app with those exact credentials
+before you resubmit, and confirm you personally see: live playback, movie
+playback with a working download button on "Big Buck Bunny" specifically
+(it's the one non-HLS file), a series with two episodes, and the normal
+profile picker on first login. If any of that doesn't work for you, it won't
+work for the reviewer either.
 
 ## What's deliberately not included
 

@@ -12,6 +12,7 @@ import 'movies_screen.dart';
 import 'movie_details_screen.dart';
 import 'series_details_screen.dart';
 import 'player_screen.dart';
+import '../widgets/tv_focusable.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,8 +71,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20.0),
                   child: ShaderMask(
-                    shaderCallback: (bounds) =>
-                        LinearGradient(colors: colors.brandGradient).createShader(bounds),
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: colors.brandGradient,
+                    ).createShader(bounds),
                     child: Text(
                       'GenZ+',
                       style: GoogleFonts.outfit(
@@ -96,7 +98,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: colors.surface.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: colors.ink.withValues(alpha: 0.1)),
+                    border: Border.all(
+                      color: colors.ink.withValues(alpha: 0.1),
+                    ),
                   ),
                   child: TextField(
                     controller: _searchController,
@@ -105,7 +109,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: GoogleFonts.outfit(color: colors.ink),
                     decoration: InputDecoration(
                       hintText: 'Global Search (Movies, Series, Live)',
-                      hintStyle: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38)),
+                      hintStyle: GoogleFonts.outfit(
+                        color: colors.ink.withValues(alpha: 0.38),
+                      ),
                       prefixIcon: Icon(
                         Icons.search,
                         color: colors.ink.withValues(alpha: 0.7),
@@ -209,7 +215,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           isArabic
                               ? 'لا توجد مسلسلات متاحة'
                               : 'No Series Available',
-                          style: TextStyle(color: colors.ink.withValues(alpha: 0.54)),
+                          style: TextStyle(
+                            color: colors.ink.withValues(alpha: 0.54),
+                          ),
                         ),
                       )
                     : ListView.builder(
@@ -254,7 +262,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           isArabic
                               ? 'لا توجد أفلام متاحة'
                               : 'No Movies Available',
-                          style: TextStyle(color: colors.ink.withValues(alpha: 0.54)),
+                          style: TextStyle(
+                            color: colors.ink.withValues(alpha: 0.54),
+                          ),
                         ),
                       )
                     : ListView.builder(
@@ -367,7 +377,8 @@ class _HomeScreenState extends State<HomeScreen> {
     int index,
   ) {
     final colors = context.colors;
-    return GestureDetector(
+    return TvFocusable(
+      borderRadius: BorderRadius.circular(12),
       onTap: () {
         final playlist = allStreams.map((l) {
           return {
@@ -410,10 +421,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? CachedNetworkImage(
                     imageUrl: live.streamIcon,
                     fit: BoxFit.cover,
-                    errorWidget: (_, _, _) =>
-                        Icon(Icons.live_tv, color: colors.ink.withValues(alpha: 0.24)),
+                    errorWidget: (_, _, _) => Icon(
+                      Icons.live_tv,
+                      color: colors.ink.withValues(alpha: 0.24),
+                    ),
                   )
-                : Icon(Icons.live_tv, color: colors.ink.withValues(alpha: 0.24)),
+                : Icon(
+                    Icons.live_tv,
+                    color: colors.ink.withValues(alpha: 0.24),
+                  ),
             // Title overlay — fixed dark scrim for legibility over the poster
             // image itself, intentionally not theme-reactive (see player_screen
             // and category cards for the same pattern).
@@ -491,7 +507,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHistoryCard(BuildContext context, HistoryItem item) {
     final colors = context.colors;
-    return GestureDetector(
+    return TvFocusable(
+      borderRadius: BorderRadius.circular(12),
       onTap: () {
         if (item.type == MediaType.movie) {
           final movie = XtreamVodStream.fromJson(item.rawData);
@@ -541,8 +558,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? CachedNetworkImage(
                     imageUrl: item.posterUrl,
                     fit: BoxFit.cover,
-                    errorWidget: (_, _, _) =>
-                        Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
+                    errorWidget: (_, _, _) => Icon(
+                      Icons.movie,
+                      color: colors.ink.withValues(alpha: 0.24),
+                    ),
                   )
                 : Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
             // Title overlay — fixed dark scrim, see note in _buildLiveCard.
@@ -583,7 +602,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     item.durationMilliseconds)
                                 .clamp(0.0, 1.0),
                         backgroundColor: Colors.white24,
-                        valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colors.brandPrimary,
+                        ),
                         minHeight: 3,
                       ),
                   ],
@@ -598,7 +619,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSeriesCard(BuildContext context, XtreamSeries series) {
     final colors = context.colors;
-    return GestureDetector(
+    return TvFocusable(
+      borderRadius: BorderRadius.circular(12),
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -621,8 +643,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? CachedNetworkImage(
                     imageUrl: series.cover,
                     fit: BoxFit.cover,
-                    errorWidget: (_, _, _) =>
-                        Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
+                    errorWidget: (_, _, _) => Icon(
+                      Icons.movie,
+                      color: colors.ink.withValues(alpha: 0.24),
+                    ),
                   )
                 : Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
             // Title overlay — fixed dark scrim, see note in _buildLiveCard.
@@ -659,7 +683,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMovieCard(BuildContext context, XtreamVodStream movie) {
     final colors = context.colors;
-    return GestureDetector(
+    return TvFocusable(
+      borderRadius: BorderRadius.circular(12),
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => MovieDetailsScreen(movie: movie)),
@@ -680,8 +705,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? CachedNetworkImage(
                     imageUrl: movie.streamIcon,
                     fit: BoxFit.cover,
-                    errorWidget: (_, _, _) =>
-                        Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
+                    errorWidget: (_, _, _) => Icon(
+                      Icons.movie,
+                      color: colors.ink.withValues(alpha: 0.24),
+                    ),
                   )
                 : Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
             // Title overlay — fixed dark scrim, see note in _buildLiveCard.

@@ -1,6 +1,8 @@
 /// Data models for Xtream Codes API responses
 library;
 
+import 'dart:convert';
+
 class XtreamCategory {
   final String categoryId;
   final String categoryName;
@@ -73,6 +75,64 @@ class XtreamLiveStream {
       'epg_channel_id': epgChannelId,
       'tv_archive': tvArchive ? 1 : 0,
     };
+  }
+}
+
+/// One "now/next" entry from Xtream's `get_short_epg`. Not every panel
+/// carries EPG data for every channel, so callers should treat an empty
+/// list as normal rather than an error.
+class XtreamEpgListing {
+  final String title;
+  final String description;
+  final DateTime? start;
+  final DateTime? end;
+  final bool nowPlaying;
+
+  XtreamEpgListing({
+    required this.title,
+    required this.description,
+    this.start,
+    this.end,
+    this.nowPlaying = false,
+  });
+
+  // Xtream sends EPG text fields base64-encoded; fall back to the raw value
+  // for the (rarer) panels that don't actually encode it.
+  static String _decodeText(dynamic value) {
+    final raw = value?.toString() ?? '';
+    if (raw.isEmpty) return '';
+    try {
+      return utf8.decode(base64.decode(raw));
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  static DateTime? _decodeTimestamp(dynamic value) {
+    final seconds = int.tryParse(value?.toString() ?? '');
+    if (seconds == null || seconds <= 0) return null;
+    return DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
+  }
+
+  factory XtreamEpgListing.fromJson(Map<String, dynamic> json) {
+    return XtreamEpgListing(
+      title: _decodeText(json['title']),
+      description: _decodeText(json['description']),
+      start: _decodeTimestamp(json['start_timestamp']),
+      end: _decodeTimestamp(json['stop_timestamp']),
+      nowPlaying: json['now_playing']?.toString() == '1',
+    );
+  }
+
+  /// Fraction of the program elapsed so far, or null if the panel didn't
+  /// provide usable start/end times.
+  double? get progress {
+    final s = start, e = end;
+    if (s == null || e == null) return null;
+    final totalSeconds = e.difference(s).inSeconds;
+    if (totalSeconds <= 0) return null;
+    final elapsedSeconds = DateTime.now().difference(s).inSeconds;
+    return (elapsedSeconds / totalSeconds).clamp(0.0, 1.0);
   }
 }
 

@@ -12,6 +12,7 @@
 // unlike the Dart-side flutter_vlc_player wrapper which added its own
 // "uninitialized controller" guard.
 
+import AVFoundation
 import Flutter
 import Foundation
 import MobileVLCKit
@@ -43,6 +44,58 @@ class NativeVlcPlayerView: NSObject, FlutterPlatformView {
     self.eventChannel.setStreamHandler(self)
     self.methodChannel.setMethodCallHandler { [weak self] call, result in
       self?.handle(call, result: result)
+    }
+
+    self.configureAudioSession()
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleAudioSessionInterruption(_:)),
+      name: AVAudioSession.interruptionNotification,
+      object: AVAudioSession.sharedInstance()
+    )
+  }
+
+  // Without this, an incoming call interrupts the audio session (iOS does
+  // this automatically, regardless of anything VLCKit does) and nothing
+  // ever tells the app the interruption ended — VLCKit's own state can
+  // still say "playing" while the OS has silently dropped the audio
+  // route, so the video looks like it's running with no sound until the
+  // app is force-restarted. This reactivates the session and resumes
+  // playback once the interruption (e.g. the call) is over.
+  private func configureAudioSession() {
+    do {
+      try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+      try AVAudioSession.sharedInstance().setActive(true)
+    } catch {
+      NSLog("[NativeVlcPlayerView] failed to configure audio session: \(error)")
+    }
+  }
+
+  @objc private func handleAudioSessionInterruption(_ notification: Notification) {
+    guard
+      let userInfo = notification.userInfo,
+      let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+      let type = AVAudioSession.InterruptionType(rawValue: typeValue)
+    else { return }
+
+    switch type {
+    case .began:
+      NSLog("[NativeVlcPlayerView] audio session interrupted (e.g. incoming call)")
+    case .ended:
+      do {
+        try AVAudioSession.sharedInstance().setActive(true)
+      } catch {
+        NSLog("[NativeVlcPlayerView] failed to reactivate audio session: \(error)")
+      }
+      var shouldResume = false
+      if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
+        shouldResume = AVAudioSession.InterruptionOptions(rawValue: optionsValue).contains(.shouldResume)
+      }
+      if shouldResume {
+        vlcMediaPlayer.play()
+      }
+    @unknown default:
+      break
     }
   }
 
@@ -107,6 +160,7 @@ class NativeVlcPlayerView: NSObject, FlutterPlatformView {
 
     case "dispose":
       NSLog("[NativeVlcPlayerView] dispose")
+      NotificationCenter.default.removeObserver(self)
       vlcMediaPlayer.stop()
       vlcMediaPlayer.delegate = nil
       eventSink = nil

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../core/build_flavor.dart' show kIsTv;
 import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
 import '../providers/user_prefs_provider.dart';
@@ -10,6 +11,8 @@ import '../screens/series_details_screen.dart';
 import '../theme/app_colors.dart';
 import 'category_card.dart';
 import '../screens/player_screen.dart';
+import 'tv_focusable.dart';
+import 'tv_search_field.dart';
 
 class CategoryLayout extends StatefulWidget {
   final String title;
@@ -74,6 +77,18 @@ class _CategoryLayoutState extends State<CategoryLayout> {
         )
         .toList();
     final colors = context.colors;
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
+    final searchHint = isArabic
+        ? 'ابحث عن ${widget.type == CategoryType.movie
+              ? 'أفلام'
+              : widget.type == CategoryType.series
+              ? 'مسلسلات'
+              : 'قنوات'}'
+        : 'Search ${widget.type == CategoryType.movie
+              ? 'Movies'
+              : widget.type == CategoryType.series
+              ? 'Series'
+              : 'Channels'}';
 
     return Scaffold(
       body: Container(
@@ -89,18 +104,38 @@ class _CategoryLayoutState extends State<CategoryLayout> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Title
+              // Header Title — on TV, LiveScreen is pushed as its own route
+              // (see TvHomeScreen._pushSection) rather than living as a
+              // permanent bottom-nav tab the way it does on phone, so it
+              // needs an explicit way back that the phone tab never does.
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                child: Text(
-                  widget.title.toUpperCase(),
-                  style: GoogleFonts.outfit(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                    fontStyle: FontStyle.italic,
-                    color: colors.ink,
-                    letterSpacing: 2,
-                  ),
+                child: Row(
+                  children: [
+                    if (kIsTv)
+                      TvFocusable(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: colors.ink,
+                            size: 26,
+                          ),
+                        ),
+                      ),
+                    Text(
+                      widget.title.toUpperCase(),
+                      style: GoogleFonts.outfit(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        fontStyle: FontStyle.italic,
+                        color: colors.ink,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -110,52 +145,68 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: colors.surface.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: colors.ink.withValues(alpha: 0.1)),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          focusNode: _searchFocus,
-                          onChanged: (val) =>
-                              setState(() => _searchQuery = val),
-                          style: GoogleFonts.outfit(color: colors.ink),
-                          decoration: InputDecoration(
-                            hintText:
-                                'Search ${widget.type == CategoryType.movie
-                                    ? 'Movies'
-                                    : widget.type == CategoryType.series
-                                    ? 'Series'
-                                    : 'Channels'}',
-                            hintStyle: GoogleFonts.outfit(
-                              color: colors.ink.withValues(alpha: 0.38),
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: colors.ink.withValues(alpha: 0.7),
-                            ),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: Icon(
-                                      Icons.close,
-                                      color: colors.ink.withValues(alpha: 0.7),
-                                    ),
-                                    onPressed: () {
+                      child: kIsTv
+                          // TV: a plain TextField here would suffer the
+                          // same on-screen-keyboard-hijacks-D-pad bug the
+                          // login screen had — see TvSearchField's own doc
+                          // comment for the full mechanism.
+                          ? TvSearchField(
+                              controller: _searchController,
+                              hint: searchHint,
+                              onChanged: (val) =>
+                                  setState(() => _searchQuery = val),
+                              onClose: _searchQuery.isEmpty
+                                  ? null
+                                  : () {
                                       _searchController.clear();
                                       setState(() => _searchQuery = '');
                                     },
-                                  )
-                                : null,
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 14,
+                            )
+                          : Container(
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: colors.surface.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: colors.ink.withValues(alpha: 0.1),
+                                ),
+                              ),
+                              child: TextField(
+                                controller: _searchController,
+                                focusNode: _searchFocus,
+                                onChanged: (val) =>
+                                    setState(() => _searchQuery = val),
+                                style: GoogleFonts.outfit(color: colors.ink),
+                                decoration: InputDecoration(
+                                  hintText: searchHint,
+                                  hintStyle: GoogleFonts.outfit(
+                                    color: colors.ink.withValues(alpha: 0.38),
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.search,
+                                    color: colors.ink.withValues(alpha: 0.7),
+                                  ),
+                                  suffixIcon: _searchQuery.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(
+                                            Icons.close,
+                                            color: colors.ink.withValues(
+                                              alpha: 0.7,
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            _searchController.clear();
+                                            setState(() => _searchQuery = '');
+                                          },
+                                        )
+                                      : null,
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
                     ),
                     const SizedBox(width: 12),
                     Container(
@@ -164,7 +215,9 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                       decoration: BoxDecoration(
                         color: colors.surface.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: colors.ink.withValues(alpha: 0.1)),
+                        border: Border.all(
+                          color: colors.ink.withValues(alpha: 0.1),
+                        ),
                       ),
                       child: IconButton(
                         icon: Icon(
@@ -188,8 +241,9 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                   itemCount: widget.tabs.length,
                   itemBuilder: (context, index) {
                     final isSelected = index == _selectedTab;
-                    return GestureDetector(
+                    return TvFocusable(
                       onTap: () => setState(() => _selectedTab = index),
+                      borderRadius: BorderRadius.zero,
                       child: Transform(
                         transform: Matrix4.skewX(-0.25),
                         child: Container(
@@ -233,6 +287,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
 
   Widget _buildContent(List<XtreamCategory> categories) {
     final colors = context.colors;
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
     if (widget.isLoading) {
       return Center(
         child: CircularProgressIndicator(
@@ -246,12 +301,18 @@ class _CategoryLayoutState extends State<CategoryLayout> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.wifi_off_rounded, color: colors.ink.withValues(alpha: 0.24), size: 56),
+            Icon(
+              Icons.wifi_off_rounded,
+              color: colors.ink.withValues(alpha: 0.24),
+              size: 56,
+            ),
             const SizedBox(height: 16),
             Text(
               widget.error!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.54)),
+              style: GoogleFonts.outfit(
+                color: colors.ink.withValues(alpha: 0.54),
+              ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -259,7 +320,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.brandPrimary,
               ),
-              child: const Text('Retry'),
+              child: Text(isArabic ? 'إعادة المحاولة' : 'Retry'),
             ),
           ],
         ),
@@ -330,8 +391,11 @@ class _CategoryLayoutState extends State<CategoryLayout> {
       if (items.isEmpty) {
         return Center(
           child: Text(
-            'No results found.',
-            style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38), fontSize: 16),
+            isArabic ? 'لا توجد نتائج.' : 'No results found.',
+            style: GoogleFonts.outfit(
+              color: colors.ink.withValues(alpha: 0.38),
+              fontSize: 16,
+            ),
           ),
         );
       }
@@ -341,8 +405,11 @@ class _CategoryLayoutState extends State<CategoryLayout> {
         if (categories.isEmpty) {
           return Center(
             child: Text(
-              'No categories found.',
-              style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38), fontSize: 16),
+              isArabic ? 'لا توجد فئات.' : 'No categories found.',
+              style: GoogleFonts.outfit(
+                color: colors.ink.withValues(alpha: 0.38),
+                fontSize: 16,
+              ),
             ),
           );
         }
@@ -376,8 +443,13 @@ class _CategoryLayoutState extends State<CategoryLayout> {
       if (items.isEmpty) {
         return Center(
           child: Text(
-            'No items available in this section.',
-            style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38), fontSize: 16),
+            isArabic
+                ? 'لا توجد عناصر في هذا القسم.'
+                : 'No items available in this section.',
+            style: GoogleFonts.outfit(
+              color: colors.ink.withValues(alpha: 0.38),
+              fontSize: 16,
+            ),
           ),
         );
       }
@@ -445,12 +517,19 @@ class _CategoryLayoutState extends State<CategoryLayout> {
     );
   }
 
-  Widget _buildLiveGridItem(XtreamLiveStream live, List<dynamic> items, int index) {
+  Widget _buildLiveGridItem(
+    XtreamLiveStream live,
+    List<dynamic> items,
+    int index,
+  ) {
     final colors = context.colors;
-    return GestureDetector(
+    return TvFocusable(
+      borderRadius: BorderRadius.circular(8),
       onTap: () {
         final playlist = items.map((item) {
-          final l = item is XtreamLiveStream ? item : XtreamLiveStream.fromJson(item as Map<String, dynamic>);
+          final l = item is XtreamLiveStream
+              ? item
+              : XtreamLiveStream.fromJson(item as Map<String, dynamic>);
           return {
             'url': l.streamUrl(
               context.read<ContentProvider>().baseUrl,
@@ -489,10 +568,15 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                       ? CachedNetworkImage(
                           imageUrl: live.streamIcon,
                           fit: BoxFit.cover,
-                          errorWidget: (_, _, _) =>
-                              Icon(Icons.live_tv, color: colors.ink.withValues(alpha: 0.24)),
+                          errorWidget: (_, _, _) => Icon(
+                            Icons.live_tv,
+                            color: colors.ink.withValues(alpha: 0.24),
+                          ),
                         )
-                      : Icon(Icons.live_tv, color: colors.ink.withValues(alpha: 0.24)),
+                      : Icon(
+                          Icons.live_tv,
+                          color: colors.ink.withValues(alpha: 0.24),
+                        ),
                   // Scrim — fixed regardless of theme, sits directly on the
                   // poster image (see home_screen.dart for the same pattern).
                   Positioned.fill(
@@ -531,7 +615,8 @@ class _CategoryLayoutState extends State<CategoryLayout> {
 
   Widget _buildMovieGridItem(XtreamVodStream movie) {
     final colors = context.colors;
-    return GestureDetector(
+    return TvFocusable(
+      borderRadius: BorderRadius.circular(8),
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => MovieDetailsScreen(movie: movie)),
@@ -550,10 +635,15 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                       ? CachedNetworkImage(
                           imageUrl: movie.streamIcon,
                           fit: BoxFit.cover,
-                          errorWidget: (_, _, _) =>
-                              Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
+                          errorWidget: (_, _, _) => Icon(
+                            Icons.movie,
+                            color: colors.ink.withValues(alpha: 0.24),
+                          ),
                         )
-                      : Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
+                      : Icon(
+                          Icons.movie,
+                          color: colors.ink.withValues(alpha: 0.24),
+                        ),
                   // Scrim — fixed regardless of theme, see _buildLiveGridItem.
                   Positioned.fill(
                     child: Container(
@@ -591,7 +681,8 @@ class _CategoryLayoutState extends State<CategoryLayout> {
 
   Widget _buildSeriesGridItem(XtreamSeries series) {
     final colors = context.colors;
-    return GestureDetector(
+    return TvFocusable(
+      borderRadius: BorderRadius.circular(8),
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -612,10 +703,15 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                       ? CachedNetworkImage(
                           imageUrl: series.cover,
                           fit: BoxFit.cover,
-                          errorWidget: (_, _, _) =>
-                              Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
+                          errorWidget: (_, _, _) => Icon(
+                            Icons.movie,
+                            color: colors.ink.withValues(alpha: 0.24),
+                          ),
                         )
-                      : Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
+                      : Icon(
+                          Icons.movie,
+                          color: colors.ink.withValues(alpha: 0.24),
+                        ),
                   // Scrim — fixed regardless of theme, see _buildLiveGridItem.
                   Positioned.fill(
                     child: Container(

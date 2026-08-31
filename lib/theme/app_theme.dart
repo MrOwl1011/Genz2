@@ -18,6 +18,20 @@ class AppTheme {
     extensions: const [AppColors.dark],
   );
 
+  static final ThemeData tv = ThemeData(
+    brightness: Brightness.dark,
+    useMaterial3: true,
+    scaffoldBackgroundColor: AppColors.tv.background,
+    primaryColor: AppColors.tv.brandPrimary,
+    colorScheme: ColorScheme.dark(
+      primary: AppColors.tv.brandPrimary,
+      secondary: AppColors.tv.brandAccent,
+      surface: AppColors.tv.surface,
+      error: AppColors.tv.error,
+    ),
+    extensions: const [AppColors.tv],
+  );
+
   static final ThemeData light = ThemeData(
     brightness: Brightness.light,
     useMaterial3: true,

@@ -15,8 +15,8 @@ require_once __DIR__ . '/json_response.php';
  * it doesn't require one) — built now so later phases' endpoints don't need
  * to revisit login.php or invent their own auth resolution.
  *
- * Terminates the request with a 401 (or 403 for a suspended account) on any
- * failure; otherwise returns ['account_id' => string, 'device_id' => string].
+ * Terminates the request with a 401 on any failure; otherwise returns
+ * ['account_id' => string, 'device_id' => string].
  */
 function require_device_token(): array
 {
@@ -60,14 +60,6 @@ function require_device_token(): array
 
     if (strtotime((string) $row['expires_at']) < time()) {
         json_error('UNAUTHORIZED', 'Session expired. Please log in again.', 401);
-    }
-
-    $acctStmt = $pdo->prepare('SELECT status FROM accounts WHERE account_id = :account_id');
-    $acctStmt->execute(['account_id' => $row['account_id']]);
-    $status = $acctStmt->fetchColumn();
-
-    if ($status !== 'active') {
-        json_error('ACCOUNT_SUSPENDED', 'This account has been suspended.', 403);
     }
 
     return [

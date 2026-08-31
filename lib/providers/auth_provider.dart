@@ -1,13 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/account_id.dart';
+import '../core/uuid.dart';
 import '../features/profiles/presentation/providers/profile_provider.dart';
 import '../features/sync/services/sync_manager.dart';
 import '../models/playlist_model.dart';
 import '../services/backend_api_service.dart';
-import '../services/demo_data_service.dart';
 import '../services/device_id_service.dart';
+import '../services/device_info_service.dart';
 import '../services/xtream_api_service.dart';
 import 'downloads_provider.dart';
 import 'user_prefs_provider.dart';
@@ -45,20 +46,139 @@ class AuthProvider extends ChangeNotifier {
   String get playlistId =>
       base64Encode(utf8.encode('${_serverUrl}_$_username'));
 
-  /// SHA256(normalize(server_url) + normalize(username)) — the identity used
-  /// by the profile/sync backend. Deliberately separate from [playlistId]
-  /// above (different formula, different purpose) — see core/account_id.dart.
-  String get accountId => computeAccountId(_serverUrl, _username);
+  /// Local partition key that every cache keyed by "accountId" outside this
+  /// file (ProfileProvider, UserPrefsProvider's favorites/history, Hive
+  /// boxes) actually stores its data under. Generated on-device, once per
+  /// playlist, the first time it's needed, and cached in SharedPreferences
+  /// forever after — so it is available instantly and offline, exactly like
+  /// the old SHA256(server_url+username) it replaces.
+  ///
+  /// It is deliberately NOT the backend's account_id. Nothing in this app
+  /// ever sends accountId to the backend — every authenticated call
+  /// identifies the account purely from the bearer device token (see
+  /// BackendApiService/backend's require_device_token()) — so there is no
+  /// need for this local key to match server state, and generating it
+  /// locally means local features (the "Who's Watching?" picker above all)
+  /// never depend on the backend responding at all, on the very first launch
+  /// included.
+  ///
+  /// This used to be SHA256(server_url + username) instead of random bytes.
+  /// That made the backend's own identity automatically credential-derived
+  /// too (the same Xtream login always produced the same id, on any
+  /// device) — which is what turned an App Store review into a Guideline
+  /// 5.6 rejection: a server that authenticates against a user's streaming
+  /// service and derives an identity from it reads as operating that
+  /// service, not as a neutral player. The backend now mints its own opaque
+  /// account_id (see backend/lib/account_id.php's
+  /// generate_anonymous_account_id()) with no relation to this value or to
+  /// Xtream credentials at all. Multi-device sync still exists; it just
+  /// isn't automatic anymore — devices join the same backend account
+  /// explicitly, with a pairing code (see createSyncPairingCode/
+  /// joinSyncAccount below).
+  String? _accountId;
+  String? get accountId => _accountId;
+
+  Future<String> _loadOrCreateLocalAccountId() async {
+    final key = 'local_account_id_$playlistId';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final existing = prefs.getString(key);
+      if (existing != null && existing.isNotEmpty) return existing;
+      final generated = generateUuidV4();
+      await prefs.setString(key, generated);
+      return generated;
+    } catch (_) {
+      // Storage itself is unavailable — fall back to a value that's at
+      // least stable for the lifetime of this provider instance rather than
+      // blocking the picker on a retry loop.
+      return generateUuidV4();
+    }
+  }
 
   String? _deviceToken;
+
   /// Bearer token for the profile/sync backend, null whenever it couldn't be
   /// reached (offline, not yet deployed, etc.) — every consumer of this must
   /// treat null as "operate in local-only/cached mode", never as an error.
   String? get deviceToken => _deviceToken;
 
-  /// True when the currently active session is one of the published demo
-  /// accounts (App Store / Play Store review) — see [DemoDataService].
-  bool get isDemoMode => DemoDataService.isDemoLogin(_serverUrl, _username, _password);
+  /// Why the last backend connection attempt failed, or null if it worked.
+  ///
+  /// Backend failures are deliberately non-fatal (the app runs fine on local
+  /// data), but that meant the *reason* only ever went to debugPrint — which
+  /// is invisible in a release build on a real TV, where you cannot attach a
+  /// debugger. So a device that silently would not sync gave the user, and
+  /// anyone debugging it, absolutely nothing to go on. Surfaced read-only in
+  /// the More screen's diagnostics row.
+  String? _backendError;
+  String? get backendError => _backendError;
+
+  /// True once a backend login/token-reuse has actually succeeded.
+  bool get isBackendConnected => _deviceToken != null;
+
+  // ─── Device token cache ────────────────────────────────────────────────
+  //
+  // The backend mints a token good for DEVICE_TOKEN_TTL_DAYS (90 days), but
+  // this used to be an in-memory-only field — so every single app launch
+  // burned a full login.php round trip re-fetching a token it had already
+  // been given. That's not just wasteful, it actively breaks things:
+  // login.php is rate limited to LOGIN_RATE_LIMIT_MAX (10) calls per hour
+  // *per IP*, and that bucket is shared by every device behind the same
+  // router. A household testing a phone, an Android TV box and a simulator
+  // — each relaunch costing one call — exhausts the hour's quota quickly,
+  // after which further logins come back 429 RATE_LIMITED. That surfaces as
+  // a plain non-fatal BackendApiException, so the affected device just
+  // silently drops to local-only mode with no visible reason: it looks
+  // exactly like "this device can't reach the backend" even though nothing
+  // about that device is wrong. Caching the token means a normal relaunch
+  // makes zero login calls.
+  //
+  // Keys are scoped by [playlistId] (not global) — switching between two
+  // saved Xtream playlists on the same device gets its own independent
+  // device token (and, via _loadOrCreateLocalAccountId above, its own local
+  // account partition) rather than sharing one across playlists.
+  String _tokenKey(String suffix) => 'backend_${suffix}_$playlistId';
+
+  /// Renew this far ahead of real expiry so a token never lapses mid-session.
+  static const Duration _tokenRenewMargin = Duration(days: 1);
+
+  Future<String?> _readCachedDeviceToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_tokenKey('device_token'));
+      final expiryRaw = prefs.getString(_tokenKey('device_token_expires_at'));
+      if (token == null || token.isEmpty || expiryRaw == null) return null;
+      final expiry = DateTime.tryParse(expiryRaw);
+      if (expiry == null) return null;
+      final renewAt = expiry.toUtc().subtract(_tokenRenewMargin);
+      if (!DateTime.now().toUtc().isBefore(renewAt)) return null;
+      return token;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _cacheDeviceToken(String token, DateTime expiresAt) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_tokenKey('device_token'), token);
+      await prefs.setString(
+        _tokenKey('device_token_expires_at'),
+        expiresAt.toUtc().toIso8601String(),
+      );
+    } catch (_) {
+      // Cache-only failure: the in-memory token still works for this
+      // session, it just won't survive a restart.
+    }
+  }
+
+  Future<void> _clearCachedDeviceToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_tokenKey('device_token'));
+      await prefs.remove(_tokenKey('device_token_expires_at'));
+    } catch (_) {}
+  }
 
   AuthProvider(this.userPrefs, this.downloads, this.profileProvider) {
     checkAutoLogin();
@@ -82,56 +202,100 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  String get _deviceDisplayName {
-    if (kIsWeb) return 'Web Browser';
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.iOS:
-        return 'iPhone/iPad';
-      case TargetPlatform.android:
-        return 'Android Device';
-      case TargetPlatform.macOS:
-        return 'Mac';
-      case TargetPlatform.windows:
-        return 'Windows PC';
-      case TargetPlatform.linux:
-        return 'Linux PC';
-      default:
-        return 'Device';
-    }
-  }
-
   /// Registers this device with the profile/sync backend and loads the
   /// account's profile list — called after every successful Xtream login
-  /// (explicit or auto-login), never blocking that login's own success:
-  /// a failure here (backend down, not deployed yet, offline) is caught and
-  /// left non-fatal, matching this feature's offline-first requirement — the
-  /// existing Xtream-only login flow must keep working regardless.
-  ///
-  /// Skipped entirely for demo-mode logins (App Store/Play Store review
-  /// accounts) — those are a fabricated, network-free session by design (see
-  /// [DemoDataService]) and reviewers should see exactly the same app they
-  /// always have, with no new profile-picker step in the way.
-  Future<void> _connectBackendAndProfiles() async {
-    if (isDemoMode) return;
+  /// (explicit or auto-login). Deliberately fire-and-forget from its call
+  /// sites (see [login]/[checkAutoLogin]) rather than awaited: this method
+  /// makes up to three sequential backend calls (device login, profile
+  /// list, profile create), each with its own 15s timeout, so a slow or
+  /// cold backend (shared hosting spinning up a PHP process, a flaky
+  /// connection) could previously stack up to ~45s of blocking before the
+  /// "Who's Watching?" picker could show anything — which read as a hang,
+  /// and only "fixed itself" on app restart because the profile created
+  /// during that first attempt was already saved locally (writes are
+  /// local-first, see ProfileRepositoryImpl.createProfile) and loaded
+  /// straight from cache on the next launch. Not awaiting here means login
+  /// itself, and reaching the picker with at least a local default profile,
+  /// never depends on the backend responding at all — ProfileProvider's own
+  /// notifyListeners() calls (from loadForAccount/createProfile) are what
+  /// update the picker once this finishes, whether that's near-instant
+  /// (local-only) or however long the network actually takes.
+  void _connectBackendAndProfiles() {
+    unawaited(_syncBackendAndProfiles());
+  }
 
-    try {
-      final result = await BackendApiService().login(
-        serverUrl: _serverUrl,
-        username: _username,
-        password: _password,
-        deviceId: DeviceIdService.getOrCreate(),
-        deviceName: _deviceDisplayName,
-        platform: _platformName,
-      );
-      _deviceToken = result.deviceToken;
-    } on BackendApiException catch (e) {
-      _deviceToken = null;
-      debugPrint('[AuthProvider] backend connect failed (non-fatal): $e');
+  Future<void> _syncBackendAndProfiles() async {
+    // Local profile/favorites/history bootstrap must never wait on the
+    // network — see _loadOrCreateLocalAccountId's doc comment.
+    _accountId = await _loadOrCreateLocalAccountId();
+
+    // Reuse a still-valid token from a previous launch instead of
+    // registering again — see the token-cache block above for why this
+    // matters well beyond saving a round trip.
+    final cachedToken = await _readCachedDeviceToken();
+    if (cachedToken != null) {
+      _deviceToken = cachedToken;
+      _backendError = null;
+    } else {
+      try {
+        final result = await BackendApiService().register(
+          deviceId: DeviceIdService.getOrCreate(),
+          deviceName: await DeviceInfoService.getDeviceModelName(),
+          platform: _platformName,
+        );
+        _deviceToken = result.deviceToken;
+        _backendError = null;
+        await _cacheDeviceToken(result.deviceToken, result.expiresAt);
+
+        // One-time bridge: fold in any data that already exists under the
+        // old credential-derived account (pre-anonymous-accounts installs),
+        // so switching to this scheme doesn't strand existing users' synced
+        // history. Best-effort — a brand-new install has nothing to find,
+        // and any failure here must never block using the app.
+        if (_serverUrl.isNotEmpty && _username.isNotEmpty) {
+          try {
+            await BackendApiService().migrateLegacyAccount(
+              result.deviceToken,
+              serverUrl: _serverUrl,
+              username: _username,
+            );
+          } catch (e) {
+            debugPrint('[AuthProvider] legacy account migration failed (non-fatal): $e');
+          }
+        }
+      } on BackendApiException catch (e) {
+        _deviceToken = null;
+        _backendError = '${e.code}: ${e.message}';
+        debugPrint('[AuthProvider] backend connect failed (non-fatal): $e');
+      } catch (e) {
+        // Anything other than a BackendApiException — device id/info
+        // lookup, a plugin failure, whatever — was previously uncaught
+        // here, which aborted this whole function before
+        // SyncManager/profileProvider below ever ran. That looked exactly
+        // like "the backend never connects" even though the network call
+        // itself was never reached, and on real device hardware (less
+        // uniform than an emulator) is a more plausible trigger than it
+        // sounds. Same non-fatal handling as a real backend failure: log
+        // it, keep going on local profiles.
+        _deviceToken = null;
+        _backendError = '${e.runtimeType}: $e';
+        debugPrint('[AuthProvider] backend connect failed (non-fatal): $e');
+      }
     }
 
-    SyncManager.instance.updateSession(accountId: accountId, deviceToken: _deviceToken);
-    await profileProvider.loadForAccount(accountId, _deviceToken);
+    SyncManager.instance.updateSession(
+      accountId: _accountId,
+      deviceToken: _deviceToken,
+    );
+    await profileProvider.loadForAccount(_accountId!, _deviceToken);
+    await _ensureProfileExists();
+  }
 
+  /// Creates the first profile for a brand-new account, or restores the
+  /// last-used one. Split out of [_syncBackendAndProfiles] so the
+  /// cached-token fast path runs exactly the same bootstrap as the
+  /// fresh-login path.
+  Future<void> _ensureProfileExists() async {
     if (profileProvider.profiles.isEmpty) {
       // First time ever for this account — brand new user, or an existing
       // pre-profiles-feature user upgrading. Create a default profile
@@ -145,7 +309,7 @@ class AuthProvider extends ChangeNotifier {
       if (profileProvider.profiles.isNotEmpty) {
         await userPrefs.migrateLegacyPlaylistDataToProfile(
           playlistId,
-          accountId,
+          _accountId!,
           profileProvider.profiles.first.profileId,
         );
       }
@@ -163,18 +327,73 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Authenticates against the real Xtream server, unless [serverUrl]/
-  /// [username]/[password] match a published demo account — in which case
-  /// no network call is made at all and a fabricated demo user is returned
-  /// instead. See [DemoDataService].
+  /// Requests a short-lived pairing code for the current device's backend
+  /// account, to be typed into a second device's [joinSyncAccount] so it
+  /// sees this device's profiles/favorites/history. Returns null if the
+  /// backend isn't reachable or this device hasn't registered with it yet —
+  /// callers (the Settings pairing UI) should show that as "sync
+  /// unavailable right now", not as an error dialog.
+  Future<BackendPairingCode?> createSyncPairingCode() async {
+    final token = _deviceToken;
+    if (token == null) return null;
+    try {
+      return await BackendApiService().createPairingCode(token);
+    } catch (e) {
+      debugPrint('[AuthProvider] createSyncPairingCode failed: $e');
+      return null;
+    }
+  }
+
+  /// Joins the backend account a pairing code was issued for — this
+  /// device's *existing* backend account is abandoned (its device row is
+  /// moved, not merged; see backend/api/account/join.php) and profiles are
+  /// reloaded from the target account. Returns true on success.
+  ///
+  /// Note this only affects the backend-synced account, not
+  /// [_loadOrCreateLocalAccountId]'s local partition key — the freshly
+  /// pulled remote profiles are written into this device's existing local
+  /// partition (via profileProvider.loadForAccount below), which is correct
+  /// as long as this device had no meaningful local-only profiles of its
+  /// own before pairing. A device that already had real local data before
+  /// joining a different account is an edge case the Settings pairing UI
+  /// should warn about, not something to silently overwrite.
+  /// Returns null on success, or a user-facing error message on failure —
+  /// deliberately not a bare bool: a 500 from a server-side bug and a
+  /// genuinely wrong/expired code both used to collapse to the same
+  /// generic "Invalid or expired code" text client-side, which made a real
+  /// server misconfiguration indistinguishable from user error and cost
+  /// real debugging time once. The raw BackendApiException code/message is
+  /// safe to show directly — see json_error's doc comment in the backend.
+  Future<String?> joinSyncAccount(String code) async {
+    final token = _deviceToken;
+    if (token == null) return 'Not connected to the sync backend yet.';
+    try {
+      final result = await BackendApiService().joinAccount(token, code);
+      _deviceToken = result.deviceToken;
+      _backendError = null;
+      await _cacheDeviceToken(result.deviceToken, result.expiresAt);
+      SyncManager.instance.updateSession(
+        accountId: _accountId,
+        deviceToken: _deviceToken,
+      );
+      await profileProvider.loadForAccount(_accountId!, _deviceToken);
+      notifyListeners();
+      return null;
+    } on BackendApiException catch (e) {
+      debugPrint('[AuthProvider] joinSyncAccount failed: ${e.code}: ${e.message}');
+      return e.message;
+    } catch (e) {
+      debugPrint('[AuthProvider] joinSyncAccount failed: $e');
+      return 'Something went wrong. Please try again.';
+    }
+  }
+
+  /// Authenticates against the real Xtream server.
   Future<XtreamUser> _authenticate({
     required String serverUrl,
     required String username,
     required String password,
   }) async {
-    if (DemoDataService.isDemoLogin(serverUrl, username, password)) {
-      return DemoDataService.buildDemoUser(username.trim());
-    }
     return _apiService.authenticate(
       serverUrl: serverUrl,
       username: username,
@@ -410,7 +629,7 @@ class AuthProvider extends ChangeNotifier {
           _username,
           _password,
         );
-        await _connectBackendAndProfiles();
+        _connectBackendAndProfiles();
       } catch (e) {
         _isAuthenticated = false;
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -465,7 +684,7 @@ class AuthProvider extends ChangeNotifier {
         oldUrl: oldUrl,
         oldUsername: oldUser,
       );
-      await _connectBackendAndProfiles();
+      _connectBackendAndProfiles();
 
       return true;
     } catch (e) {
@@ -485,6 +704,20 @@ class AuthProvider extends ChangeNotifier {
 
     if (deleteFromList) {
       await deletePlaylist(_serverUrl, _username);
+      // Only a permanent delete forgets this playlist's backend identity —
+      // playlistId (and so the token-cache key) is deterministic from
+      // server_url+username, so a plain logout/re-login to the SAME
+      // playlist must keep it cached. Clearing it unconditionally here used
+      // to force a fresh register() on next login, which mints a brand-new,
+      // disconnected anonymous account and made every "log out, log back
+      // in" look exactly like "my sync/history disappeared" even though
+      // nothing was actually lost server-side — the old account was just
+      // orphaned and a new empty one silently took its place.
+      await _clearCachedDeviceToken();
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('local_account_id_$playlistId');
+      } catch (_) {}
     }
 
     // Clear active playlist status
@@ -494,6 +727,7 @@ class AuthProvider extends ChangeNotifier {
 
     _user = null;
     _isAuthenticated = false;
+    _accountId = null;
     _deviceToken = null;
     _isLoading = false;
     profileProvider.reset();

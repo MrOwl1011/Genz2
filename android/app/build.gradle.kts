@@ -28,6 +28,8 @@ android {
     }
 
     defaultConfig {
+        // Overridden per-flavor below; kept here as the fallback Gradle
+        // itself expects a value for before flavor resolution.
         applicationId = "com.genzplus.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -35,6 +37,40 @@ android {
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    // Two build variants of one codebase — see lib/main.dart (phone) and
+    // lib/main_tv.dart (TV) — but ONE Play Console app project. Play's
+    // Android TV support for an existing app is a form-factor-scoped
+    // release *inside* that app (Release > choose "Android TV" release),
+    // not a separate app listing — Play rejected a distinct
+    // com.genzplus.app.tv package ("needs to have package name
+    // com.genzplus.app") and rejected an independent TV versionCode
+    // sequence starting at 1 ("already used", since Play requires a
+    // strictly increasing versionCode across every release in the app,
+    // TV included). So both flavors must always share applicationId, and
+    // any versionCode either one uses must still fit into that one shared,
+    // increasing sequence — that's a different constraint from requiring
+    // both flavors to use the *same* versionCode, which is why each flavor
+    // now sets its own (still both higher than any previous release, still
+    // distinct from each other). versionName still comes from defaultConfig
+    // above (pubspec.yaml's version: line) — only versionCode is overridden
+    // per flavor here. What still makes this a dedicated TV build is the
+    // manifest overlay in src/tv/ (leanback support, TV banner,
+    // LEANBACK_LAUNCHER) and the kIsTv-gated Dart entry point, not the
+    // applicationId.
+    flavorDimensions += "platform"
+    productFlavors {
+        create("phone") {
+            dimension = "platform"
+            applicationId = "com.genzplus.app"
+            versionCode = 43
+        }
+        create("tv") {
+            dimension = "platform"
+            applicationId = "com.genzplus.app"
+            versionCode = 44
+        }
     }
 
     signingConfigs {

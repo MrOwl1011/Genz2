@@ -16,6 +16,58 @@ function html_escape(?string $value): string
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Every DATETIME column in this database is stored in UTC with no
+ * timezone marker (see core/datetime_utils.dart's matching note on the
+ * Flutter side) — MySQL's NOW() and PHP's date functions on this server
+ * are not assumed to agree on what timezone that is, so this always
+ * treats the raw value as UTC explicitly rather than relying on the
+ * server's default timezone, then converts to a fixed GMT+3 for display.
+ * Fixed offset rather than a named zone (e.g. Asia/Kuwait) — none of the
+ * GMT+3 countries this admin panel is used from observe DST, so there's
+ * no correctness reason to depend on the server's tzdata being current.
+ */
+function admin_display_time(?string $utcDatetime): string
+{
+    if ($utcDatetime === null || $utcDatetime === '') {
+        return 'Never';
+    }
+    try {
+        $dt = new DateTime($utcDatetime, new DateTimeZone('UTC'));
+        $dt->setTimezone(new DateTimeZone('+03:00'));
+        return $dt->format('Y-m-d H:i');
+    } catch (Exception $e) {
+        return $utcDatetime;
+    }
+}
+
+/**
+ * Every account this panel displays used to have a username/server_url —
+ * that's no longer true (see lib/account_id.php's
+ * generate_anonymous_account_id() doc comment): new accounts store neither,
+ * by design, since this backend no longer learns a user's Xtream identity at
+ * all. A handful of legacy rows may still carry the old
+ * username/server_url until migrate_legacy.php folds them into an anonymous
+ * account the first time that user's device re-registers — those still
+ * display exactly as before. For everyone else there's nothing
+ * credential-derived left to show, so this falls back to the most
+ * recently-seen device's name (pass it as $latestDeviceName from a query
+ * that LEFT JOINs devices — see accounts.php/index.php), and finally to a
+ * shortened account_id if even that's unavailable (an account with zero
+ * devices, e.g. one created via a pairing code that's never actually been
+ * used to register a second device yet).
+ */
+function account_label(?string $username, string $accountId, ?string $latestDeviceName = null): string
+{
+    if ($username !== null && $username !== '') {
+        return $username;
+    }
+    if ($latestDeviceName !== null && $latestDeviceName !== '') {
+        return $latestDeviceName;
+    }
+    return substr($accountId, 0, 12) . '…';
+}
+
 function is_admin_logged_in(): bool
 {
     if (!isset($_SESSION['admin_id'], $_SESSION['admin_last_activity'])) {

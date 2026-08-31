@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../main.dart';
+import '../app_root.dart';
 import '../models/playlist_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/dialog_buttons.dart';
+import '../widgets/tv_focusable.dart';
 import 'login_screen.dart';
 import 'playlist_history_screen.dart';
 
@@ -79,9 +81,8 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => Center(
-        child: CircularProgressIndicator(color: colors.brandPrimary),
-      ),
+      builder: (_) =>
+          Center(child: CircularProgressIndicator(color: colors.brandPrimary)),
     );
 
     final success = await auth.login(
@@ -95,10 +96,10 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
       Navigator.of(context).pop(); // dismiss loading dialog
 
       if (success) {
-        // Through AuthRootHandler, not straight to MainNavigationScreen —
-        // see the matching comment in login_screen.dart's _handleLogin().
+        // Through AppRoot, not straight to the home screen — see the
+        // matching comment in login_screen.dart's _handleLogin().
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const AuthRootHandler()),
+          MaterialPageRoute(builder: (_) => const AppRoot()),
           (route) => false,
         );
       } else {
@@ -153,23 +154,19 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
               : 'Are you sure you want to delete "$name"?\nThis will remove all associated history and favorites.',
           style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
+          DialogSecondaryButton(
+            label: isArabic ? 'إلغاء' : 'Cancel',
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.outfit(color: colors.ink),
-            ),
           ),
-          TextButton(
+          DialogPrimaryButton(
+            label: isArabic ? 'حذف' : 'Delete',
+            color: colors.error,
             onPressed: () {
               Navigator.of(ctx).pop();
               _doDeletePlaylist(playlist);
             },
-            child: Text(
-              'Delete',
-              style: GoogleFonts.outfit(color: colors.error),
-            ),
           ),
         ],
       ),
@@ -283,7 +280,9 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
               if (_isLoading)
                 Expanded(
                   child: Center(
-                    child: CircularProgressIndicator(color: colors.brandPrimary),
+                    child: CircularProgressIndicator(
+                      color: colors.brandPrimary,
+                    ),
                   ),
                 )
               else if (_playlists.isEmpty)
@@ -313,7 +312,10 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
           Text(
             isArabic ? 'لا توجد قوائم محفوظة بعد' : 'No saved playlists yet',
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.54), fontSize: 15),
+            style: GoogleFonts.outfit(
+              color: colors.ink.withValues(alpha: 0.54),
+              fontSize: 15,
+            ),
           ),
           const SizedBox(height: 24),
           _buildAddNewCard(isArabic),
@@ -447,6 +449,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                 ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
+                focusColor: colors.brandAccent.withValues(alpha: 0.35),
                 onPressed: () {
                   setState(() {
                     if (isRevealed) {
@@ -551,6 +554,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
     required String tooltip,
     required VoidCallback onTap,
   }) {
+    final colors = context.colors;
     return Tooltip(
       message: tooltip,
       child: Material(
@@ -558,6 +562,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(24),
+          focusColor: colors.brandAccent.withValues(alpha: 0.35),
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Icon(icon, color: color, size: 22),
@@ -569,14 +574,18 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
 
   Widget _buildAddNewCard(bool isArabic) {
     final colors = context.colors;
-    return GestureDetector(
+    return TvFocusable(
       onTap: _onAddNewTap,
+      borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
         decoration: BoxDecoration(
           color: colors.surfaceElevated.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: colors.ink.withValues(alpha: 0.24), width: 1.5),
+          border: Border.all(
+            color: colors.ink.withValues(alpha: 0.24),
+            width: 1.5,
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

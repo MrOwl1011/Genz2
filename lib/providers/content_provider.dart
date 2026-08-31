@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/xtream_models.dart';
 import '../models/search_results_model.dart';
-import '../services/demo_data_service.dart';
 import '../services/xtream_api_service.dart';
 
 class ContentProvider extends ChangeNotifier {
@@ -11,16 +10,11 @@ class ContentProvider extends ChangeNotifier {
   String _serverUrl = '';
   String _username = '';
   String _password = '';
-  bool _isDemoMode = false;
 
   String get serverUrl => _serverUrl;
   String get username => _username;
   String get password => _password;
   String get baseUrl => XtreamApiService.getBaseUrl(_serverUrl);
-  /// True when the active credentials are a published demo account — see
-  /// [DemoDataService]. All loaders below serve local mock data instead of
-  /// hitting the (non-existent) demo server whenever this is true.
-  bool get isDemoMode => _isDemoMode;
 
   // ─── Live Categories ────────────────────────────────────────────────────────
   List<XtreamCategory> _liveCategories = [];
@@ -52,16 +46,41 @@ class ContentProvider extends ChangeNotifier {
   // ─── Setup ──────────────────────────────────────────────────────────────────
 
   void setCredentials(String serverUrl, String username, String password) {
-    final changed = _serverUrl != serverUrl ||
+    final changed =
+        _serverUrl != serverUrl ||
         _username != username ||
         _password != password;
     _serverUrl = serverUrl;
     _username = username;
     _password = password;
-    _isDemoMode = DemoDataService.isDemoLogin(serverUrl, username, password);
     if (changed && serverUrl.isNotEmpty) {
+      // Wipe the previous account's cached lists (categories, "New" tab,
+      // search index) immediately, before the new account's network calls
+      // even start. Without this, screens reading these lists directly —
+      // the "New" tab in particular has no loading gate — kept showing the
+      // old account's content until something eventually overwrote it,
+      // which on a slow/failed reload meant it lingered until the app was
+      // fully restarted.
+      _clearCachedContent();
       loadAllCategories();
     }
+  }
+
+  void _clearCachedContent() {
+    _liveCategories = [];
+    _vodCategories = [];
+    _seriesCategories = [];
+    _liveError = null;
+    _vodError = null;
+    _seriesError = null;
+    _newMovies = [];
+    _newSeries = [];
+    _allMovies = [];
+    _allSeries = [];
+    _allLiveStreams = [];
+    _isAllContentLoaded = false;
+    _allContentError = null;
+    notifyListeners();
   }
 
   Future<void> loadAllCategories() async {
@@ -81,13 +100,11 @@ class ContentProvider extends ChangeNotifier {
     _liveError = null;
     notifyListeners();
     try {
-      _liveCategories = _isDemoMode
-          ? DemoDataService.getLiveCategories()
-          : await _api.getLiveCategories(
-              serverUrl: _serverUrl,
-              username: _username,
-              password: _password,
-            );
+      _liveCategories = await _api.getLiveCategories(
+        serverUrl: _serverUrl,
+        username: _username,
+        password: _password,
+      );
     } catch (e) {
       _liveError = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -97,13 +114,29 @@ class ContentProvider extends ChangeNotifier {
   }
 
   Future<List<XtreamLiveStream>> getLiveStreams({String? categoryId}) async {
-    if (_isDemoMode) return DemoDataService.getLiveStreams(categoryId: categoryId);
     return _api.getLiveStreams(
       serverUrl: _serverUrl,
       username: _username,
       password: _password,
       categoryId: categoryId,
     );
+  }
+
+  /// Swallows errors rather than throwing — EPG is a decorative extra on
+  /// top of the channel list, and plenty of panels simply don't support
+  /// `get_short_epg` at all, which shouldn't take down the live screen.
+  Future<List<XtreamEpgListing>> getShortEpg(int streamId) async {
+    if (_serverUrl.isEmpty) return [];
+    try {
+      return await _api.getShortEpg(
+        serverUrl: _serverUrl,
+        username: _username,
+        password: _password,
+        streamId: streamId,
+      );
+    } catch (_) {
+      return [];
+    }
   }
 
   // ─── VOD ─────────────────────────────────────────────────────────────────────
@@ -114,13 +147,11 @@ class ContentProvider extends ChangeNotifier {
     _vodError = null;
     notifyListeners();
     try {
-      _vodCategories = _isDemoMode
-          ? DemoDataService.getVodCategories()
-          : await _api.getVodCategories(
-              serverUrl: _serverUrl,
-              username: _username,
-              password: _password,
-            );
+      _vodCategories = await _api.getVodCategories(
+        serverUrl: _serverUrl,
+        username: _username,
+        password: _password,
+      );
     } catch (e) {
       _vodError = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -130,7 +161,6 @@ class ContentProvider extends ChangeNotifier {
   }
 
   Future<List<XtreamVodStream>> getVodStreams({String? categoryId}) async {
-    if (_isDemoMode) return DemoDataService.getVodStreams(categoryId: categoryId);
     return _api.getVodStreams(
       serverUrl: _serverUrl,
       username: _username,
@@ -140,7 +170,6 @@ class ContentProvider extends ChangeNotifier {
   }
 
   Future<XtreamVodInfo?> getVodInfo(int vodId) async {
-    if (_isDemoMode) return DemoDataService.getVodInfo(vodId);
     return _api.getVodInfo(
       serverUrl: _serverUrl,
       username: _username,
@@ -194,13 +223,11 @@ class ContentProvider extends ChangeNotifier {
     _seriesError = null;
     notifyListeners();
     try {
-      _seriesCategories = _isDemoMode
-          ? DemoDataService.getSeriesCategories()
-          : await _api.getSeriesCategories(
-              serverUrl: _serverUrl,
-              username: _username,
-              password: _password,
-            );
+      _seriesCategories = await _api.getSeriesCategories(
+        serverUrl: _serverUrl,
+        username: _username,
+        password: _password,
+      );
     } catch (e) {
       _seriesError = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -210,7 +237,6 @@ class ContentProvider extends ChangeNotifier {
   }
 
   Future<List<XtreamSeries>> getSeriesList({String? categoryId}) async {
-    if (_isDemoMode) return DemoDataService.getSeriesList(categoryId: categoryId);
     return _api.getSeriesList(
       serverUrl: _serverUrl,
       username: _username,
@@ -220,7 +246,6 @@ class ContentProvider extends ChangeNotifier {
   }
 
   Future<XtreamSeriesInfo?> getSeriesInfo(int seriesId) async {
-    if (_isDemoMode) return DemoDataService.getSeriesInfo(seriesId);
     return _api.getSeriesInfo(
       serverUrl: _serverUrl,
       username: _username,
@@ -237,14 +262,26 @@ class ContentProvider extends ChangeNotifier {
 
   bool _isAllContentLoaded = false;
   bool _isLoadingAllContent = false;
+  String? _allContentError;
 
   bool get isLoadingAllContent => _isLoadingAllContent;
   bool get isAllContentLoaded => _isAllContentLoaded;
+  // A failure left _isAllContentLoaded false with no way for a caller to
+  // tell "still loading" apart from "tried and failed" — every caller
+  // either showed nothing or looked stuck loading forever, with no way to
+  // offer a retry. _isAllContentLoaded staying false is exactly what lets
+  // the very next loadAllContent() call (e.g. a user-triggered retry)
+  // actually attempt the request again rather than being skipped as
+  // already-loaded.
+  String? get allContentError => _allContentError;
 
   Future<void> loadAllContent() async {
-    if (_serverUrl.isEmpty || _isAllContentLoaded || _isLoadingAllContent) return;
+    if (_serverUrl.isEmpty || _isAllContentLoaded || _isLoadingAllContent) {
+      return;
+    }
 
     _isLoadingAllContent = true;
+    _allContentError = null;
     notifyListeners();
 
     try {
@@ -260,7 +297,7 @@ class ContentProvider extends ChangeNotifier {
 
       _isAllContentLoaded = true;
     } catch (e) {
-      // Handle silently or log
+      _allContentError = e.toString().replaceFirst('Exception: ', '');
     } finally {
       _isLoadingAllContent = false;
       notifyListeners();
@@ -302,19 +339,6 @@ class ContentProvider extends ChangeNotifier {
     _serverUrl = '';
     _username = '';
     _password = '';
-    _isDemoMode = false;
-    _liveCategories = [];
-    _vodCategories = [];
-    _seriesCategories = [];
-    _liveError = null;
-    _vodError = null;
-    _seriesError = null;
-    
-    _allMovies = [];
-    _allSeries = [];
-    _allLiveStreams = [];
-    _isAllContentLoaded = false;
-    
-    notifyListeners();
+    _clearCachedContent();
   }
 }

@@ -26,12 +26,12 @@ class FavoriteItem {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'posterUrl': posterUrl,
-        'type': type.name,
-        'rawData': rawData,
-      };
+    'id': id,
+    'title': title,
+    'posterUrl': posterUrl,
+    'type': type.name,
+    'rawData': rawData,
+  };
 
   factory FavoriteItem.fromJson(Map<String, dynamic> json) {
     return FavoriteItem(
@@ -66,15 +66,15 @@ class HistoryItem {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'posterUrl': posterUrl,
-        'type': type.name,
-        'positionMilliseconds': positionMilliseconds,
-        'durationMilliseconds': durationMilliseconds,
-        'rawData': rawData,
-        'lastWatched': lastWatched.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'posterUrl': posterUrl,
+    'type': type.name,
+    'positionMilliseconds': positionMilliseconds,
+    'durationMilliseconds': durationMilliseconds,
+    'rawData': rawData,
+    'lastWatched': lastWatched.toIso8601String(),
+  };
 
   factory HistoryItem.fromJson(Map<String, dynamic> json) {
     return HistoryItem(
@@ -82,8 +82,16 @@ class HistoryItem {
       title: json['title'],
       posterUrl: json['posterUrl'],
       type: MediaType.values.firstWhere((e) => e.name == json['type']),
-      positionMilliseconds: json['positionMilliseconds'] ?? (json['positionSeconds'] != null ? (json['positionSeconds'] as int) * 1000 : 0),
-      durationMilliseconds: json['durationMilliseconds'] ?? (json['durationSeconds'] != null ? (json['durationSeconds'] as int) * 1000 : 0),
+      positionMilliseconds:
+          json['positionMilliseconds'] ??
+          (json['positionSeconds'] != null
+              ? (json['positionSeconds'] as int) * 1000
+              : 0),
+      durationMilliseconds:
+          json['durationMilliseconds'] ??
+          (json['durationSeconds'] != null
+              ? (json['durationSeconds'] as int) * 1000
+              : 0),
       rawData: json['rawData'],
       lastWatched: DateTime.parse(json['lastWatched']),
     );
@@ -181,11 +189,11 @@ class UserPrefsProvider extends ChangeNotifier {
 
   Future<void> setPlaylistId(String playlistId) async {
     if (playlistId.isEmpty) return;
-    
+
     _currentPlaylistId = playlistId;
     _favoritesKey = 'favorites_$playlistId';
     _historyKey = 'history_$playlistId';
-    
+
     final prefs = await SharedPreferences.getInstance();
     await _loadDataFromCurrentKeys(prefs);
   }
@@ -199,14 +207,80 @@ class UserPrefsProvider extends ChangeNotifier {
   /// If [deviceToken] is available, also pulls this profile's favorites/
   /// history from the backend afterward (best-effort, non-blocking) — see
   /// _pullAndMergeFromBackend for the merge strategy and its trade-offs.
-  Future<void> setProfileScope(String accountId, String profileId, {String? deviceToken}) async {
+  Future<void> setProfileScope(
+    String accountId,
+    String profileId, {
+    String? deviceToken,
+    DateTime? favoritesClearedAt,
+    DateTime? historyClearedAt,
+  }) async {
     _useProfileScope = true;
     _profileAccountId = accountId;
     _profileId = profileId;
     await _loadProfileScopedData();
+    await _applyAdminClearMarkersIfNeeded(
+      profileId,
+      favoritesClearedAt: favoritesClearedAt,
+      historyClearedAt: historyClearedAt,
+    );
 
     if (deviceToken != null) {
       unawaited(_pullAndMergeFromBackend(deviceToken));
+    }
+  }
+
+  String _favoritesClearedMarkerKey(String profileId) =>
+      'favorites_cleared_ack_$profileId';
+  String _historyClearedMarkerKey(String profileId) =>
+      'history_cleared_ack_$profileId';
+
+  /// The admin panel's "Clear Favorites"/"Clear History" actions delete rows
+  /// server-side and stamp profiles.favorites_cleared_at/history_cleared_at
+  /// — but the normal sync merge below only ever *adds* items it doesn't
+  /// have locally, it never removes ones the device already cached. Without
+  /// this, an admin clearing a profile's data server-side had no visible
+  /// effect at all: the device just kept showing what it already had.
+  ///
+  /// Compares each timestamp against a locally stored "last applied" marker
+  /// (so the same clear isn't reapplied — and doesn't wipe out favorites/
+  /// history the user has added since) and wipes the local list only when
+  /// the server's marker is newer than what this device has already acted
+  /// on. Runs before the pull-merge so the subsequent pull repopulates from
+  /// the (now genuinely current) server state rather than fighting a stale
+  /// local cache.
+  Future<void> _applyAdminClearMarkersIfNeeded(
+    String profileId, {
+    DateTime? favoritesClearedAt,
+    DateTime? historyClearedAt,
+  }) async {
+    if (favoritesClearedAt != null) {
+      final ackKey = _favoritesClearedMarkerKey(profileId);
+      final lastAck = HiveBoxes.metaBox.get(ackKey) as String?;
+      final alreadyApplied =
+          lastAck != null &&
+          !favoritesClearedAt.isAfter(DateTime.parse(lastAck));
+      if (!alreadyApplied) {
+        _favorites = [];
+        await _saveFavorites();
+        await HiveBoxes.metaBox.put(
+          ackKey,
+          favoritesClearedAt.toUtc().toIso8601String(),
+        );
+      }
+    }
+    if (historyClearedAt != null) {
+      final ackKey = _historyClearedMarkerKey(profileId);
+      final lastAck = HiveBoxes.metaBox.get(ackKey) as String?;
+      final alreadyApplied =
+          lastAck != null && !historyClearedAt.isAfter(DateTime.parse(lastAck));
+      if (!alreadyApplied) {
+        _history = [];
+        await _saveHistory();
+        await HiveBoxes.metaBox.put(
+          ackKey,
+          historyClearedAt.toUtc().toIso8601String(),
+        );
+      }
     }
   }
 
@@ -239,16 +313,20 @@ class UserPrefsProvider extends ChangeNotifier {
         final id = (r['stream_id'] ?? '').toString();
         if (id.isEmpty) continue;
         _favorites.removeWhere((f) => f.id == id);
-        _favorites.add(FavoriteItem(
-          id: id,
-          title: (r['title'] as String?) ?? '',
-          posterUrl: (r['poster_url'] as String?) ?? '',
-          type: MediaType.values.firstWhere(
-            (t) => t.name == r['stream_type'],
-            orElse: () => MediaType.movie,
+        _favorites.add(
+          FavoriteItem(
+            id: id,
+            title: (r['title'] as String?) ?? '',
+            posterUrl: (r['poster_url'] as String?) ?? '',
+            type: MediaType.values.firstWhere(
+              (t) => t.name == r['stream_type'],
+              orElse: () => MediaType.movie,
+            ),
+            rawData: r['raw_data'] is Map
+                ? Map<String, dynamic>.from(r['raw_data'] as Map)
+                : {},
           ),
-          rawData: r['raw_data'] is Map ? Map<String, dynamic>.from(r['raw_data'] as Map) : {},
-        ));
+        );
       }
 
       for (final r in remoteHistory) {
@@ -256,7 +334,9 @@ class UserPrefsProvider extends ChangeNotifier {
         if (id.isEmpty || r['updated_at'] == null) continue;
         final remoteUpdatedAt = parseBackendUtc(r['updated_at'] as String);
         final existingIndex = _history.indexWhere((h) => h.id == id);
-        final isNewer = existingIndex == -1 || remoteUpdatedAt.isAfter(_history[existingIndex].lastWatched);
+        final isNewer =
+            existingIndex == -1 ||
+            remoteUpdatedAt.isAfter(_history[existingIndex].lastWatched);
         if (!isNewer) continue;
 
         final item = HistoryItem(
@@ -267,15 +347,37 @@ class UserPrefsProvider extends ChangeNotifier {
             (t) => t.name == r['stream_type'],
             orElse: () => MediaType.movie,
           ),
-          positionMilliseconds: (((r['position_seconds'] as num?) ?? 0).toInt()) * 1000,
-          durationMilliseconds: (((r['duration_seconds'] as num?) ?? 0).toInt()) * 1000,
-          rawData: r['raw_data'] is Map ? Map<String, dynamic>.from(r['raw_data'] as Map) : {},
+          positionMilliseconds:
+              (((r['position_seconds'] as num?) ?? 0).toInt()) * 1000,
+          durationMilliseconds:
+              (((r['duration_seconds'] as num?) ?? 0).toInt()) * 1000,
+          rawData: r['raw_data'] is Map
+              ? Map<String, dynamic>.from(r['raw_data'] as Map)
+              : {},
           lastWatched: remoteUpdatedAt,
         );
         if (existingIndex == -1) {
           _history.add(item);
         } else {
           _history[existingIndex] = item;
+        }
+
+        // Same series-level dedup saveHistory() applies locally — a pull
+        // merges purely by per-episode id, so without this it silently
+        // reintroduces older episodes of the same series that a previous
+        // saveHistory() call had already superseded (e.g. rows from before
+        // the backend itself started cleaning these up on save).
+        if (item.type == MediaType.series) {
+          final seriesId = item.rawData['series_id'];
+          if (seriesId != null) {
+            _history.removeWhere(
+              (h) =>
+                  h.id != item.id &&
+                  h.type == MediaType.series &&
+                  h.rawData['series_id'] == seriesId &&
+                  h.lastWatched.isBefore(item.lastWatched),
+            );
+          }
         }
       }
       _history.sort((a, b) => b.lastWatched.compareTo(a.lastWatched));
@@ -298,7 +400,11 @@ class UserPrefsProvider extends ChangeNotifier {
     if (raw is! String || raw.isEmpty) return [];
     try {
       final decoded = jsonDecode(raw) as List;
-      return decoded.map((e) => FavoriteItem.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+      return decoded
+          .map(
+            (e) => FavoriteItem.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList();
     } catch (_) {
       return [];
     }
@@ -308,14 +414,18 @@ class UserPrefsProvider extends ChangeNotifier {
     if (raw is! String || raw.isEmpty) return [];
     try {
       final decoded = jsonDecode(raw) as List;
-      return decoded.map((e) => HistoryItem.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+      return decoded
+          .map((e) => HistoryItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
     } catch (_) {
       return [];
     }
   }
 
   Future<void> _loadProfileScopedData() async {
-    _favorites = _decodeFavoritesJson(HiveBoxes.favoritesBox.get(_profileHiveKey));
+    _favorites = _decodeFavoritesJson(
+      HiveBoxes.favoritesBox.get(_profileHiveKey),
+    );
     _history = _decodeHistoryJson(HiveBoxes.historyBox.get(_profileHiveKey))
       ..sort((a, b) => b.lastWatched.compareTo(a.lastWatched));
 
@@ -356,8 +466,14 @@ class UserPrefsProvider extends ChangeNotifier {
     _favorites = legacyFavorites;
     _history = legacyHistory;
 
-    await HiveBoxes.favoritesBox.put(_profileHiveKey, jsonEncode(_favorites.map((e) => e.toJson()).toList()));
-    await HiveBoxes.historyBox.put(_profileHiveKey, jsonEncode(_history.map((e) => e.toJson()).toList()));
+    await HiveBoxes.favoritesBox.put(
+      _profileHiveKey,
+      jsonEncode(_favorites.map((e) => e.toJson()).toList()),
+    );
+    await HiveBoxes.historyBox.put(
+      _profileHiveKey,
+      jsonEncode(_history.map((e) => e.toJson()).toList()),
+    );
 
     // Migrated data is only local until it's actually pushed — without this,
     // it would sit on this one device forever, never reaching other devices
@@ -366,32 +482,36 @@ class UserPrefsProvider extends ChangeNotifier {
     // lastWatched, which is more meaningful and used instead).
     final now = DateTime.now().toUtc();
     for (final f in _favorites) {
-      unawaited(SyncManager.instance.enqueueFavoriteAdd(
-        accountId: accountId,
-        profileId: profileId,
-        streamId: f.id,
-        streamType: f.type.name,
-        title: f.title,
-        posterUrl: f.posterUrl,
-        rawData: f.rawData,
-        updatedAt: now,
-      ));
+      unawaited(
+        SyncManager.instance.enqueueFavoriteAdd(
+          accountId: accountId,
+          profileId: profileId,
+          streamId: f.id,
+          streamType: f.type.name,
+          title: f.title,
+          posterUrl: f.posterUrl,
+          rawData: f.rawData,
+          updatedAt: now,
+        ),
+      );
     }
     for (final h in _history) {
-      unawaited(SyncManager.instance.enqueueHistorySave(
-        accountId: accountId,
-        profileId: profileId,
-        streamId: h.id,
-        streamType: h.type.name,
-        episodeId: h.rawData['episode_id']?.toString(),
-        seriesId: h.rawData['series_id']?.toString(),
-        title: h.title,
-        posterUrl: h.posterUrl,
-        positionSeconds: (h.positionMilliseconds / 1000).round(),
-        durationSeconds: (h.durationMilliseconds / 1000).round(),
-        rawData: h.rawData,
-        updatedAt: h.lastWatched.toUtc(),
-      ));
+      unawaited(
+        SyncManager.instance.enqueueHistorySave(
+          accountId: accountId,
+          profileId: profileId,
+          streamId: h.id,
+          streamType: h.type.name,
+          episodeId: h.rawData['episode_id']?.toString(),
+          seriesId: h.rawData['series_id']?.toString(),
+          title: h.title,
+          posterUrl: h.posterUrl,
+          positionSeconds: (h.positionMilliseconds / 1000).round(),
+          durationSeconds: (h.durationMilliseconds / 1000).round(),
+          rawData: h.rawData,
+          updatedAt: h.lastWatched.toUtc(),
+        ),
+      );
     }
 
     notifyListeners();
@@ -429,7 +549,9 @@ class UserPrefsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final histStr = prefs.getStringList('history_$playlistId');
     if (histStr == null) return [];
-    final items = histStr.map((e) => HistoryItem.fromJson(jsonDecode(e))).toList();
+    final items = histStr
+        .map((e) => HistoryItem.fromJson(jsonDecode(e)))
+        .toList();
     items.sort((a, b) => b.lastWatched.compareTo(a.lastWatched));
     return items;
   }
@@ -463,7 +585,9 @@ class UserPrefsProvider extends ChangeNotifier {
     // Load Favorites
     final favStr = prefs.getStringList(_favoritesKey);
     if (favStr != null) {
-      _favorites = favStr.map((e) => FavoriteItem.fromJson(jsonDecode(e))).toList();
+      _favorites = favStr
+          .map((e) => FavoriteItem.fromJson(jsonDecode(e)))
+          .toList();
     } else {
       _favorites = [];
     }
@@ -471,20 +595,25 @@ class UserPrefsProvider extends ChangeNotifier {
     // Load History
     final histStr = prefs.getStringList(_historyKey);
     if (histStr != null) {
-      _history = histStr.map((e) => HistoryItem.fromJson(jsonDecode(e))).toList();
+      _history = histStr
+          .map((e) => HistoryItem.fromJson(jsonDecode(e)))
+          .toList();
       // Sort by last watched descending
       _history.sort((a, b) => b.lastWatched.compareTo(a.lastWatched));
     } else {
       _history = [];
     }
-    
+
     notifyListeners();
   }
 
   Future<void> _saveFavorites() async {
     if (_useProfileScope) {
       try {
-        await HiveBoxes.favoritesBox.put(_profileHiveKey, jsonEncode(_favorites.map((e) => e.toJson()).toList()));
+        await HiveBoxes.favoritesBox.put(
+          _profileHiveKey,
+          jsonEncode(_favorites.map((e) => e.toJson()).toList()),
+        );
       } catch (e) {
         // Was previously a fire-and-forget, uncaught async failure here —
         // logging it now rather than letting it disappear silently, so a
@@ -503,7 +632,10 @@ class UserPrefsProvider extends ChangeNotifier {
   Future<void> _saveHistory() async {
     if (_useProfileScope) {
       try {
-        await HiveBoxes.historyBox.put(_profileHiveKey, jsonEncode(_history.map((e) => e.toJson()).toList()));
+        await HiveBoxes.historyBox.put(
+          _profileHiveKey,
+          jsonEncode(_history.map((e) => e.toJson()).toList()),
+        );
       } catch (e) {
         debugPrint('[UserPrefsProvider] failed to persist history: $e');
       }
@@ -533,37 +665,43 @@ class UserPrefsProvider extends ChangeNotifier {
     if (wasFavorite) {
       _favorites.removeWhere((item) => item.id == id);
     } else {
-      _favorites.add(FavoriteItem(
-        id: id,
-        title: title,
-        posterUrl: posterUrl,
-        type: type,
-        rawData: rawData,
-      ));
+      _favorites.add(
+        FavoriteItem(
+          id: id,
+          title: title,
+          posterUrl: posterUrl,
+          type: type,
+          rawData: rawData,
+        ),
+      );
     }
     _saveFavorites();
 
     if (_useProfileScope && _profileAccountId != null && _profileId != null) {
       final now = DateTime.now().toUtc();
       if (wasFavorite) {
-        unawaited(SyncManager.instance.enqueueFavoriteRemove(
-          accountId: _profileAccountId!,
-          profileId: _profileId!,
-          streamId: id,
-          streamType: type.name,
-          updatedAt: now,
-        ));
+        unawaited(
+          SyncManager.instance.enqueueFavoriteRemove(
+            accountId: _profileAccountId!,
+            profileId: _profileId!,
+            streamId: id,
+            streamType: type.name,
+            updatedAt: now,
+          ),
+        );
       } else {
-        unawaited(SyncManager.instance.enqueueFavoriteAdd(
-          accountId: _profileAccountId!,
-          profileId: _profileId!,
-          streamId: id,
-          streamType: type.name,
-          title: title,
-          posterUrl: posterUrl,
-          rawData: rawData,
-          updatedAt: now,
-        ));
+        unawaited(
+          SyncManager.instance.enqueueFavoriteAdd(
+            accountId: _profileAccountId!,
+            profileId: _profileId!,
+            streamId: id,
+            streamType: type.name,
+            title: title,
+            posterUrl: posterUrl,
+            rawData: rawData,
+            updatedAt: now,
+          ),
+        );
       }
     }
   }
@@ -581,29 +719,33 @@ class UserPrefsProvider extends ChangeNotifier {
   }) {
     // Remove if already exists to move it to the top
     _history.removeWhere((item) => item.id == id);
-    
+
     // For series episodes, remove any previous episode from the same series
     // so only the latest watched episode is kept per series
     if (type == MediaType.series) {
       final seriesId = rawData['series_id'];
       if (seriesId != null) {
-        _history.removeWhere((item) =>
-          item.type == MediaType.series &&
-          item.rawData['series_id'] == seriesId
+        _history.removeWhere(
+          (item) =>
+              item.type == MediaType.series &&
+              item.rawData['series_id'] == seriesId,
         );
       }
     }
-    
-    _history.insert(0, HistoryItem(
-      id: id,
-      title: title,
-      posterUrl: posterUrl,
-      type: type,
-      positionMilliseconds: positionMilliseconds,
-      durationMilliseconds: durationMilliseconds,
-      rawData: rawData,
-      lastWatched: DateTime.now(),
-    ));
+
+    _history.insert(
+      0,
+      HistoryItem(
+        id: id,
+        title: title,
+        posterUrl: posterUrl,
+        type: type,
+        positionMilliseconds: positionMilliseconds,
+        durationMilliseconds: durationMilliseconds,
+        rawData: rawData,
+        lastWatched: DateTime.now(),
+      ),
+    );
 
     // Limit history size to e.g., 50 items
     if (_history.length > 50) {
@@ -613,20 +755,22 @@ class UserPrefsProvider extends ChangeNotifier {
     _saveHistory();
 
     if (_useProfileScope && _profileAccountId != null && _profileId != null) {
-      unawaited(SyncManager.instance.enqueueHistorySave(
-        accountId: _profileAccountId!,
-        profileId: _profileId!,
-        streamId: id,
-        streamType: type.name,
-        episodeId: rawData['episode_id']?.toString(),
-        seriesId: rawData['series_id']?.toString(),
-        title: title,
-        posterUrl: posterUrl,
-        positionSeconds: (positionMilliseconds / 1000).round(),
-        durationSeconds: (durationMilliseconds / 1000).round(),
-        rawData: rawData,
-        updatedAt: DateTime.now().toUtc(),
-      ));
+      unawaited(
+        SyncManager.instance.enqueueHistorySave(
+          accountId: _profileAccountId!,
+          profileId: _profileId!,
+          streamId: id,
+          streamType: type.name,
+          episodeId: rawData['episode_id']?.toString(),
+          seriesId: rawData['series_id']?.toString(),
+          title: title,
+          posterUrl: posterUrl,
+          positionSeconds: (positionMilliseconds / 1000).round(),
+          durationSeconds: (durationMilliseconds / 1000).round(),
+          rawData: rawData,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+      );
     }
   }
 
@@ -634,7 +778,8 @@ class UserPrefsProvider extends ChangeNotifier {
     try {
       final item = _history.firstWhere((item) => item.id == id);
       // If watched more than 95%, start over
-      if (item.durationMilliseconds > 0 && item.positionMilliseconds >= item.durationMilliseconds - 10000) {
+      if (item.durationMilliseconds > 0 &&
+          item.positionMilliseconds >= item.durationMilliseconds - 10000) {
         return 0;
       }
       return (item.positionMilliseconds / 1000).floor();

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import '../core/build_flavor.dart' show kIsTv;
+import '../models/download_item.dart';
 import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/dialog_buttons.dart';
 import '../widgets/resume_dialog.dart';
 import 'player_screen.dart';
 
@@ -23,6 +26,10 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
   XtreamSeriesInfo? _seriesInfo;
   bool _isLoading = true;
   String? _error;
+  // Ids currently awaiting DownloadsProvider.pauseDownload's server-support
+  // check — that can take several seconds (see the comment there), so the
+  // pause button shows a spinner instead of looking frozen/unresponsive.
+  final Set<String> _pausingIds = {};
 
   @override
   void initState() {
@@ -58,9 +65,12 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     final content = context.read<ContentProvider>();
     final userPrefs = context.read<UserPrefsProvider>();
     final downloads = context.read<DownloadsProvider>();
+    final isArabic = userPrefs.locale == 'ar';
 
     String urlFor(XtreamEpisode ep) {
-      final localPath = downloads.isDownloaded(ep.id) ? downloads.itemFor(ep.id)?.filePath : null;
+      final localPath = downloads.isDownloaded(ep.id)
+          ? downloads.itemFor(ep.id)?.filePath
+          : null;
       if (localPath != null) return Uri.file(localPath).toString();
       return ep.streamUrl(content.baseUrl, content.username, content.password);
     }
@@ -71,7 +81,13 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
 
     // Show resume dialog if position > 30 seconds
     if (position > 30) {
-      final result = await showResumeDialog(context, position);
+      final result = await showResumeDialog(
+        context,
+        position,
+        episodeLabel: isArabic
+            ? 'الموسم ${episode.season} · الحلقة ${episode.episodeNum}'
+            : 'Season ${episode.season} · Episode ${episode.episodeNum}',
+      );
       if (!mounted) return;
       if (result == null) {
         return; // dismissed via X or outside tap — cancelled, don't open the player
@@ -91,7 +107,8 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
       for (final s in sortedSeasons) {
         final eps = _seriesInfo!.episodes[s]!;
         // Assuming they are already sorted or we can sort them
-        final sortedEps = List<XtreamEpisode>.from(eps)..sort((a, b) => a.episodeNum.compareTo(b.episodeNum));
+        final sortedEps = List<XtreamEpisode>.from(eps)
+          ..sort((a, b) => a.episodeNum.compareTo(b.episodeNum));
         for (final ep in sortedEps) {
           if (ep.id == episode.id) {
             initialIndex = playlist.length;
@@ -121,36 +138,39 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
       }
     }
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => PlayerScreen(
-          streamUrl: url,
-          title: 'S${episode.season} E${episode.episodeNum} - ${episode.title}',
-          coverUrl: widget.series.cover,
-          isLive: false,
-          mediaId: episode.id,
-          mediaType: MediaType.series,
-          rawMediaData: {
-            'id': episode.id,
-            'episode_num': episode.episodeNum,
-            'title': episode.title,
-            'container_extension': episode.containerExtension,
-            'info': episode.info,
-            'custom_sid': episode.customSid,
-            'added': episode.added,
-            'season': episode.season,
-            'series_id': widget.series.seriesId,
-            'series_name': widget.series.name,
-            'series_cover': widget.series.cover,
-          },
-          initialPositionSeconds: position,
-          playlist: playlist.isNotEmpty ? playlist : null,
-          initialIndex: initialIndex,
-        ),
-      ),
-    ).then((_) {
-      setState(() {});
-    });
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (_) => PlayerScreen(
+              streamUrl: url,
+              title:
+                  'S${episode.season} E${episode.episodeNum} - ${episode.title}',
+              coverUrl: widget.series.cover,
+              isLive: false,
+              mediaId: episode.id,
+              mediaType: MediaType.series,
+              rawMediaData: {
+                'id': episode.id,
+                'episode_num': episode.episodeNum,
+                'title': episode.title,
+                'container_extension': episode.containerExtension,
+                'info': episode.info,
+                'custom_sid': episode.customSid,
+                'added': episode.added,
+                'season': episode.season,
+                'series_id': widget.series.seriesId,
+                'series_name': widget.series.name,
+                'series_cover': widget.series.cover,
+              },
+              initialPositionSeconds: position,
+              playlist: playlist.isNotEmpty ? playlist : null,
+              initialIndex: initialIndex,
+            ),
+          ),
+        )
+        .then((_) {
+          setState(() {});
+        });
   }
 
   /// Resumes from the last watched episode for this series.
@@ -161,7 +181,9 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     final userPrefs = context.read<UserPrefsProvider>();
     // Find the last watched episode for this series in history
     final historyItem = userPrefs.history.cast<HistoryItem?>().firstWhere(
-      (h) => h!.type == MediaType.series && h.rawData['series_id'] == widget.series.seriesId,
+      (h) =>
+          h!.type == MediaType.series &&
+          h.rawData['series_id'] == widget.series.seriesId,
       orElse: () => null,
     );
 
@@ -178,7 +200,9 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     }
 
     // Fallback: play first episode of first season
-    final firstSeason = _seriesInfo!.episodes.keys.reduce((a, b) => a < b ? a : b);
+    final firstSeason = _seriesInfo!.episodes.keys.reduce(
+      (a, b) => a < b ? a : b,
+    );
     final firstEp = _seriesInfo!.episodes[firstSeason]?.first;
     if (firstEp != null) _playEpisode(firstEp);
   }
@@ -191,7 +215,8 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     final cast = _seriesInfo?.info.cast ?? widget.series.cast;
     final director = _seriesInfo?.info.director ?? widget.series.director;
     final genre = _seriesInfo?.info.genre ?? widget.series.genre;
-    final releaseDate = _seriesInfo?.info.releaseDate ?? widget.series.releaseDate;
+    final releaseDate =
+        _seriesInfo?.info.releaseDate ?? widget.series.releaseDate;
 
     final userPrefs = context.watch<UserPrefsProvider>();
     final isFav = userPrefs.isFavorite(widget.series.seriesId.toString());
@@ -206,7 +231,12 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
             top: 0,
             left: 0,
             right: 0,
-            height: MediaQuery.of(context).size.height * 0.55,
+            // TV: a landscape screen needs much less vertical hero space and
+            // much more room for the details card below (see the matching
+            // height on that card) — the phone's near-even 55/55 split badly
+            // cramped the description/episode list on TV, cutting the
+            // description off with no way to tell more was below the fold.
+            height: MediaQuery.of(context).size.height * (kIsTv ? 0.32 : 0.55),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -243,7 +273,11 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
             top: MediaQuery.of(context).padding.top + 10,
             left: 16,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 28),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ),
@@ -252,7 +286,12 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: MediaQuery.of(context).size.height * 0.55,
+              // TV: much taller than the backdrop above gives back — see
+              // that height's comment. Most of the screen on TV, since
+              // there's no touch-scroll affordance to hint more content is
+              // below the fold the way a phone's drag handle implies.
+              height:
+                  MediaQuery.of(context).size.height * (kIsTv ? 0.78 : 0.55),
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
@@ -284,7 +323,12 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                             child: IconButton(
                               icon: Icon(
                                 isFav ? Icons.favorite : Icons.favorite_border,
-                                color: isFav ? colors.brandPrimary : Colors.black,
+                                color: isFav
+                                    ? colors.brandPrimary
+                                    : Colors.black,
+                              ),
+                              focusColor: colors.brandAccent.withValues(
+                                alpha: 0.35,
                               ),
                               onPressed: () {
                                 userPrefs.toggleFavorite(
@@ -320,11 +364,21 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                             shape: const CircleBorder(),
                             child: InkWell(
                               customBorder: const CircleBorder(),
+                              focusColor: Colors.white.withValues(alpha: 0.35),
+                              // TV: see the same fix + rationale in
+                              // movie_details_screen.dart — autofocusing
+                              // Play avoids the back button being an
+                              // unreachable directional-focus dead end.
+                              autofocus: kIsTv,
                               onTap: () => _playResumeOrFirst(),
                               child: const SizedBox(
                                 width: 72,
                                 height: 72,
-                                child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 48),
+                                child: Icon(
+                                  Icons.play_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
                               ),
                             ),
                           ),
@@ -339,7 +393,9 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                     child: _isLoading
                         ? Center(
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colors.brandPrimary,
+                              ),
                             ),
                           )
                         : SingleChildScrollView(
@@ -352,12 +408,14 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                   children: [
                                     // Thumbnail
                                     Container(
-                                      width: 100,
-                                      height: 150,
+                                      width: kIsTv ? 76 : 100,
+                                      height: kIsTv ? 114 : 150,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(8),
                                         image: DecorationImage(
-                                          image: CachedNetworkImageProvider(cover),
+                                          image: CachedNetworkImageProvider(
+                                            cover,
+                                          ),
                                           fit: BoxFit.cover,
                                         ),
                                       ),
@@ -366,12 +424,13 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                     // Details
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             title.toUpperCase(),
                                             style: GoogleFonts.outfit(
-                                              fontSize: 24,
+                                              fontSize: kIsTv ? 19 : 24,
                                               fontWeight: FontWeight.w900,
                                               fontStyle: FontStyle.italic,
                                               color: colors.ink,
@@ -381,30 +440,46 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                           if (releaseDate.isNotEmpty)
                                             Text(
                                               releaseDate,
-                                              style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
+                                              style: GoogleFonts.outfit(
+                                                color: colors.ink.withValues(
+                                                  alpha: 0.7,
+                                                ),
+                                              ),
                                             ),
                                         ],
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: kIsTv ? 10 : 16),
                                 if (genre.isNotEmpty)
                                   Text(
                                     genre,
                                     style: GoogleFonts.outfit(
                                       color: colors.ink,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                      fontSize: kIsTv ? 14 : 16,
                                     ),
                                   ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: kIsTv ? 8 : 12),
+                                // TV: capped rather than left to run on —
+                                // there's no scroll-hint affordance like a
+                                // phone's drag handle, so a description that
+                                // just trails off the bottom of the screen
+                                // reads as broken/cut-off rather than
+                                // "scroll for more". A fixed line count plus
+                                // ellipsis always reads as complete.
                                 if (plot.isNotEmpty)
                                   Text(
                                     plot,
+                                    maxLines: kIsTv ? 4 : null,
+                                    overflow: kIsTv
+                                        ? TextOverflow.ellipsis
+                                        : TextOverflow.clip,
                                     style: GoogleFonts.outfit(
-                                      color: colors.brandPrimary, // Brand-colored description per user request
-                                      fontSize: 15,
+                                      color: colors
+                                          .brandPrimary, // Brand-colored description per user request
+                                      fontSize: kIsTv ? 13 : 15,
                                       height: 1.4,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -433,7 +508,8 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                 ],
 
                                 // Episodes Section
-                                if (_seriesInfo != null && _seriesInfo!.episodes.isNotEmpty)
+                                if (_seriesInfo != null &&
+                                    _seriesInfo!.episodes.isNotEmpty)
                                   ..._buildEpisodesList(),
 
                                 const SizedBox(height: 20),
@@ -454,7 +530,9 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     final colors = context.colors;
     final List<Widget> items = [];
     final sortedSeasons = _seriesInfo!.episodes.keys.toList()..sort();
-    final userPrefs = context.read<UserPrefsProvider>(); // read history for progress
+    final userPrefs = context
+        .read<UserPrefsProvider>(); // read history for progress
+    final isArabic = userPrefs.locale == 'ar';
     final content = context.read<ContentProvider>();
     final downloads = context.watch<DownloadsProvider>();
 
@@ -466,7 +544,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Text(
-            'SEASON $season',
+            isArabic ? 'الموسم $season' : 'SEASON $season',
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w900,
@@ -484,6 +562,14 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
         items.add(
           ListTile(
             contentPadding: EdgeInsets.zero,
+            // ListTile already participates in D-pad focus traversal and
+            // responds to Select/Enter out of the box — the default focus
+            // tint is too subtle to see from a TV viewing distance, so make
+            // it obvious instead of adding a whole extra focus wrapper.
+            focusColor: colors.brandAccent.withValues(alpha: 0.18),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
             leading: Container(
               width: 40,
               height: 40,
@@ -502,21 +588,40 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
               ),
             ),
             title: Text(
-              ep.title.isNotEmpty ? ep.title : 'Episode ${ep.episodeNum}',
+              ep.title.isNotEmpty
+                  ? ep.title
+                  : (isArabic
+                        ? 'الحلقة ${ep.episodeNum}'
+                        : 'Episode ${ep.episodeNum}'),
               style: GoogleFonts.outfit(
                 color: colors.ink,
                 fontWeight: FontWeight.w600,
               ),
             ),
             subtitle: position > 0
-                ? Text('Watched ${position ~/ 60}m', style: TextStyle(color: colors.brandPrimary, fontSize: 12))
+                ? Text(
+                    isArabic
+                        ? 'شوهد ${position ~/ 60} د'
+                        : 'Watched ${position ~/ 60}m',
+                    style: TextStyle(color: colors.brandPrimary, fontSize: 12),
+                  )
                 : null,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildEpisodeDownloadButton(context, downloads, content, ep, colors),
+                _buildEpisodeDownloadButton(
+                  context,
+                  downloads,
+                  content,
+                  ep,
+                  colors,
+                  isArabic,
+                ),
                 const SizedBox(width: 4),
-                Icon(Icons.play_circle_fill_rounded, color: colors.ink.withValues(alpha: 0.54)),
+                Icon(
+                  Icons.play_circle_fill_rounded,
+                  color: colors.ink.withValues(alpha: 0.54),
+                ),
               ],
             ),
             onTap: () => _playEpisode(ep),
@@ -525,6 +630,33 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
       }
     }
     return items;
+  }
+
+  /// Pauses a download, surfacing the case where the server doesn't support
+  /// resumable downloads — pausing there can't be resumed later, so it's
+  /// left running instead of being torn down; see
+  /// [DownloadsProvider.pauseDownload].
+  Future<void> _pause(
+    BuildContext context,
+    DownloadsProvider downloads,
+    String id,
+  ) async {
+    setState(() => _pausingIds.add(id));
+    final paused = await downloads.pauseDownload(id);
+    if (!mounted) return;
+    setState(() => _pausingIds.remove(id));
+    if (!paused && context.mounted) {
+      final isArabic = context.read<UserPrefsProvider>().locale == 'ar';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isArabic
+                ? 'لا يمكن إيقاف هذا التنزيل مؤقتاً — الخادم لا يدعم ذلك.'
+                : "This download can't be paused — the server doesn't support it.",
+          ),
+        ),
+      );
+    }
   }
 
   /// Per-episode download control: plain download icon → progress spinner
@@ -536,34 +668,62 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     ContentProvider content,
     XtreamEpisode ep,
     AppColors colors,
+    bool isArabic,
   ) {
     if (downloads.isDownloaded(ep.id)) {
       return IconButton(
         icon: const Icon(Icons.offline_pin_rounded),
         color: colors.brandPrimary,
-        tooltip: 'Play Offline',
+        tooltip: isArabic ? 'تشغيل دون اتصال' : 'Play Offline',
         onPressed: () => _playEpisode(ep),
       );
     }
 
     if (downloads.isDownloading(ep.id)) {
       final item = downloads.itemFor(ep.id)!;
+      final isPaused = item.status == DownloadStatus.paused;
+      final isPausing = _pausingIds.contains(ep.id);
+      final canPause = DownloadsProvider.pauseSupported;
       return IconButton(
-        icon: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            value: item.totalBytes > 0 ? item.progress : null,
-            valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
-          ),
-        ),
-        tooltip: 'Cancel Download',
-        onPressed: () => downloads.cancelDownload(ep.id),
+        icon: isPaused
+            ? Icon(Icons.play_arrow_rounded, color: colors.brandPrimary)
+            : SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  value:
+                      !isPausing &&
+                          item.status == DownloadStatus.downloading &&
+                          item.totalBytes > 0
+                      ? item.progress
+                      : null,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colors.brandPrimary,
+                  ),
+                ),
+              ),
+        tooltip: !canPause
+            ? (isArabic ? 'إلغاء التنزيل' : 'Cancel Download')
+            : isPaused
+            ? (isArabic ? 'استئناف التنزيل' : 'Resume Download')
+            : (isArabic ? 'إيقاف التنزيل مؤقتاً' : 'Pause Download'),
+        onPressed: !canPause
+            ? () => downloads.cancelDownload(ep.id)
+            : isPausing
+            ? null
+            : () => isPaused
+                  ? downloads.resumeDownload(ep.id)
+                  : _pause(context, downloads, ep.id),
+        onLongPress: canPause ? () => downloads.cancelDownload(ep.id) : null,
       );
     }
 
-    final sourceUrl = ep.streamUrl(content.baseUrl, content.username, content.password);
+    final sourceUrl = ep.streamUrl(
+      content.baseUrl,
+      content.username,
+      content.password,
+    );
     if (!DownloadsProvider.isDownloadable(sourceUrl)) {
       // HLS (.m3u8) sources can't be saved as a single playable offline
       // file — see DownloadsProvider.isDownloadable — so don't offer an
@@ -572,30 +732,310 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     }
 
     return IconButton(
-      icon: Icon(Icons.download_rounded, color: colors.ink.withValues(alpha: 0.54)),
-      tooltip: 'Download',
-      onPressed: () {
-        downloads.startDownload(
-          id: ep.id,
-          title: ep.title.isNotEmpty ? ep.title : 'Episode ${ep.episodeNum}',
-          posterUrl: widget.series.cover,
-          type: MediaType.series,
-          sourceUrl: sourceUrl,
-          rawData: {
-            'id': ep.id,
-            'episode_num': ep.episodeNum,
-            'title': ep.title,
-            'container_extension': ep.containerExtension,
-            'info': ep.info,
-            'custom_sid': ep.customSid,
-            'added': ep.added,
-            'season': ep.season,
-            'series_id': widget.series.seriesId,
-            'series_name': widget.series.name,
-            'series_cover': widget.series.cover,
+      icon: Icon(
+        Icons.download_rounded,
+        color: colors.ink.withValues(alpha: 0.54),
+      ),
+      tooltip: isArabic ? 'تنزيل' : 'Download',
+      onPressed: () => _promptDownloadChoice(context, downloads, content, ep),
+    );
+  }
+
+  /// Entry point for downloading a series episode: ask whether the user
+  /// wants just the tapped episode or a hand-picked batch of episodes across
+  /// seasons, rather than only ever offering one at a time.
+  void _promptDownloadChoice(
+    BuildContext context,
+    DownloadsProvider downloads,
+    ContentProvider content,
+    XtreamEpisode ep,
+  ) {
+    final colors = context.colors;
+    final isArabic = context.read<UserPrefsProvider>().locale == 'ar';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          isArabic ? 'تنزيل الحلقات' : 'Download Episodes',
+          style: GoogleFonts.outfit(
+            color: colors.ink,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          isArabic
+              ? 'تنزيل هذه الحلقة فقط، أم اختيار عدة حلقات لتنزيلها معاً؟'
+              : 'Download just this episode, or pick several episodes to download together?',
+          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          DialogSecondaryButton(
+            label: isArabic ? 'هذه الحلقة' : 'This Episode',
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _downloadEpisode(downloads, content, ep);
+            },
+          ),
+          DialogPrimaryButton(
+            label: isArabic ? 'اختيار حلقات...' : 'Select Episodes...',
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _showMultiEpisodeDownloadSheet(context, downloads, content);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _downloadEpisode(
+    DownloadsProvider downloads,
+    ContentProvider content,
+    XtreamEpisode ep,
+  ) {
+    final isArabic = context.read<UserPrefsProvider>().locale == 'ar';
+    downloads.startDownload(
+      id: ep.id,
+      title: ep.title.isNotEmpty
+          ? ep.title
+          : (isArabic ? 'الحلقة ${ep.episodeNum}' : 'Episode ${ep.episodeNum}'),
+      posterUrl: widget.series.cover,
+      type: MediaType.series,
+      sourceUrl: ep.streamUrl(
+        content.baseUrl,
+        content.username,
+        content.password,
+      ),
+      rawData: {
+        'id': ep.id,
+        'episode_num': ep.episodeNum,
+        'title': ep.title,
+        'container_extension': ep.containerExtension,
+        'info': ep.info,
+        'custom_sid': ep.customSid,
+        'added': ep.added,
+        'season': ep.season,
+        'series_id': widget.series.seriesId,
+        'series_name': widget.series.name,
+        'series_cover': widget.series.cover,
+      },
+    );
+  }
+
+  /// A modal, per-season checklist of episodes, letting the user queue many
+  /// downloads in one go instead of tapping every episode's button
+  /// individually. Already-downloaded/in-progress or non-downloadable (HLS)
+  /// episodes are shown but disabled.
+  void _showMultiEpisodeDownloadSheet(
+    BuildContext context,
+    DownloadsProvider downloads,
+    ContentProvider content,
+  ) {
+    final colors = context.colors;
+    final isArabic = context.read<UserPrefsProvider>().locale == 'ar';
+    final selected = <String>{};
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final sortedSeasons = _seriesInfo!.episodes.keys.toList()..sort();
+            return DraggableScrollableSheet(
+              initialChildSize: 0.75,
+              minChildSize: 0.4,
+              maxChildSize: 0.95,
+              expand: false,
+              builder: (ctx, scrollController) {
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              isArabic ? 'اختيار الحلقات' : 'SELECT EPISODES',
+                              style: GoogleFonts.outfit(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                fontStyle: FontStyle.italic,
+                                color: colors.ink,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: Text(
+                              isArabic ? 'إلغاء' : 'Cancel',
+                              style: GoogleFonts.outfit(
+                                color: colors.ink.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        children: [
+                          for (final season in sortedSeasons) ...[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                              child: Text(
+                                isArabic ? 'الموسم $season' : 'SEASON $season',
+                                style: GoogleFonts.outfit(
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.brandPrimary,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ),
+                            ...(_seriesInfo!.episodes[season]!..sort(
+                                  (a, b) =>
+                                      a.episodeNum.compareTo(b.episodeNum),
+                                ))
+                                .map((ep) {
+                                  final already =
+                                      downloads.isDownloaded(ep.id) ||
+                                      downloads.isDownloading(ep.id);
+                                  final sourceUrl = ep.streamUrl(
+                                    content.baseUrl,
+                                    content.username,
+                                    content.password,
+                                  );
+                                  final downloadable =
+                                      DownloadsProvider.isDownloadable(
+                                        sourceUrl,
+                                      );
+                                  final enabled = !already && downloadable;
+                                  return CheckboxListTile(
+                                    value: selected.contains(ep.id),
+                                    enabled: enabled,
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
+                                    activeColor: colors.brandPrimary,
+                                    onChanged: enabled
+                                        ? (v) => setSheetState(() {
+                                            if (v == true) {
+                                              selected.add(ep.id);
+                                            } else {
+                                              selected.remove(ep.id);
+                                            }
+                                          })
+                                        : null,
+                                    title: Text(
+                                      ep.title.isNotEmpty
+                                          ? ep.title
+                                          : (isArabic
+                                                ? 'الحلقة ${ep.episodeNum}'
+                                                : 'Episode ${ep.episodeNum}'),
+                                      style: GoogleFonts.outfit(
+                                        color: colors.ink,
+                                      ),
+                                    ),
+                                    subtitle: already
+                                        ? Text(
+                                            isArabic
+                                                ? 'تم تنزيلها بالفعل'
+                                                : 'Already downloaded',
+                                            style: GoogleFonts.outfit(
+                                              color: colors.ink.withValues(
+                                                alpha: 0.4,
+                                              ),
+                                              fontSize: 12,
+                                            ),
+                                          )
+                                        : (!downloadable
+                                              ? Text(
+                                                  isArabic
+                                                      ? 'غير قابلة للتنزيل'
+                                                      : 'Not downloadable',
+                                                  style: GoogleFonts.outfit(
+                                                    color: colors.ink
+                                                        .withValues(alpha: 0.4),
+                                                    fontSize: 12,
+                                                  ),
+                                                )
+                                              : null),
+                                  );
+                                }),
+                          ],
+                        ],
+                      ),
+                    ),
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colors.brandPrimary,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: selected.isEmpty
+                                ? null
+                                : () {
+                                    Navigator.of(ctx).pop();
+                                    _downloadEpisodes(
+                                      downloads,
+                                      content,
+                                      selected,
+                                    );
+                                  },
+                            child: Text(
+                              selected.isEmpty
+                                  ? (isArabic
+                                        ? 'اختر حلقات للتنزيل'
+                                        : 'Select episodes to download')
+                                  : (isArabic
+                                        ? 'تنزيل ${selected.length} حلقة'
+                                        : 'Download ${selected.length} Episode${selected.length == 1 ? '' : 's'}'),
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
           },
         );
       },
     );
+  }
+
+  void _downloadEpisodes(
+    DownloadsProvider downloads,
+    ContentProvider content,
+    Set<String> ids,
+  ) {
+    if (_seriesInfo == null) return;
+    for (final episodes in _seriesInfo!.episodes.values) {
+      for (final ep in episodes) {
+        if (ids.contains(ep.id)) {
+          _downloadEpisode(downloads, content, ep);
+        }
+      }
+    }
   }
 }

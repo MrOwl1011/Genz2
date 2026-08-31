@@ -4,22 +4,37 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
 
 /// Shows a resume dialog and returns `true` to resume, `false` to start over,
 /// or `null` if dismissed via the X button or tapping outside — callers must
 /// treat `null` as "cancelled, don't open the player at all", not as resume.
-Future<bool?> showResumeDialog(BuildContext context, int positionSeconds) {
+///
+/// [episodeLabel], when the item being resumed is a series episode (e.g.
+/// "Season 1 · Episode 3"), is shown above the stopped-at time so it's clear
+/// which episode is being continued — movies pass nothing and the line is
+/// simply omitted.
+Future<bool?> showResumeDialog(
+  BuildContext context,
+  int positionSeconds, {
+  String? episodeLabel,
+}) {
   return showDialog<bool>(
     context: context,
     barrierColor: Colors.black87,
-    builder: (ctx) => _ResumeDialog(positionSeconds: positionSeconds),
+    builder: (ctx) => _ResumeDialog(
+      positionSeconds: positionSeconds,
+      episodeLabel: episodeLabel,
+    ),
   );
 }
 
 class _ResumeDialog extends StatelessWidget {
   final int positionSeconds;
-  const _ResumeDialog({required this.positionSeconds});
+  final String? episodeLabel;
+  const _ResumeDialog({required this.positionSeconds, this.episodeLabel});
 
   /// Formats seconds into a human-readable string like "1h 23m 45s".
   String _formatTime(int totalSeconds) {
@@ -37,6 +52,7 @@ class _ResumeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -78,19 +94,36 @@ class _ResumeDialog extends StatelessWidget {
 
                   // Title
                   Text(
-                    'Resume Playback?',
+                    isArabic ? 'استئناف التشغيل؟' : 'Resume Playback?',
                     style: GoogleFonts.outfit(
                       color: colors.ink,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (episodeLabel != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      episodeLabel!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(
+                        color: colors.brandPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
 
                   // Subtitle with formatted time
                   Text(
-                    'You stopped at ${_formatTime(positionSeconds)}',
-                    style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.54), fontSize: 14),
+                    isArabic
+                        ? 'توقفت عند ${_formatTime(positionSeconds)}'
+                        : 'You stopped at ${_formatTime(positionSeconds)}',
+                    style: GoogleFonts.outfit(
+                      color: colors.ink.withValues(alpha: 0.54),
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -99,6 +132,11 @@ class _ResumeDialog extends StatelessWidget {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
+                      // Resume is the default action, so it takes focus as
+                      // soon as the dialog opens: on a remote that means
+                      // OK/Select resumes straight away instead of landing
+                      // on nothing and making the user hunt for a button.
+                      autofocus: true,
                       onPressed: () => Navigator.of(context).pop(true),
                       icon: const Icon(
                         Icons.play_arrow_rounded,
@@ -106,7 +144,7 @@ class _ResumeDialog extends StatelessWidget {
                         size: 22,
                       ),
                       label: Text(
-                        'Resume',
+                        isArabic ? 'استئناف' : 'Resume',
                         style: GoogleFonts.outfit(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -135,7 +173,7 @@ class _ResumeDialog extends StatelessWidget {
                         size: 20,
                       ),
                       label: Text(
-                        'Start Over',
+                        isArabic ? 'البدء من جديد' : 'Start Over',
                         style: GoogleFonts.outfit(
                           color: colors.ink.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w600,
@@ -143,7 +181,9 @@ class _ResumeDialog extends StatelessWidget {
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: colors.ink.withValues(alpha: 0.24)),
+                        side: BorderSide(
+                          color: colors.ink.withValues(alpha: 0.24),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -160,7 +200,10 @@ class _ResumeDialog extends StatelessWidget {
               top: 4,
               right: 4,
               child: IconButton(
-                icon: Icon(Icons.close_rounded, color: colors.ink.withValues(alpha: 0.54)),
+                icon: Icon(
+                  Icons.close_rounded,
+                  color: colors.ink.withValues(alpha: 0.54),
+                ),
                 onPressed: () => Navigator.of(context).pop(),
                 visualDensity: VisualDensity.compact,
               ),

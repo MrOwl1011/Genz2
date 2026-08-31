@@ -8,6 +8,7 @@ import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/tv_focusable.dart';
 import 'player_screen.dart';
 
 class ChannelsScreen extends StatefulWidget {
@@ -44,7 +45,13 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     super.dispose();
   }
 
-  void _disposePlayer() {
+  /// Awaited in _playChannel (via await below) so a new backend isn't
+  /// created while the previous one is still mid-teardown — stop()/dispose()
+  /// are real async native calls, and firing them without awaiting let two
+  /// player lifecycles overlap, which is why switching to a second channel
+  /// in the mini-player would silently fail to load after the first one
+  /// played fine.
+  Future<void> _disposePlayer() async {
     final backend = _backend;
 
     if (mounted) {
@@ -56,8 +63,8 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     }
 
     try {
-      backend?.stop();
-      backend?.dispose();
+      await backend?.stop();
+      await backend?.dispose();
     } catch (_) {}
   }
 
@@ -105,7 +112,8 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
       return; // Already playing
     }
 
-    _disposePlayer();
+    await _disposePlayer();
+    if (!mounted) return;
 
     setState(() {
       _currentChannel = channel;
@@ -159,10 +167,13 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
           _currentChannel = null;
           _backend = null;
         });
+        final isArabic = context.read<UserPrefsProvider>().locale == 'ar';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to play: ${e.toString().replaceFirst("Exception: ", "")}',
+              isArabic
+                  ? 'فشل التشغيل: ${e.toString().replaceFirst("Exception: ", "")}'
+                  : 'Failed to play: ${e.toString().replaceFirst("Exception: ", "")}',
             ),
             backgroundColor: context.colors.error,
           ),
@@ -174,6 +185,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
 
     return PopScope(
       canPop: true,
@@ -270,7 +282,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                               fontSize: 14,
                             ),
                             decoration: InputDecoration(
-                              hintText: 'Search',
+                              hintText: isArabic ? 'بحث' : 'Search',
                               hintStyle: GoogleFonts.outfit(
                                 color: colors.ink.withValues(alpha: 0.3),
                                 fontSize: 14,
@@ -371,14 +383,17 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                                                       content.username,
                                                       content.password,
                                                     );
-    
+
                                                 final initialIndex = _filtered
                                                     .indexWhere(
                                                       (c) =>
                                                           c.streamId ==
-                                                          _currentChannel!.streamId,
+                                                          _currentChannel!
+                                                              .streamId,
                                                     );
-                                                final playlist = _filtered.map((c) {
+                                                final playlist = _filtered.map((
+                                                  c,
+                                                ) {
                                                   return {
                                                     'url': c.streamUrl(
                                                       content.baseUrl,
@@ -394,34 +409,43 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                                                     'rawMediaData': c.toJson(),
                                                   };
                                                 }).toList();
-    
+
                                                 _disposePlayer();
                                                 Navigator.of(context).push(
                                                   MaterialPageRoute(
-                                                    builder: (_) => PlayerScreen(
-                                                      streamUrl: url,
-                                                      title: _currentChannel!.name,
-                                                      coverUrl: _currentChannel!
-                                                          .streamIcon,
-                                                      isLive: true,
-                                                      mediaId: _currentChannel!
-                                                          .streamId
-                                                          .toString(),
-                                                      mediaType: MediaType.live,
-                                                      rawMediaData: _currentChannel!
-                                                          .toJson(),
-                                                      playlist: playlist,
-                                                      initialIndex: initialIndex,
-                                                    ),
+                                                    builder: (_) =>
+                                                        PlayerScreen(
+                                                          streamUrl: url,
+                                                          title:
+                                                              _currentChannel!
+                                                                  .name,
+                                                          coverUrl:
+                                                              _currentChannel!
+                                                                  .streamIcon,
+                                                          isLive: true,
+                                                          mediaId:
+                                                              _currentChannel!
+                                                                  .streamId
+                                                                  .toString(),
+                                                          mediaType:
+                                                              MediaType.live,
+                                                          rawMediaData:
+                                                              _currentChannel!
+                                                                  .toJson(),
+                                                          playlist: playlist,
+                                                          initialIndex:
+                                                              initialIndex,
+                                                        ),
                                                   ),
                                                 );
                                               },
                                               child: Container(
-                                                padding: const EdgeInsets.all(6),
+                                                padding: const EdgeInsets.all(
+                                                  6,
+                                                ),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.black.withValues(
-                                                    alpha: 0.6,
-                                                  ),
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.6),
                                                   borderRadius:
                                                       BorderRadius.circular(8),
                                                 ),
@@ -441,9 +465,10 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                                     color: Colors.black,
                                     child: Center(
                                       child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          colors.brandPrimary,
-                                        ),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              colors.brandPrimary,
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -468,6 +493,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
 
   Widget _buildBody() {
     final colors = context.colors;
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(
@@ -481,12 +507,18 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.wifi_off_rounded, color: colors.ink.withValues(alpha: 0.24), size: 56),
+            Icon(
+              Icons.wifi_off_rounded,
+              color: colors.ink.withValues(alpha: 0.24),
+              size: 56,
+            ),
             const SizedBox(height: 16),
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.54)),
+              style: GoogleFonts.outfit(
+                color: colors.ink.withValues(alpha: 0.54),
+              ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -495,7 +527,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                 backgroundColor: colors.brandPrimary,
               ),
               child: Text(
-                'Retry',
+                isArabic ? 'إعادة المحاولة' : 'Retry',
                 style: GoogleFonts.outfit(color: Colors.white),
               ),
             ),
@@ -507,8 +539,11 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     if (_filtered.isEmpty) {
       return Center(
         child: Text(
-          'No channels found.',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38), fontSize: 16),
+          isArabic ? 'لا توجد قنوات.' : 'No channels found.',
+          style: GoogleFonts.outfit(
+            color: colors.ink.withValues(alpha: 0.38),
+            fontSize: 16,
+          ),
         ),
       );
     }
@@ -547,8 +582,10 @@ class _ChannelTile extends StatelessWidget {
     final userPrefs = context.watch<UserPrefsProvider>();
     final favoriteId = channel.streamId.toString();
     final isFav = userPrefs.isFavorite(favoriteId);
-    return GestureDetector(
+    final isArabic = userPrefs.locale == 'ar';
+    return TvFocusable(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         height: 72,
@@ -624,7 +661,7 @@ class _ChannelTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'No Information',
+                    isArabic ? 'لا توجد معلومات' : 'No Information',
                     style: GoogleFonts.outfit(
                       color: colors.ink.withValues(alpha: 0.38),
                       fontSize: 12,
@@ -637,7 +674,9 @@ class _ChannelTile extends StatelessWidget {
             IconButton(
               icon: Icon(
                 isFav ? Icons.favorite : Icons.favorite_border,
-                color: isFav ? colors.brandPrimary : colors.ink.withValues(alpha: 0.38),
+                color: isFav
+                    ? colors.brandPrimary
+                    : colors.ink.withValues(alpha: 0.38),
                 size: 20,
               ),
               onPressed: () {

@@ -19,13 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_valid_csrf();
     $action = (string) ($_POST['action'] ?? '');
 
-    if ($action === 'suspend') {
-        $pdo->prepare("UPDATE accounts SET status = 'suspended' WHERE account_id = :id")->execute(['id' => $accountId]);
-        $flash = 'Account suspended.';
-    } elseif ($action === 'unsuspend') {
-        $pdo->prepare("UPDATE accounts SET status = 'active' WHERE account_id = :id")->execute(['id' => $accountId]);
-        $flash = 'Account reactivated.';
-    } elseif ($action === 'delete_account') {
+    if ($action === 'delete_account') {
         $pdo->prepare('DELETE FROM accounts WHERE account_id = :id')->execute(['id' => $accountId]);
         header('Location: accounts.php?deleted=1');
         exit;
@@ -54,18 +48,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $flashType = 'error';
         } elseif ($action === 'clear_profile_history') {
             $pdo->prepare('DELETE FROM history WHERE profile_id = :pid')->execute(['pid' => $profileId]);
+            // Tells the app to actually wipe its own local cache for this
+            // profile too — see the doc comment on this column in schema.sql.
+            // Without this, the device just silently keeps showing what it
+            // already had cached; the server-side delete alone is invisible
+            // to the user.
+            $pdo->prepare('UPDATE profiles SET history_cleared_at = NOW() WHERE profile_id = :pid')->execute(['pid' => $profileId]);
             $flash = 'History cleared for this profile.';
         } else {
             $pdo->prepare('DELETE FROM favorites WHERE profile_id = :pid')->execute(['pid' => $profileId]);
+            $pdo->prepare('UPDATE profiles SET favorites_cleared_at = NOW() WHERE profile_id = :pid')->execute(['pid' => $profileId]);
             $flash = 'Favorites cleared for this profile.';
         }
-    } elseif ($action === 'force_logout_device') {
-        $deviceId = (string) ($_POST['device_id'] ?? '');
-        $pdo->prepare('UPDATE device_tokens SET revoked_at = NOW() WHERE account_id = :aid AND device_id = :did AND revoked_at IS NULL')
-            ->execute(['aid' => $accountId, 'did' => $deviceId]);
-        $pdo->prepare('DELETE FROM devices WHERE account_id = :aid AND device_id = :did')
-            ->execute(['aid' => $accountId, 'did' => $deviceId]);
-        $flash = 'Device logged out and removed.';
     }
 }
 
@@ -102,16 +96,22 @@ foreach ($profiles as &$p) {
 }
 unset($p);
 
-$devicesStmt = $pdo->prepare('SELECT device_id, device_name, platform, last_seen_at FROM devices WHERE account_id = :id ORDER BY last_seen_at DESC');
+$devicesStmt = $pdo->prepare('SELECT device_id, device_name, platform, last_seen_at
+    FROM devices WHERE account_id = :id ORDER BY last_seen_at DESC');
 $devicesStmt->execute(['id' => $accountId]);
 $devices = $devicesStmt->fetchAll();
 
-$pageTitle = $account['username'];
+// See account_label()'s doc comment — this account has no username/server_url
+// unless it predates the anonymous-account change and hasn't gone through
+// migrate_legacy.php yet.
+$accountLabel = account_label($account['username'], $account['account_id'], $devices[0]['device_name'] ?? null);
+
+$pageTitle = $accountLabel;
 $activeNav = 'accounts';
 require __DIR__ . '/includes/layout_start.php';
 ?>
 <p><a href="accounts.php">← Back to Accounts</a></p>
-<h1><?= html_escape($account['username']) ?> <span class="badge <?= $account['status'] === 'active' ? 'active' : 'suspended' ?>"><?= html_escape($account['status']) ?></span></h1>
+<h1><?= html_escape($accountLabel) ?></h1>
 
 <?php if ($flash !== null): ?>
   <div class="flash <?= $flashType ?>"><?= html_escape($flash) ?></div>
@@ -120,24 +120,14 @@ require __DIR__ . '/includes/layout_start.php';
 <div class="card">
   <table>
     <tr><th style="width:160px;">Account ID</th><td><code><?= html_escape($account['account_id']) ?></code></td></tr>
-    <tr><th>Server URL</th><td><?= html_escape($account['server_url']) ?></td></tr>
-    <tr><th>Created</th><td class="muted"><?= html_escape($account['created_at']) ?></td></tr>
-    <tr><th>Last Login</th><td class="muted"><?= html_escape($account['last_login_at'] ?? 'Never') ?></td></tr>
+    <?php if ($account['username'] !== null && $account['username'] !== ''): ?>
+    <tr><th>Username <span class="muted">(legacy)</span></th><td><?= html_escape($account['username']) ?></td></tr>
+    <tr><th>Server URL <span class="muted">(legacy)</span></th><td><?= html_escape($account['server_url']) ?></td></tr>
+    <?php endif; ?>
+    <tr><th>Created</th><td class="muted"><?= html_escape(admin_display_time($account['created_at'])) ?></td></tr>
+    <tr><th>Last Login</th><td class="muted"><?= html_escape(admin_display_time($account['last_login_at'])) ?></td></tr>
   </table>
   <div style="margin-top:16px;display:flex;gap:10px;">
-    <?php if ($account['status'] === 'active'): ?>
-      <form method="POST" onsubmit="return confirm('Suspend this account?');">
-        <input type="hidden" name="csrf_token" value="<?= html_escape(csrf_token()) ?>">
-        <input type="hidden" name="action" value="suspend">
-        <button type="submit" class="btn">Suspend Account</button>
-      </form>
-    <?php else: ?>
-      <form method="POST">
-        <input type="hidden" name="csrf_token" value="<?= html_escape(csrf_token()) ?>">
-        <input type="hidden" name="action" value="unsuspend">
-        <button type="submit" class="btn">Unsuspend Account</button>
-      </form>
-    <?php endif; ?>
     <form method="POST" onsubmit="return confirm('Permanently delete this account and ALL its data? This cannot be undone.');">
       <input type="hidden" name="csrf_token" value="<?= html_escape(csrf_token()) ?>">
       <input type="hidden" name="action" value="delete_account">
@@ -160,7 +150,7 @@ require __DIR__ . '/includes/layout_start.php';
           <td class="muted"><?= $p['is_kids'] ? 'Yes' : 'No' ?></td>
           <td><?= $p['favorite_count'] ?></td>
           <td><?= $p['history_count'] ?></td>
-          <td class="muted"><?= html_escape($p['created_at']) ?></td>
+          <td class="muted"><?= html_escape(admin_display_time($p['created_at'])) ?></td>
           <td>
             <form class="inline" method="POST" onsubmit="return confirm('Clear all favorites for this profile?');">
               <input type="hidden" name="csrf_token" value="<?= html_escape(csrf_token()) ?>">
@@ -190,24 +180,16 @@ require __DIR__ . '/includes/layout_start.php';
 <h2>Devices (<?= count($devices) ?>)</h2>
 <div class="card table-wrap">
   <table>
-    <thead><tr><th>Device</th><th>Platform</th><th>Last Seen</th><th>Actions</th></tr></thead>
+    <thead><tr><th>Device</th><th>Platform</th><th>Last Seen</th></tr></thead>
     <tbody>
       <?php if (empty($devices)): ?>
-        <tr><td colspan="4" class="muted">No devices.</td></tr>
+        <tr><td colspan="3" class="muted">No devices.</td></tr>
       <?php endif; ?>
       <?php foreach ($devices as $d): ?>
         <tr>
           <td><?= html_escape($d['device_name']) ?></td>
           <td class="muted"><?= html_escape($d['platform']) ?></td>
-          <td class="muted"><?= html_escape($d['last_seen_at']) ?></td>
-          <td>
-            <form class="inline" method="POST" onsubmit="return confirm('Force logout this device?');">
-              <input type="hidden" name="csrf_token" value="<?= html_escape(csrf_token()) ?>">
-              <input type="hidden" name="device_id" value="<?= html_escape($d['device_id']) ?>">
-              <input type="hidden" name="action" value="force_logout_device">
-              <button type="submit" class="btn small danger">Force Logout</button>
-            </form>
-          </td>
+          <td class="muted"><?= html_escape(admin_display_time($d['last_seen_at'])) ?></td>
         </tr>
       <?php endforeach; ?>
     </tbody>

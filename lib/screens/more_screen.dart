@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../core/build_flavor.dart' show kIsTv;
 import '../providers/auth_provider.dart';
+import '../features/devices/presentation/screens/devices_screen.dart';
+import '../widgets/sync_pairing_dialogs.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
@@ -11,6 +14,8 @@ import '../features/profiles/presentation/screens/profile_picker_screen.dart';
 import '../features/profiles/presentation/widgets/profile_avatar_tile.dart';
 import 'downloads_screen.dart';
 import 'login_screen.dart';
+import '../widgets/dialog_buttons.dart';
+import '../widgets/tv_focusable.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -35,7 +40,8 @@ class MoreScreen extends StatelessWidget {
     final profileProvider = Provider.of<ProfileProvider>(context);
     final isArabic = userPrefs.locale == 'ar';
     final colors = context.colors;
-    final downloadsCount = downloads.completedDownloads.length + downloads.downloading.length;
+    final downloadsCount =
+        downloads.completedDownloads.length + downloads.downloading.length;
 
     // Calculate days left
     String daysLeftText;
@@ -72,16 +78,36 @@ class MoreScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Screen Title
-              Text(
-                isArabic ? 'المزيد' : 'MORE',
-                style: GoogleFonts.outfit(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: colors.ink,
-                  letterSpacing: 2,
-                ),
+              // Screen Title — on TV this is pushed as its own route (see
+              // TvHomeScreen._pushSection), unlike phone where it's a
+              // permanent bottom-nav tab, so it needs a way back that a
+              // tab body never does.
+              Row(
+                children: [
+                  if (kIsTv)
+                    TvFocusable(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: colors.ink,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    isArabic ? 'المزيد' : 'MORE',
+                    style: GoogleFonts.outfit(
+                      fontSize: 38,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: colors.ink,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 
@@ -92,10 +118,7 @@ class MoreScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: colors.surface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: colors.border,
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: colors.border, width: 1.5),
                 ),
                 child: Row(
                   children: [
@@ -162,67 +185,87 @@ class MoreScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Viewer Profile — Netflix-style profiles (separate from the
-              // Xtream account card above). Skipped for demo-mode sessions,
-              // which never connect to the profile/sync backend at all (see
-              // AuthProvider._connectBackendAndProfiles).
-              if (!auth.isDemoMode) ...[
-                _buildSectionHeader(isArabic ? 'الملف الشخصي' : 'Viewer Profile', colors),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProfilePickerScreen(isEmbedded: true)),
-                  ),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: colors.border, width: 1.5),
-                    ),
-                    child: Row(
-                      children: [
-                        if (profileProvider.activeProfile != null)
-                          ProfileAvatarTile(
-                            profile: profileProvider.activeProfile,
-                            size: 44,
-                            showLabel: false,
-                          )
-                        else
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: colors.brandPrimary.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.person_rounded, color: colors.brandPrimary, size: 22),
-                          ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                profileProvider.activeProfile?.name ??
-                                    (isArabic ? 'اختر ملفاً شخصياً' : 'Select a profile'),
-                                style: GoogleFonts.outfit(color: colors.ink, fontWeight: FontWeight.w600, fontSize: 15),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isArabic ? 'إدارة أو تبديل الملفات الشخصية' : 'Switch, add, edit or delete profiles',
-                                style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.5), fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.chevron_right_rounded, color: colors.ink.withValues(alpha: 0.38)),
-                      ],
-                    ),
+              // Xtream account card above).
+              _buildSectionHeader(
+                isArabic ? 'الملف الشخصي' : 'Viewer Profile',
+                colors,
+              ),
+              const SizedBox(height: 12),
+              TvFocusable(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ProfilePickerScreen(isEmbedded: true),
                   ),
                 ),
-                const SizedBox(height: 24),
-              ],
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: colors.border, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      if (profileProvider.activeProfile != null)
+                        ProfileAvatarTile(
+                          profile: profileProvider.activeProfile,
+                          size: 44,
+                          showLabel: false,
+                        )
+                      else
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: colors.brandPrimary.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.person_rounded,
+                            color: colors.brandPrimary,
+                            size: 22,
+                          ),
+                        ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              profileProvider.activeProfile?.name ??
+                                  (isArabic
+                                      ? 'اختر ملفاً شخصياً'
+                                      : 'Select a profile'),
+                              style: GoogleFonts.outfit(
+                                color: colors.ink,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isArabic
+                                  ? 'إدارة أو تبديل الملفات الشخصية'
+                                  : 'Switch, add, edit or delete profiles',
+                              style: GoogleFonts.outfit(
+                                color: colors.ink.withValues(alpha: 0.5),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: colors.ink.withValues(alpha: 0.38),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // Account Details Info Panel
               _buildSectionHeader(
@@ -250,34 +293,14 @@ class MoreScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // Supported Streams Info
-              _buildSectionHeader(
-                isArabic ? 'توافق النظام' : 'System Compatibility',
-                colors,
-              ),
-              const SizedBox(height: 12),
-              _buildInfoContainer(colors, [
-                _buildInfoRow(
-                  colors,
-                  isArabic ? 'إصدار المحرك' : 'Engine Version',
-                  'v1.4.2-NX',
-                ),
-                _buildInfoRow(
-                  colors,
-                  isArabic ? 'بدون إعلانات' : 'Ad-Free Mode',
-                  isArabic ? 'مفعل (مدى الحياة)' : 'Enabled (Lifetime)',
-                ),
-              ]),
-
-              const SizedBox(height: 24),
-
               // Help & Support
               _buildSectionHeader(
                 isArabic ? 'المساعدة والدعم' : 'Help & Support',
                 colors,
               ),
               const SizedBox(height: 12),
-              GestureDetector(
+              TvFocusable(
+                borderRadius: BorderRadius.circular(16),
                 onTap: () async {
                   final url = Uri.parse('https://wa.me/96550507254');
                   if (await canLaunchUrl(url)) {
@@ -290,7 +313,10 @@ class MoreScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: colors.ink.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colors.ink.withValues(alpha: 0.1), width: 1.5),
+                    border: Border.all(
+                      color: colors.ink.withValues(alpha: 0.1),
+                      width: 1.5,
+                    ),
                   ),
                   child: Center(
                     child: Row(
@@ -318,6 +344,106 @@ class MoreScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+
+              // Sync diagnostics — see AuthProvider.backendError for why
+              // this is on screen rather than only in debugPrint.
+              _buildSectionHeader(isArabic ? 'المزامنة' : 'Sync', colors),
+              const SizedBox(height: 12),
+              _buildInfoContainer(colors, [
+                Builder(
+                  builder: (context) {
+                    final auth = context.watch<AuthProvider>();
+                    final ok = auth.isBackendConnected;
+                    final err = auth.backendError;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            ok
+                                ? Icons.cloud_done_rounded
+                                : Icons.cloud_off_rounded,
+                            color: ok ? colors.brandPrimary : colors.error,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  ok
+                                      ? (isArabic ? 'متصل' : 'Connected')
+                                      : (isArabic
+                                            ? 'غير متصل'
+                                            : 'Not connected'),
+                                  style: GoogleFonts.outfit(
+                                    color: colors.ink,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (!ok) ...[
+                                  const SizedBox(height: 4),
+                                  // The raw reason, verbatim. Deliberately
+                                  // not prettified into a friendly message:
+                                  // this exists to be reported back when a
+                                  // specific device won't sync.
+                                  Text(
+                                    err ?? 'No error recorded yet.',
+                                    style: GoogleFonts.outfit(
+                                      color: colors.ink.withValues(alpha: 0.6),
+                                      fontSize: 11.5,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                Divider(
+                  color: colors.ink.withValues(alpha: 0.08),
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                ),
+                _buildActionRow(
+                  context,
+                  colors,
+                  icon: Icons.qr_code_rounded,
+                  label: isArabic ? 'إظهار رمز المزامنة' : 'Show my sync code',
+                  value: '',
+                  onTap: () => _showPairingCodeDialog(context, isArabic),
+                ),
+                _buildActionRow(
+                  context,
+                  colors,
+                  icon: Icons.link_rounded,
+                  label: isArabic ? 'إدخال رمز' : 'Enter a code',
+                  value: '',
+                  onTap: () => _showJoinCodeDialog(context, isArabic),
+                ),
+                _buildActionRow(
+                  context,
+                  colors,
+                  icon: Icons.devices_rounded,
+                  label: isArabic ? 'الأجهزة المتزامنة' : 'Synced Devices',
+                  value: '',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const DevicesScreen()),
+                  ),
+                ),
+              ]),
               const SizedBox(height: 24),
 
               // Settings Section
@@ -365,7 +491,8 @@ class MoreScreen extends StatelessWidget {
               const SizedBox(height: 36),
 
               // Logout Button
-              GestureDetector(
+              TvFocusable(
+                borderRadius: BorderRadius.circular(30),
                 onTap: () async {
                   // Logout only ends the session — the playlist stays saved
                   // so it still appears in "Users" for one-tap re-login.
@@ -418,7 +545,8 @@ class MoreScreen extends StatelessWidget {
               const SizedBox(height: 12),
 
               // Delete Account Button
-              GestureDetector(
+              TvFocusable(
+                borderRadius: BorderRadius.circular(30),
                 onTap: () => _showDeleteAccountDialog(context, auth, isArabic),
                 child: Container(
                   width: double.infinity,
@@ -495,15 +623,15 @@ class MoreScreen extends StatelessWidget {
               : 'This will permanently delete this account along with all its associated history and favorites. This action cannot be undone.',
           style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
+          DialogSecondaryButton(
+            label: isArabic ? 'إلغاء' : 'Cancel',
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              isArabic ? 'إلغاء' : 'Cancel',
-              style: GoogleFonts.outfit(color: colors.ink),
-            ),
           ),
-          TextButton(
+          DialogPrimaryButton(
+            label: isArabic ? 'حذف' : 'Delete',
+            color: colors.error,
             onPressed: () async {
               Navigator.of(ctx).pop();
               await auth.logout(deleteFromList: true);
@@ -514,13 +642,6 @@ class MoreScreen extends StatelessWidget {
                 );
               }
             },
-            child: Text(
-              isArabic ? 'حذف' : 'Delete',
-              style: GoogleFonts.outfit(
-                color: colors.error,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ),
         ],
       ),
@@ -608,7 +729,11 @@ class MoreScreen extends StatelessWidget {
     );
   }
 
-  void _showThemePicker(BuildContext context, UserPrefsProvider userPrefs, bool isArabic) {
+  void _showThemePicker(
+    BuildContext context,
+    UserPrefsProvider userPrefs,
+    bool isArabic,
+  ) {
     final colors = context.colors;
     showModalBottomSheet(
       context: context,
@@ -642,9 +767,24 @@ class MoreScreen extends StatelessWidget {
               ),
             ),
             Divider(color: colors.ink.withValues(alpha: 0.1), height: 1),
-            _buildThemeOption(ctx, userPrefs, mode: ThemeMode.system, label: _themeModeLabel(ThemeMode.system, isArabic)),
-            _buildThemeOption(ctx, userPrefs, mode: ThemeMode.light, label: _themeModeLabel(ThemeMode.light, isArabic)),
-            _buildThemeOption(ctx, userPrefs, mode: ThemeMode.dark, label: _themeModeLabel(ThemeMode.dark, isArabic)),
+            _buildThemeOption(
+              ctx,
+              userPrefs,
+              mode: ThemeMode.system,
+              label: _themeModeLabel(ThemeMode.system, isArabic),
+            ),
+            _buildThemeOption(
+              ctx,
+              userPrefs,
+              mode: ThemeMode.light,
+              label: _themeModeLabel(ThemeMode.light, isArabic),
+            ),
+            _buildThemeOption(
+              ctx,
+              userPrefs,
+              mode: ThemeMode.dark,
+              label: _themeModeLabel(ThemeMode.dark, isArabic),
+            ),
             const SizedBox(height: 24),
           ],
         ),
@@ -677,6 +817,14 @@ class MoreScreen extends StatelessWidget {
         Navigator.pop(context);
       },
     );
+  }
+
+  void _showPairingCodeDialog(BuildContext context, bool isArabic) {
+    showPairingCodeDialog(context, authProvider: context.read<AuthProvider>(), isArabic: isArabic);
+  }
+
+  void _showJoinCodeDialog(BuildContext context, bool isArabic) {
+    showJoinCodeDialog(context, authProvider: context.read<AuthProvider>(), isArabic: isArabic);
   }
 
   Widget _buildSectionHeader(String title, AppColors colors) {
@@ -759,9 +907,9 @@ class MoreScreen extends StatelessWidget {
     required String value,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return TvFocusable(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
@@ -829,6 +977,7 @@ class MoreScreen extends StatelessWidget {
             onChanged: onChanged,
             activeThumbColor: primaryColor,
             inactiveTrackColor: colors.ink.withValues(alpha: 0.12),
+            focusColor: colors.brandAccent.withValues(alpha: 0.35),
           ),
         ],
       ),

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/tv_focusable.dart';
 import 'home_screen.dart';
 import 'live_screen.dart'; // will update this next
 import 'movies_category_screen.dart';
@@ -87,11 +88,31 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, isArabic ? 'الرئيسية' : 'Home', icon: Icons.home_rounded),
-              _buildNavItem(1, isArabic ? 'مباشر' : 'Live', icon: Icons.sensors_rounded),
-              _buildNavItem(2, isArabic ? 'أفلام' : 'Movies', icon: Icons.movie_creation_outlined),
-              _buildNavItem(3, isArabic ? 'مسلسلات' : 'Series', icon: Icons.video_library_outlined),
-              _buildNavItem(4, isArabic ? 'المزيد' : 'More', icon: Icons.menu_rounded),
+              _buildNavItem(
+                0,
+                isArabic ? 'الرئيسية' : 'Home',
+                icon: Icons.home_rounded,
+              ),
+              _buildNavItem(
+                1,
+                isArabic ? 'مباشر' : 'Live',
+                icon: Icons.sensors_rounded,
+              ),
+              _buildNavItem(
+                2,
+                isArabic ? 'أفلام' : 'Movies',
+                icon: Icons.movie_creation_outlined,
+              ),
+              _buildNavItem(
+                3,
+                isArabic ? 'مسلسلات' : 'Series',
+                icon: Icons.video_library_outlined,
+              ),
+              _buildNavItem(
+                4,
+                isArabic ? 'المزيد' : 'More',
+                icon: Icons.menu_rounded,
+              ),
             ],
           ),
         ),
@@ -99,23 +120,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Widget _buildNavItem(
-    int index,
-    String label, {
-    IconData? icon,
-  }) {
+  Widget _buildNavItem(int index, String label, {IconData? icon}) {
     final isSelected = _currentIndex == index;
     final colors = context.colors;
     final activeColor = colors.brandPrimary;
     final inactiveColor = colors.ink.withValues(alpha: 0.38);
 
-    return GestureDetector(
+    return TvFocusable(
+      borderRadius: BorderRadius.circular(20),
       onTap: () {
         setState(() {
           _currentIndex = index;
         });
       },
-      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

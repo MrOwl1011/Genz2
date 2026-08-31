@@ -22,7 +22,7 @@ class ProfileProvider extends ChangeNotifier {
   final ProfileRepository _repository;
 
   ProfileProvider(this.userPrefs, {ProfileRepository? repository})
-      : _repository = repository ?? ProfileRepositoryImpl();
+    : _repository = repository ?? ProfileRepositoryImpl();
 
   String? _accountId;
   String? _deviceToken;
@@ -53,7 +53,9 @@ class ProfileProvider extends ChangeNotifier {
     _profiles = _repository.getCachedProfiles(accountId);
     notifyListeners();
 
-    if (deviceToken == null) return; // offline — stick with the cached list above
+    if (deviceToken == null) {
+      return; // offline — stick with the cached list above
+    }
 
     _isLoading = true;
     notifyListeners();
@@ -75,7 +77,13 @@ class ProfileProvider extends ChangeNotifier {
     _activeProfile = profile;
     final accountId = _accountId;
     if (accountId != null) {
-      userPrefs.setProfileScope(accountId, profile.profileId, deviceToken: _deviceToken);
+      userPrefs.setProfileScope(
+        accountId,
+        profile.profileId,
+        deviceToken: _deviceToken,
+        favoritesClearedAt: profile.favoritesClearedAt,
+        historyClearedAt: profile.historyClearedAt,
+      );
       // Persisted so the *next* app launch can skip the picker and resume
       // straight into this same profile — see tryRestoreLastProfile(),
       // called from AuthProvider right after loadForAccount(). Without this,

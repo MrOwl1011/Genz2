@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/content_provider.dart';
+import '../providers/user_prefs_provider.dart';
 import '../widgets/category_layout.dart';
 import '../widgets/category_card.dart'; // for CategoryType
 import 'movies_screen.dart';
@@ -11,9 +12,10 @@ class MoviesCategoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = context.watch<ContentProvider>();
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
 
     return CategoryLayout(
-      title: 'MOVIES',
+      title: isArabic ? 'أفلام' : 'MOVIES',
       categories: content.vodCategories,
       type: CategoryType.movie,
       isLoading: content.isLoadingVod,
@@ -24,7 +26,9 @@ class MoviesCategoryScreen extends StatelessWidget {
           MaterialPageRoute(builder: (_) => MoviesScreen(category: category)),
         );
       },
-      tabs: const ['All', 'Liked', 'New'],
+      tabs: isArabic
+          ? const ['الكل', 'المفضلة', 'جديد']
+          : const ['All', 'Liked', 'New'],
     );
   }
 }

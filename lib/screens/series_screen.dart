@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
+import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
 import 'series_details_screen.dart';
 
@@ -101,6 +102,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -156,18 +158,19 @@ class _SeriesScreenState extends State<SeriesScreen> {
                   decoration: BoxDecoration(
                     color: colors.surface.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                      color: colors.border,
-                      width: 1.5,
-                    ),
+                    border: Border.all(color: colors.border, width: 1.5),
                   ),
                   child: TextField(
                     controller: _searchController,
                     onChanged: _onSearch,
                     style: GoogleFonts.outfit(color: colors.ink),
                     decoration: InputDecoration(
-                      hintText: 'Search series...',
-                      hintStyle: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.3)),
+                      hintText: isArabic
+                          ? 'ابحث عن مسلسلات...'
+                          : 'Search series...',
+                      hintStyle: GoogleFonts.outfit(
+                        color: colors.ink.withValues(alpha: 0.3),
+                      ),
                       prefixIcon: Icon(
                         Icons.search,
                         color: colors.ink.withValues(alpha: 0.38),
@@ -191,6 +194,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
 
   Widget _buildBody() {
     final colors = context.colors;
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(
@@ -204,12 +208,18 @@ class _SeriesScreenState extends State<SeriesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.wifi_off_rounded, color: colors.ink.withValues(alpha: 0.24), size: 56),
+            Icon(
+              Icons.wifi_off_rounded,
+              color: colors.ink.withValues(alpha: 0.24),
+              size: 56,
+            ),
             const SizedBox(height: 16),
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.54)),
+              style: GoogleFonts.outfit(
+                color: colors.ink.withValues(alpha: 0.54),
+              ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -218,7 +228,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                 backgroundColor: colors.brandPrimary,
               ),
               child: Text(
-                'Retry',
+                isArabic ? 'إعادة المحاولة' : 'Retry',
                 style: GoogleFonts.outfit(color: Colors.white),
               ),
             ),
@@ -230,8 +240,11 @@ class _SeriesScreenState extends State<SeriesScreen> {
     if (_filtered.isEmpty) {
       return Center(
         child: Text(
-          'No series found.',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38), fontSize: 16),
+          isArabic ? 'لا توجد مسلسلات.' : 'No series found.',
+          style: GoogleFonts.outfit(
+            color: colors.ink.withValues(alpha: 0.38),
+            fontSize: 16,
+          ),
         ),
       );
     }

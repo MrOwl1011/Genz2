@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:video_player/video_player.dart';
 
+import '../core/build_flavor.dart' show kIsTv;
 import 'player_backend.dart';
 
 /// [PlayerBackend] implementation backed by `video_player` (ExoPlayer on
@@ -89,7 +90,9 @@ class ExoPlayerBackend implements PlayerBackend {
       _heightCtrl.add(h);
     }
 
-    if (value.hasError && value.errorDescription != null && value.errorDescription!.isNotEmpty) {
+    if (value.hasError &&
+        value.errorDescription != null &&
+        value.errorDescription!.isNotEmpty) {
       debugPrint('[ExoPlayerBackend] error: ${value.errorDescription}');
       _errorCtrl.add(value.errorDescription!);
     }
@@ -137,7 +140,19 @@ class ExoPlayerBackend implements PlayerBackend {
     controller.addListener(_onControllerChanged);
 
     try {
-      await controller.initialize();
+      // No bound otherwise: a dead/unresponsive source (or, on TV, a
+      // decoder slot still tied up by a prior instance) leaves
+      // initialize() simply never resolving, which is exactly what a
+      // "stuck on Connecting forever" channel looks like from the caller's
+      // side. 20s is generous enough for a slow-but-real IPTV connect
+      // (manifest negotiation is routinely slower than VOD CDNs) while
+      // still giving up in bounded time.
+      await controller.initialize().timeout(
+        const Duration(seconds: 20),
+        onTimeout: () => throw TimeoutException(
+          'Timed out connecting to this stream after 20s',
+        ),
+      );
       _initialized = true;
       debugPrint(
         '[ExoPlayerBackend] initialized: '
@@ -146,7 +161,9 @@ class ExoPlayerBackend implements PlayerBackend {
       );
 
       // Flush queued commands
-      final commands = List<void Function(VideoPlayerController)>.from(_pendingCommands);
+      final commands = List<void Function(VideoPlayerController)>.from(
+        _pendingCommands,
+      );
       _pendingCommands.clear();
       for (final command in commands) {
         command(controller);
@@ -162,6 +179,19 @@ class ExoPlayerBackend implements PlayerBackend {
       });
 
       if (autoPlay) {
+        // TV: give the stream a head start before the first frame plays,
+        // rather than starting the instant ExoPlayer reports "initialized"
+        // (which only means the format/duration are known, not that
+        // there's any real cushion buffered yet). IPTV sources are
+        // frequently higher-latency/less consistent than typical VOD CDNs,
+        // and starting with ~zero buffer is what turns that into an
+        // immediate stutter/rebuffer right at playback start. The
+        // `video_player` plugin doesn't expose ExoPlayer's LoadControl to
+        // configure this natively, so this polls the buffered ranges it
+        // does expose instead. Phone is left as-is (starts immediately) —
+        // not the behavior reported as a problem, and phones are typically
+        // on lower-latency, more consistent connections than a TV box.
+        if (kIsTv) await _waitForInitialBuffer(controller);
         await controller.play();
       }
     } catch (e) {
@@ -175,14 +205,42 @@ class ExoPlayerBackend implements PlayerBackend {
     _watchdog?.cancel();
     _watchdog = Timer(const Duration(seconds: 12), () {
       if (_disposed) return;
-      if (_lastDuration.inMilliseconds == 0 && _lastPosition.inMilliseconds == 0) {
-        debugPrint('[ExoPlayerBackend] watchdog: no progress within 12s for $url');
+      if (_lastDuration.inMilliseconds == 0 &&
+          _lastPosition.inMilliseconds == 0) {
+        debugPrint(
+          '[ExoPlayerBackend] watchdog: no progress within 12s for $url',
+        );
         _errorCtrl.add(
           'ExoPlayer did not respond while opening this stream. '
           'The stream may be unavailable or in an unsupported format.',
         );
       }
     });
+  }
+
+  /// Polls the controller's already-buffered ranges (there's no push-based
+  /// signal for this) until roughly 1s is buffered ahead of the playback
+  /// position, or [timeout] passes — whichever comes first, so a source
+  /// that never buffers well doesn't delay playback start indefinitely and
+  /// just falls back to today's immediate-play behavior.
+  Future<void> _waitForInitialBuffer(
+    VideoPlayerController controller, {
+    Duration target = const Duration(seconds: 1),
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (!_disposed && DateTime.now().isBefore(deadline)) {
+      final position = controller.value.position;
+      final bufferedAhead = controller.value.buffered
+          .where((range) => range.start <= position && range.end > position)
+          .fold<Duration>(
+            Duration.zero,
+            (acc, range) =>
+                range.end - position > acc ? range.end - position : acc,
+          );
+      if (bufferedAhead >= target) return;
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
   }
 
   @override

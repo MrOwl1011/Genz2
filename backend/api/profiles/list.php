@@ -10,7 +10,7 @@ require_api_key();
 $auth = require_device_token();
 
 $stmt = db()->prepare(
-    'SELECT profile_id, name, avatar, is_kids, created_at, updated_at
+    'SELECT profile_id, name, avatar, is_kids, favorites_cleared_at, history_cleared_at, created_at, updated_at
      FROM profiles
      WHERE account_id = :account_id AND deleted_at IS NULL
      ORDER BY created_at ASC'
@@ -24,6 +24,8 @@ $profiles = array_map(static function (array $row): array {
         'name' => $row['name'],
         'avatar' => $row['avatar'],
         'is_kids' => (bool) $row['is_kids'],
+        'favorites_cleared_at' => $row['favorites_cleared_at'],
+        'history_cleared_at' => $row['history_cleared_at'],
         'created_at' => $row['created_at'],
         'updated_at' => $row['updated_at'],
     ];

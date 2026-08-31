@@ -11,6 +11,8 @@ class ProfileModel extends ProfileEntity {
     required super.avatar,
     required super.isKids,
     required super.updatedAt,
+    super.favoritesClearedAt,
+    super.historyClearedAt,
   });
 
   factory ProfileModel.fromEntity(ProfileEntity entity) {
@@ -20,7 +22,14 @@ class ProfileModel extends ProfileEntity {
       avatar: entity.avatar,
       isKids: entity.isKids,
       updatedAt: entity.updatedAt,
+      favoritesClearedAt: entity.favoritesClearedAt,
+      historyClearedAt: entity.historyClearedAt,
     );
+  }
+
+  static DateTime? _parseBackendUtcOrNull(dynamic value) {
+    if (value == null) return null;
+    return parseBackendUtc(value as String);
   }
 
   /// From a backend API response (`profile_id`/`is_kids` snake_case,
@@ -32,6 +41,8 @@ class ProfileModel extends ProfileEntity {
       avatar: (json['avatar'] as String?) ?? 'default',
       isKids: json['is_kids'] == true,
       updatedAt: parseBackendUtc(json['updated_at'] as String),
+      favoritesClearedAt: _parseBackendUtcOrNull(json['favorites_cleared_at']),
+      historyClearedAt: _parseBackendUtcOrNull(json['history_cleared_at']),
     );
   }
 
@@ -46,6 +57,12 @@ class ProfileModel extends ProfileEntity {
       avatar: map['avatar'] as String,
       isKids: map['isKids'] as bool,
       updatedAt: DateTime.parse(map['updatedAt'] as String),
+      favoritesClearedAt: map['favoritesClearedAt'] != null
+          ? DateTime.parse(map['favoritesClearedAt'] as String)
+          : null,
+      historyClearedAt: map['historyClearedAt'] != null
+          ? DateTime.parse(map['historyClearedAt'] as String)
+          : null,
     );
   }
 
@@ -56,6 +73,8 @@ class ProfileModel extends ProfileEntity {
       'avatar': avatar,
       'isKids': isKids,
       'updatedAt': updatedAt.toUtc().toIso8601String(),
+      'favoritesClearedAt': favoritesClearedAt?.toUtc().toIso8601String(),
+      'historyClearedAt': historyClearedAt?.toUtc().toIso8601String(),
     };
   }
 }

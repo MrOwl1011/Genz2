@@ -1,6 +1,6 @@
 import '../providers/user_prefs_provider.dart' show MediaType;
 
-enum DownloadStatus { downloading, completed, failed }
+enum DownloadStatus { queued, downloading, paused, completed, failed }
 
 /// A single downloaded (or downloading) piece of media, scoped to whichever
 /// playlist/account was active when it was requested — see
@@ -19,6 +19,10 @@ class DownloadItem {
   int totalBytes;
   int downloadedBytes;
 
+  /// Live transfer speed in megabytes/second, for UI display only — not
+  /// persisted (there is nothing meaningful to restore it to on relaunch).
+  double speedMBps;
+
   DownloadItem({
     required this.id,
     required this.title,
@@ -27,28 +31,29 @@ class DownloadItem {
     required this.sourceUrl,
     required this.rawData,
     required this.createdAt,
-    this.status = DownloadStatus.downloading,
+    this.status = DownloadStatus.queued,
     this.filePath,
     this.totalBytes = 0,
     this.downloadedBytes = 0,
+    this.speedMBps = 0,
   });
 
   double get progress =>
       totalBytes > 0 ? (downloadedBytes / totalBytes).clamp(0.0, 1.0) : 0.0;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'posterUrl': posterUrl,
-        'type': type.name,
-        'sourceUrl': sourceUrl,
-        'rawData': rawData,
-        'createdAt': createdAt.toIso8601String(),
-        'status': status.name,
-        'filePath': filePath,
-        'totalBytes': totalBytes,
-        'downloadedBytes': downloadedBytes,
-      };
+    'id': id,
+    'title': title,
+    'posterUrl': posterUrl,
+    'type': type.name,
+    'sourceUrl': sourceUrl,
+    'rawData': rawData,
+    'createdAt': createdAt.toIso8601String(),
+    'status': status.name,
+    'filePath': filePath,
+    'totalBytes': totalBytes,
+    'downloadedBytes': downloadedBytes,
+  };
 
   factory DownloadItem.fromJson(Map<String, dynamic> json) {
     return DownloadItem(

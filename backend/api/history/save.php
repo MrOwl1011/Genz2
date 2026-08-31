@@ -92,4 +92,32 @@ $stmt->execute([
     'updated_at' => $updatedAt,
 ]);
 
+// The unique key above is per-episode (stream_id), not per-series, so
+// watching episode 2 then episode 5 previously left both rows sitting in
+// the table forever — every sync pull re-merged the old episode back in
+// alongside the new one. Only one history entry per series should ever
+// exist: the most recently watched episode. Guarded by updated_at so an
+// out-of-order/stale write (e.g. a delayed sync of an older watch) can't
+// wipe out a genuinely newer episode's row — only rows actually older
+// than this write get removed, which also correctly handles a user
+// deliberately re-watching an earlier episode later (that becomes the
+// newest updated_at and this cleanup then removes the now-stale sibling).
+if ($streamType === 'series' && $seriesId !== null) {
+    $cleanupStmt = db()->prepare(
+        'DELETE FROM history
+         WHERE profile_id = :profile_id
+           AND stream_type = :stream_type
+           AND series_id = :series_id
+           AND stream_id != :stream_id
+           AND updated_at < :updated_at'
+    );
+    $cleanupStmt->execute([
+        'profile_id' => $profileId,
+        'stream_type' => $streamType,
+        'series_id' => $seriesId,
+        'stream_id' => $streamId,
+        'updated_at' => $updatedAt,
+    ]);
+}
+
 json_success(null);

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../providers/user_prefs_provider.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../widgets/dialog_buttons.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_avatar_tile.dart';
@@ -28,7 +30,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.existingProfile?.name ?? '');
+    _nameController = TextEditingController(
+      text: widget.existingProfile?.name ?? '',
+    );
     _selectedAvatar = widget.existingProfile?.avatar ?? kAvatarColorKeys.first;
     _nameController.addListener(() => setState(() {}));
   }
@@ -50,9 +54,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _save() async {
+    final isArabic = context.read<UserPrefsProvider>().locale == 'ar';
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      _showError('Please enter a name.');
+      _showError(isArabic ? 'الرجاء إدخال اسم.' : 'Please enter a name.');
       return;
     }
 
@@ -72,33 +77,44 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (success) {
       Navigator.of(context).pop();
     } else {
-      _showError(provider.errorMessage ?? 'Something went wrong.');
+      _showError(
+        provider.errorMessage ??
+            (isArabic ? 'حدث خطأ ما.' : 'Something went wrong.'),
+      );
     }
   }
 
   Future<void> _delete() async {
     final colors = context.colors;
+    final isArabic = context.read<UserPrefsProvider>().locale == 'ar';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surfaceElevated,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Delete Profile?',
-          style: GoogleFonts.outfit(color: colors.ink, fontWeight: FontWeight.bold),
+          isArabic ? 'حذف الملف الشخصي؟' : 'Delete Profile?',
+          style: GoogleFonts.outfit(
+            color: colors.ink,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Text(
-          'This removes "${widget.existingProfile!.name}" from this account.',
+          isArabic
+              ? 'سيؤدي هذا إلى إزالة "${widget.existingProfile!.name}" من هذا الحساب.'
+              : 'This removes "${widget.existingProfile!.name}" from this account.',
           style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
+          DialogSecondaryButton(
+            label: isArabic ? 'إلغاء' : 'Cancel',
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Cancel', style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7))),
           ),
-          TextButton(
+          DialogPrimaryButton(
+            label: isArabic ? 'حذف' : 'Delete',
+            color: colors.error,
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Delete', style: GoogleFonts.outfit(color: colors.error, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -107,8 +123,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
     setState(() => _isSaving = true);
     final provider = context.read<ProfileProvider>();
-    final wasActive = provider.activeProfile?.profileId == widget.existingProfile!.profileId;
-    final success = await provider.deleteProfile(widget.existingProfile!.profileId);
+    final wasActive =
+        provider.activeProfile?.profileId == widget.existingProfile!.profileId;
+    final success = await provider.deleteProfile(
+      widget.existingProfile!.profileId,
+    );
 
     if (!mounted) return;
     setState(() => _isSaving = false);
@@ -116,7 +135,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (success) {
       if (wasActive) {
         // Deleting the profile you're currently viewing as clears
-        // ProfileProvider.activeProfile, which AuthRootHandler reacts to by
+        // ProfileProvider.activeProfile, which AppRoot reacts to by
         // swapping the app's root content back to the profile picker — that
         // already tears down and rebuilds everything above it (this screen,
         // and whatever picker screen is under it), so a plain pop() here
@@ -128,13 +147,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         Navigator.of(context).pop();
       }
     } else {
-      _showError(provider.errorMessage ?? 'Something went wrong.');
+      _showError(
+        provider.errorMessage ??
+            (isArabic ? 'حدث خطأ ما.' : 'Something went wrong.'),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
 
     return Scaffold(
       body: Container(
@@ -158,12 +181,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.ink),
-                      onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: colors.ink,
+                      ),
+                      onPressed: _isSaving
+                          ? null
+                          : () => Navigator.of(context).pop(),
                     ),
                     Expanded(
                       child: Text(
-                        _isEditing ? 'EDIT PROFILE' : 'ADD PROFILE',
+                        _isEditing
+                            ? (isArabic ? 'تعديل الملف الشخصي' : 'EDIT PROFILE')
+                            : (isArabic ? 'إضافة ملف شخصي' : 'ADD PROFILE'),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.outfit(
                           fontSize: 20,
@@ -194,13 +224,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         controller: _nameController,
                         maxLength: 60,
                         textCapitalization: TextCapitalization.words,
-                        style: GoogleFonts.outfit(color: colors.ink, fontSize: 16),
+                        style: GoogleFonts.outfit(
+                          color: colors.ink,
+                          fontSize: 16,
+                        ),
                         decoration: InputDecoration(
-                          labelText: 'Name',
-                          labelStyle: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.6)),
+                          labelText: isArabic ? 'الاسم' : 'Name',
+                          labelStyle: GoogleFonts.outfit(
+                            color: colors.ink.withValues(alpha: 0.6),
+                          ),
                           filled: true,
                           fillColor: colors.surface,
-                          counterStyle: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.4)),
+                          counterStyle: GoogleFonts.outfit(
+                            color: colors.ink.withValues(alpha: 0.4),
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide(color: colors.border),
@@ -211,7 +248,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(color: colors.brandPrimary, width: 2),
+                            borderSide: BorderSide(
+                              color: colors.brandPrimary,
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
@@ -219,7 +259,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Avatar Color',
+                          isArabic ? 'لون الصورة الرمزية' : 'Avatar Color',
                           style: GoogleFonts.outfit(
                             color: colors.ink.withValues(alpha: 0.7),
                             fontSize: 13,
@@ -240,7 +280,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               size: 48,
                               showLabel: false,
                               selected: _selectedAvatar == key,
-                              onTap: () => setState(() => _selectedAvatar = key),
+                              onTap: () =>
+                                  setState(() => _selectedAvatar = key),
                             ),
                         ],
                       ),
@@ -252,17 +293,34 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           onPressed: _isSaving ? null : _save,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colors.brandPrimary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           child: _isSaving
                               ? const SizedBox(
                                   width: 22,
                                   height: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation(Colors.white)),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Colors.white,
+                                    ),
+                                  ),
                                 )
                               : Text(
-                                  _isEditing ? 'Save Changes' : 'Create Profile',
-                                  style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                  _isEditing
+                                      ? (isArabic
+                                            ? 'حفظ التغييرات'
+                                            : 'Save Changes')
+                                      : (isArabic
+                                            ? 'إنشاء ملف شخصي'
+                                            : 'Create Profile'),
+                                  style: GoogleFonts.outfit(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                         ),
                       ),
@@ -274,12 +332,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           child: OutlinedButton(
                             onPressed: _isSaving ? null : _delete,
                             style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: colors.error.withValues(alpha: 0.5)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              side: BorderSide(
+                                color: colors.error.withValues(alpha: 0.5),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                             child: Text(
-                              'Delete Profile',
-                              style: GoogleFonts.outfit(color: colors.error, fontWeight: FontWeight.w600, fontSize: 15),
+                              isArabic ? 'حذف الملف الشخصي' : 'Delete Profile',
+                              style: GoogleFonts.outfit(
+                                color: colors.error,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                         ),

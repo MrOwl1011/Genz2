@@ -32,3 +32,20 @@ function compute_account_id(string $serverUrl, string $username): string
 {
     return hash('sha256', normalize_server_url($serverUrl) . normalize_username($username));
 }
+
+/**
+ * account_id for every account created from here on. Deliberately unrelated
+ * to any Xtream credential — see register.php's doc comment for why this
+ * replaced compute_account_id() as the identity for new accounts.
+ * compute_account_id() itself is kept only for migrate_legacy.php, which
+ * needs to look up accounts that were created under the old scheme before
+ * this change.
+ *
+ * 32 random bytes hex-encoded to 64 chars, matching accounts.account_id's
+ * existing CHAR(64) column exactly — no schema change needed to switch
+ * schemes.
+ */
+function generate_anonymous_account_id(): string
+{
+    return bin2hex(random_bytes(32));
+}

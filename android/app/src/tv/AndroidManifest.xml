@@ -1,0 +1,48 @@
+<!--
+  Manifest overlay for the `tv` product flavor only — merged with
+  src/main/AndroidManifest.xml at build time (Android's standard flavor
+  source-set overlay mechanism), adding exactly the declarations that make
+  sense for a dedicated Android TV app and nothing the phone flavor should
+  carry. See src/main/AndroidManifest.xml for everything shared.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- required="true": unlike the old single-APK build (where this had to
+         stay optional so the same file could also install on phones), this
+         flavor is never distributed to anything but a TV, so this can — and
+         for a listing under Android TV's own Play Store category, should —
+         be a hard requirement. -->
+    <uses-feature android:name="android.software.leanback" android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <application android:banner="@drawable/tv_banner">
+        <!--
+          Force Flutter's legacy Skia renderer instead of Impeller.
+
+          Impeller is the default on Android now, and it is fine on phones
+          and on the TV emulator — but on real TV silicon it is not. Logcat
+          from a MediaTek m7322 set (Android 11) shows it pick Vulkan, fail
+          with "EGL Error: Bad Attribute (12292)", and fall back to Impeller
+          OpenGLES, after which screens render blank/white or freeze
+          mid-paint and the app dies. That matches, exactly, the white movie
+          detail page and the stuck loading spinner reported on that TV
+          while the same build behaved perfectly on a phone and in the
+          emulator (both of whose GPUs drive Impeller correctly).
+
+          Scoped to the tv flavor deliberately: the phone build shows none
+          of this, so there is no reason to give up Impeller there.
+        -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <!-- Makes the app show up on the Android TV home screen
+                     launcher — this is the whole reason a TV flavor needs
+                     its own manifest overlay at all. -->
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

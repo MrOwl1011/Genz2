@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
 import '../theme/app_colors.dart';
+import 'tv_focusable.dart';
 
 enum CategoryType { live, movie, series }
 
@@ -84,8 +85,9 @@ class _CategoryCardState extends State<CategoryCard> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return GestureDetector(
+    return TvFocusable(
       onTap: widget.onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(

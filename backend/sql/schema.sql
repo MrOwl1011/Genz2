@@ -28,9 +28,18 @@ SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS accounts (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  -- account_id is now an opaque random identifier (see
+  -- account_id.php's generate_anonymous_account_id()), not derived from an
+  -- Xtream server_url/username the way it originally was — this backend no
+  -- longer learns, stores, or validates any streaming-service credential at
+  -- all. server_url/username are nullable purely so migrate_legacy.php can
+  -- still look up accounts created under the old scheme on a database that
+  -- already has rows from before this change; register.php never writes
+  -- them for a new account. See sql/migrate_v2_anonymous_accounts.sql for
+  -- the ALTER statements an already-deployed database needs to run once.
   account_id CHAR(64) NOT NULL,
-  server_url VARCHAR(500) NOT NULL,
-  username VARCHAR(191) NOT NULL,
+  server_url VARCHAR(500) NULL,
+  username VARCHAR(191) NULL,
   status ENUM('active','suspended') NOT NULL DEFAULT 'active',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_login_at DATETIME NULL,
@@ -47,6 +56,15 @@ CREATE TABLE IF NOT EXISTS profiles (
   name VARCHAR(60) NOT NULL,
   avatar VARCHAR(191) NOT NULL DEFAULT 'default',
   is_kids TINYINT(1) NOT NULL DEFAULT 0,
+  -- Set by the admin panel's "Clear Favorites"/"Clear History" actions
+  -- (never by the app itself). The client compares these against a locally
+  -- stored "last applied" marker and wipes its own local favorites/history
+  -- for this profile when the server's timestamp is newer — otherwise an
+  -- admin clearing a profile's data had no visible effect on the device,
+  -- since the normal sync merge only ever adds items, never removes ones
+  -- the device already cached locally. See UserPrefsProvider.setProfileScope.
+  favorites_cleared_at DATETIME NULL,
+  history_cleared_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at DATETIME NULL,
@@ -152,6 +170,20 @@ CREATE TABLE IF NOT EXISTS sync_log (
   PRIMARY KEY (id),
   KEY idx_sync_log_account_time (account_id, applied_at),
   KEY idx_sync_log_device (device_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Short-lived codes for linking a second device to an existing anonymous
+-- account without either device ever exchanging identifying information —
+-- see lib/pairing.php's class doc comment.
+CREATE TABLE IF NOT EXISTS pairing_codes (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  code VARCHAR(8) NOT NULL,
+  account_id CHAR(64) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_pairing_codes_code (code),
+  KEY idx_pairing_codes_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Fixed-window rate limiting (no Redis available on shared cPanel hosting).

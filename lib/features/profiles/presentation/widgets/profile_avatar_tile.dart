@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../theme/app_colors.dart';
+import '../../../../widgets/tv_focusable.dart';
 import '../../domain/entities/profile_entity.dart';
 
 /// Fixed palette of avatar colors to choose from when creating/editing a
@@ -73,9 +74,9 @@ class ProfileAvatarTile extends StatelessWidget {
     final color = avatarColorForKey(avatarKey, colors);
     final initial = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
 
-    return GestureDetector(
+    return TvFocusable(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
+      borderRadius: BorderRadius.circular(20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -90,7 +91,12 @@ class ProfileAvatarTile extends StatelessWidget {
                 width: 3,
               ),
               boxShadow: selected
-                  ? [BoxShadow(color: colors.brandAccent.withValues(alpha: 0.5), blurRadius: 16)]
+                  ? [
+                      BoxShadow(
+                        color: colors.brandAccent.withValues(alpha: 0.5),
+                        blurRadius: 16,
+                      ),
+                    ]
                   : null,
             ),
             alignment: Alignment.center,

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Default app label. The `tv` flavor overrides this via its own
+         src/tv/res/values/strings.xml (standard Android resource
+         overlay — a more specific source set wins over main for the same
+         resource name), rather than the manifest setting android:label
+         directly, which would conflict between flavors during manifest
+         merging. -->
+    <string name="app_name">GenZ+</string>
+</resources>

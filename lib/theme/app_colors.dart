@@ -36,7 +36,11 @@ class AppColors extends ThemeExtension<AppColors> {
 
   static const AppColors dark = AppColors(
     background: Color(0xFF0B0713),
-    backgroundGradient: [Color(0xFF2A0E4A), Color(0xFF0B0713), Color(0xFF000000)],
+    backgroundGradient: [
+      Color(0xFF2A0E4A),
+      Color(0xFF0B0713),
+      Color(0xFF000000),
+    ],
     surface: Color(0xFF170C22),
     surfaceElevated: Color(0xFF1A1A1A),
     surfaceMuted: Color(0xFF1E1E1E),
@@ -54,9 +58,37 @@ class AppColors extends ThemeExtension<AppColors> {
     error: Color(0xFFE5484D),
   );
 
+  /// The TV app's own dark palette — deliberately separate from [dark]
+  /// rather than a shared constant, so retouching the TV app's colors can
+  /// never accidentally change the phone app's look (which keeps using
+  /// [dark]/[light] exactly as before). Neutral near-black with purple used
+  /// only as an accent (selection, focus, progress), not as the dominant
+  /// surface colour — see main_tv.dart for where this gets wired in.
+  static const AppColors tv = AppColors(
+    background: Color(0xFF0B0B0F),
+    backgroundGradient: [
+      Color(0xFF15111F),
+      Color(0xFF0D0D12),
+      Color(0xFF0B0B0F),
+    ],
+    surface: Color(0xFF18181F),
+    surfaceElevated: Color(0xFF1E1E27),
+    surfaceMuted: Color(0xFF101014),
+    border: Color(0xFF27272A),
+    ink: Colors.white,
+    brandPrimary: Color(0xFF7C3AED),
+    brandAccent: Color(0xFF8B5CF6),
+    brandGradient: [Color(0xFF5B21B6), Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+    error: Color(0xFFE5484D),
+  );
+
   static const AppColors light = AppColors(
     background: Color(0xFFF7F5FA),
-    backgroundGradient: [Color(0xFFF3EEFA), Color(0xFFF7F5FA), Color(0xFFFFFFFF)],
+    backgroundGradient: [
+      Color(0xFFF3EEFA),
+      Color(0xFFF7F5FA),
+      Color(0xFFFFFFFF),
+    ],
     surface: Color(0xFFFFFFFF),
     surfaceElevated: Color(0xFFF1ECFB),
     surfaceMuted: Color(0xFFECE7F2),

@@ -11,9 +11,16 @@ import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
+import '../core/build_flavor.dart' show kIsTv, kIsTvRemote;
 import '../providers/user_prefs_provider.dart';
 import '../services/player_backend.dart';
 import '../services/player_backend_factory.dart';
+
+/// The TV transport row's buttons, left to right — VOD/series only (see
+/// _tvControlActions; live never builds this list at all, its own
+/// left/right-to-change-channel behavior in _handlePlayerKeyEvent is
+/// untouched by any of this).
+enum _TvControlAction { previous, rewind, playPause, forward, next }
 
 class PlayerScreen extends StatefulWidget {
   final String streamUrl;
@@ -66,6 +73,19 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   // ─── Cached Player State ──────────────────────────────────────────────────
   bool _isPlaying = false;
+  // Distinct from _isPlaying: many backends report `playing: false` on the
+  // raw stream for a moment while buffering/seeking, not just when the user
+  // actually paused — most visible on TV when seeking fast (several D-pad
+  // right presses in quick succession each kick off a seek that briefly
+  // stalls playback). _handlePlayerKeyEvent used to key its "paused, so
+  // left/right navigate the transport row instead of seeking" branch off
+  // !_isPlaying directly, so that momentary buffering blip was
+  // indistinguishable from a real pause: mid fast-seek, the row would
+  // suddenly "steal" left/right into button navigation instead of
+  // continuing to seek. This only ever flips inside _togglePlayPause, i.e.
+  // only on an explicit user action, so a buffering-induced dip in
+  // _isPlaying never touches it.
+  bool _isUserPaused = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   int? _videoWidth;
@@ -81,12 +101,14 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _isDraggingSeek = false;
   double _dragSeekValue = 0.0;
   int _lastSaveTime = 0;
-  Timer? _seekWatchdogTimer;
+
+  // ─── TV transport row (VOD/series only — see _tvControlActions) ───────────
+  // Null until the user actually moves into the row with left/right, so it
+  // defaults to Play/Pause the first time (see _tvHighlightedControl)
+  // without needing every pause to explicitly reset it.
+  _TvControlAction? _tvFocusedControl;
 
   // ─── Settings State ────────────────────────────────────────────────────────
-  double _playbackSpeed = 1.0;
-  int _aspectRatioIndex = 0; // 0=Fit, 1=Fill, 2=16:9, 3=4:3
-  static const List<String> _aspectRatioLabels = ['Fit', 'Fill', '16:9', '4:3'];
 
   // ─── Manual Rotate State ───────────────────────────────────────────────────
   // -1 = not yet forced (following the initial landscape-both default).
@@ -102,6 +124,15 @@ class _PlayerScreenState extends State<PlayerScreen>
     'Horizontal Right',
     'Horizontal Left',
   ];
+  static const List<String> _rotationLabelsAr = [
+    'عمودي',
+    'أفقي يمين',
+    'أفقي يسار',
+  ];
+
+  String _rotationLabel(int index, bool isArabic) {
+    return isArabic ? _rotationLabelsAr[index] : _rotationLabels[index];
+  }
 
   // ─── Swipe Controls (Brightness/Volume) ────────────────────────────────────
   double? _dragStartY;
@@ -158,16 +189,25 @@ class _PlayerScreenState extends State<PlayerScreen>
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     WakelockPlus.enable(); // Keep screen awake
     _initPlayer();
-    _initVolumeAndBrightness();
+    // Brightness/volume sliders and the swipe gesture that drives them need
+    // a touchscreen — gated on kIsTvRemote (not kIsTv), since iPad running
+    // the TV UI still has one and should keep these, unlike an actual TV
+    // remote (see build_flavor.dart's doc comment on kIsTvRemote).
+    if (!kIsTvRemote) _initVolumeAndBrightness();
 
     // Shown at most once ever, device-wide — see markPlayerTutorialSeen().
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final userPrefs = context.read<UserPrefsProvider>();
-      if (!userPrefs.hasSeenPlayerTutorial) {
-        setState(() => _showTutorial = true);
-      }
-    });
+    // Skipped only for an actual remote: it explains swipe gestures for
+    // brightness/volume, which don't exist without a touchscreen (see
+    // _buildVideoLayer/_buildControlsOverlay).
+    if (!kIsTvRemote) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final userPrefs = context.read<UserPrefsProvider>();
+        if (!userPrefs.hasSeenPlayerTutorial) {
+          setState(() => _showTutorial = true);
+        }
+      });
+    }
   }
 
   void _dismissTutorial() {
@@ -197,9 +237,10 @@ class _PlayerScreenState extends State<PlayerScreen>
     VolumeController.instance.addListener((volume) {
       if (mounted) setState(() => _currentVolume = volume);
     });
-    _brightnessSubscription = ScreenBrightness().onCurrentBrightnessChanged.listen((brightness) {
-      if (mounted) setState(() => _currentBrightness = brightness);
-    });
+    _brightnessSubscription = ScreenBrightness().onCurrentBrightnessChanged
+        .listen((brightness) {
+          if (mounted) setState(() => _currentBrightness = brightness);
+        });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -224,6 +265,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       _position = Duration.zero;
       _duration = Duration.zero;
       _isPlaying = false;
+      _isUserPaused = false;
       _videoWidth = null;
       _videoHeight = null;
       _lastRawPosition = null;
@@ -261,11 +303,13 @@ class _PlayerScreenState extends State<PlayerScreen>
       if (!_currentIsLive) {
         int targetPos = 0;
         if (_currentMediaId != null && mounted) {
-          targetPos = context.read<UserPrefsProvider>().getHistoryPositionMilliseconds(_currentMediaId!);
+          targetPos = context
+              .read<UserPrefsProvider>()
+              .getHistoryPositionMilliseconds(_currentMediaId!);
           debugPrint('[Player History] Episode ID Loaded: $_currentMediaId');
           debugPrint('[Player History] Episode ID Saved: $_currentMediaId');
         }
-        
+
         if (targetPos == 0 && _currentIndex == widget.initialIndex) {
           targetPos = widget.initialPositionSeconds * 1000;
         }
@@ -273,15 +317,19 @@ class _PlayerScreenState extends State<PlayerScreen>
         if (targetPos > 0) {
           debugPrint('[Player History] Saved Position: $targetPos ms');
           debugPrint('[Player History] Loaded Position: $targetPos ms');
-          
+
           // Wait for player to be fully initialized and report a duration
           int durationWaits = 0;
-          while (_duration.inMilliseconds == 0 && durationWaits < 100 && mounted) {
+          while (_duration.inMilliseconds == 0 &&
+              durationWaits < 100 &&
+              mounted) {
             await Future.delayed(const Duration(milliseconds: 50));
             durationWaits++;
           }
-          
-          debugPrint('[Player History] Player Initialized: ${_duration.inMilliseconds > 0}');
+
+          debugPrint(
+            '[Player History] Player Initialized: ${_duration.inMilliseconds > 0}',
+          );
 
           // CRITICAL FIX FOR ANDROID: Start playing before seeking.
           // If play is false, libmpv/ExoPlayer on Android may ignore the seek command
@@ -292,7 +340,9 @@ class _PlayerScreenState extends State<PlayerScreen>
           // This guarantees that the native engine is fully prepared and actively playing,
           // so it won't reset our seek back to 0.
           int playWaits = 0;
-          while (_backend!.position.inMilliseconds == 0 && playWaits < 40 && mounted) {
+          while (_backend!.position.inMilliseconds == 0 &&
+              playWaits < 40 &&
+              mounted) {
             await Future.delayed(const Duration(milliseconds: 50));
             playWaits++;
           }
@@ -307,14 +357,17 @@ class _PlayerScreenState extends State<PlayerScreen>
           while (seekWaits < 100 && mounted) {
             final currentPos = _backend!.position.inMilliseconds;
             // Allow a 1.5 second variance (keyframes can snap position slightly)
-            if ((currentPos - targetPos).abs() <= 1500 || currentPos >= targetPos) {
+            if ((currentPos - targetPos).abs() <= 1500 ||
+                currentPos >= targetPos) {
               break;
             }
             await Future.delayed(const Duration(milliseconds: 50));
             seekWaits++;
           }
 
-          debugPrint('[Player History] Current Position After Seek: ${_backend!.position.inMilliseconds} ms');
+          debugPrint(
+            '[Player History] Current Position After Seek: ${_backend!.position.inMilliseconds} ms',
+          );
         }
       }
 
@@ -353,6 +406,23 @@ class _PlayerScreenState extends State<PlayerScreen>
           // flag was never cleared, force-clear it now.
           if (playing && _isBuffering) {
             _isBuffering = false;
+          }
+          // Remote: a paused video with no visible controls looks stuck —
+          // a remote has no touch-tap to bring them back, so once paused
+          // they stay up (no auto-hide) until playback resumes. Phone and
+          // iPad keep the existing tap-to-toggle/auto-hide behavior, since
+          // pausing there doesn't strand the user the same way — both have
+          // a touchscreen to bring controls back with.
+          if (kIsTvRemote && !_isLocked) {
+            if (!playing) {
+              _hideTimer?.cancel();
+              _showControls = true;
+            } else {
+              _resetHideTimer();
+              // Next pause starts back at Play/Pause rather than wherever
+              // the highlight happened to be left last time.
+              _tvFocusedControl = null;
+            }
           }
         });
       }
@@ -410,7 +480,9 @@ class _PlayerScreenState extends State<PlayerScreen>
       if (completed && mounted) {
         // Auto-play next in playlist only for TV series if enabled
         if (_currentMediaType == MediaType.series) {
-          final autoPlayEnabled = context.read<UserPrefsProvider>().autoPlayNextEpisode;
+          final autoPlayEnabled = context
+              .read<UserPrefsProvider>()
+              .autoPlayNextEpisode;
           if (autoPlayEnabled &&
               widget.playlist != null &&
               _currentIndex < widget.playlist!.length - 1) {
@@ -454,10 +526,25 @@ class _PlayerScreenState extends State<PlayerScreen>
       return;
     }
 
-    final position = _position.inMilliseconds;
+    final rawPosition = _position.inMilliseconds;
     final duration = _duration.inMilliseconds;
 
-    if (position > 0) {
+    // Treat "basically at the end" as finished rather than saving a resume
+    // point there — without this, a saved position within the last few
+    // seconds of a *short* video (a demo clip, a short-form episode) gets
+    // silently re-applied via initialPositionSeconds on the next open with
+    // no resume dialog (that only shows above 30s saved), which looks like
+    // the player skipping straight to near the end instead of playing from
+    // the start. Matches the standard "mark as watched" behavior most
+    // players use instead of ever resuming inside the last few seconds.
+    // Explicitly saved as 0 (not just skipped) so this also clears out any
+    // stale resume point already saved from an earlier, shorter session.
+    final isEffectivelyFinished =
+        duration > 0 &&
+        (duration - rawPosition <= 15000 || rawPosition >= duration * 0.95);
+    final position = isEffectivelyFinished ? 0 : rawPosition;
+
+    if (position > 0 || isEffectivelyFinished) {
       context.read<UserPrefsProvider>().saveHistory(
         id: _currentMediaId!,
         title: _currentTitle,
@@ -477,8 +564,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   void _playIndex(int index) async {
     if (widget.playlist == null ||
         index < 0 ||
-        index >= widget.playlist!.length)
+        index >= widget.playlist!.length) {
       return;
+    }
 
     // Save current position before switching
     _saveCurrentPosition();
@@ -523,15 +611,78 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   void _playNext() {
-    if (widget.playlist != null &&
-        _currentIndex < widget.playlist!.length - 1) {
+    final playlist = widget.playlist;
+    if (playlist == null || playlist.length < 2) return;
+    if (_currentIndex < playlist.length - 1) {
       _playIndex(_currentIndex + 1);
+      return;
     }
+    // Live wraps: channel surfing past the last channel returns to the
+    // first, the way it does on a TV's own tuner. Deliberately not applied
+    // to VOD/series, where running past the last episode means "finished",
+    // not "start the season over".
+    if (_currentIsLive) _playIndex(0);
   }
 
   void _playPrevious() {
-    if (widget.playlist != null && _currentIndex > 0) {
+    final playlist = widget.playlist;
+    if (playlist == null || playlist.length < 2) return;
+    if (_currentIndex > 0) {
       _playIndex(_currentIndex - 1);
+      return;
+    }
+    if (_currentIsLive) _playIndex(playlist.length - 1);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TV transport row (VOD/series, paused only) ────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Which buttons the row actually has right now — Previous/Next only when
+  /// there's really a playlist to move through (matches the same
+  /// `hasPlaylist` gate _buildCenterControls already used, so Movies, which
+  /// never gets a `playlist` at all — see tv_movie_detail_screen.dart —
+  /// never shows episode buttons that would do nothing).
+  List<_TvControlAction> get _tvControlActions {
+    final hasPlaylist = widget.playlist != null && widget.playlist!.length > 1;
+    return [
+      if (hasPlaylist) _TvControlAction.previous,
+      _TvControlAction.rewind,
+      _TvControlAction.playPause,
+      _TvControlAction.forward,
+      if (hasPlaylist) _TvControlAction.next,
+    ];
+  }
+
+  /// Defaults to Play/Pause the first time the row appears (or after it's
+  /// been reset — see _togglePlayPause) rather than requiring every caller
+  /// to know that default themselves.
+  _TvControlAction _tvHighlightedControl(List<_TvControlAction> actions) {
+    final current = _tvFocusedControl;
+    if (current != null && actions.contains(current)) return current;
+    return _TvControlAction.playPause;
+  }
+
+  void _tvMoveControlFocus(int delta) {
+    final actions = _tvControlActions;
+    final currentIndex = actions.indexOf(_tvHighlightedControl(actions));
+    final nextIndex = (currentIndex + delta).clamp(0, actions.length - 1);
+    setState(() => _tvFocusedControl = actions[nextIndex]);
+    _resetHideTimer();
+  }
+
+  void _tvActivateHighlightedControl() {
+    switch (_tvHighlightedControl(_tvControlActions)) {
+      case _TvControlAction.previous:
+        _playPrevious();
+      case _TvControlAction.rewind:
+        _seekRelative(-10);
+      case _TvControlAction.playPause:
+        _togglePlayPause();
+      case _TvControlAction.forward:
+        _seekRelative(10);
+      case _TvControlAction.next:
+        _playNext();
     }
   }
 
@@ -562,9 +713,117 @@ class _PlayerScreenState extends State<PlayerScreen>
   // Playback Controls
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /// Handles TV remote / physical keyboard input. This screen is otherwise
+  /// entirely gesture-driven (swipe for brightness/volume, double-tap to
+  /// seek) — those gestures have no D-pad equivalent, so instead of trying
+  /// to focus-navigate onto tiny on-screen controls, common remote keys map
+  /// directly to the same actions regardless of what's focused: Select/
+  /// Enter/media-play-pause toggles playback, D-pad left/right seeks the
+  /// same 10s step the double-tap gesture already uses, D-pad down reveals
+  /// the controls overlay. Mirrors the existing lock behavior — a locked
+  /// screen ignores these the same way it already ignores touch gestures.
+  KeyEventResult _handlePlayerKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (_isLocked) return KeyEventResult.ignored;
+
+    final key = event.logicalKey;
+
+    // Actual remote, VOD/series, paused: the transport row is "live" for
+    // the D-pad — left/right move a highlight along it instead of seeking,
+    // and select activates whichever button is currently highlighted
+    // rather than always just toggling play/pause. Playing (or live, or
+    // phone/iPad) falls through to the unconditional behavior below exactly
+    // as before. kIsTvRemote, not kIsTv: iPad no longer renders that
+    // transport row at all (see _buildTvTransportRow's call site) since it
+    // has the full on-screen button row instead, so this branch would
+    // otherwise silently swallow left/right into navigating a highlight
+    // nothing on screen shows — e.g. from a Bluetooth keyboard/controller.
+    if (kIsTvRemote && !_currentIsLive && _isUserPaused) {
+      if (key == LogicalKeyboardKey.arrowLeft) {
+        _tvMoveControlFocus(-1);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowRight) {
+        _tvMoveControlFocus(1);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.select ||
+          key == LogicalKeyboardKey.enter ||
+          key == LogicalKeyboardKey.numpadEnter ||
+          key == LogicalKeyboardKey.gameButtonA) {
+        _tvActivateHighlightedControl();
+        return KeyEventResult.handled;
+      }
+    }
+
+    if (key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.mediaPlayPause ||
+        key == LogicalKeyboardKey.gameButtonA) {
+      _togglePlayPause();
+      return KeyEventResult.handled;
+    }
+    // On live there is nothing to seek through, so left/right change
+    // channel instead — matching what those keys do on a normal TV remote,
+    // and replacing the prev/next buttons that _buildCenterControls no
+    // longer draws for live.
+    if (_currentIsLive) {
+      if (key == LogicalKeyboardKey.arrowLeft ||
+          key == LogicalKeyboardKey.mediaRewind ||
+          key == LogicalKeyboardKey.mediaTrackPrevious) {
+        _playPrevious();
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowRight ||
+          key == LogicalKeyboardKey.mediaFastForward ||
+          key == LogicalKeyboardKey.mediaTrackNext) {
+        _playNext();
+        return KeyEventResult.handled;
+      }
+    } else if (key == LogicalKeyboardKey.mediaTrackPrevious ||
+        key == LogicalKeyboardKey.mediaTrackNext) {
+      // VOD/series: a remote's dedicated skip-track buttons (distinct from
+      // arrow left/right, which seek instead) jump episodes regardless of
+      // play/pause state — the one way to change episode without pausing
+      // first, mirroring how a real TV remote's skip buttons work on any
+      // playlist-based source. _playNext/_playPrevious already no-op on a
+      // single-item or absent playlist (Movies), so this is safe to wire
+      // unconditionally rather than re-checking hasPlaylist here too.
+      if (key == LogicalKeyboardKey.mediaTrackPrevious) {
+        _playPrevious();
+      } else {
+        _playNext();
+      }
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.mediaRewind) {
+      // Reuses the double-tap-to-rewind path (not a bare _seekRelative)
+      // specifically for its -10s flash overlay — a remote seek needs the
+      // same "yes, that registered" confirmation a touch double-tap
+      // already gets, especially since this can fire while the main
+      // controls are hidden.
+      _onDoubleTapLeft();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowRight ||
+        key == LogicalKeyboardKey.mediaFastForward) {
+      _onDoubleTapRight();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowDown && !_showControls) {
+      _toggleControls();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   void _togglePlayPause() {
     if (_backend == null) return;
+    final wasPlaying = _isPlaying;
     _backend!.playOrPause();
+    setState(() => _isUserPaused = wasPlaying);
     _resetHideTimer();
     if (_isPlaying) {
       _saveCurrentPosition();
@@ -600,18 +859,6 @@ class _PlayerScreenState extends State<PlayerScreen>
     _seekGraceTimer?.cancel();
     _seekGraceTimer = Timer(const Duration(seconds: 3), () {
       _inSeekGracePeriod = false;
-    });
-
-    _seekWatchdogTimer?.cancel();
-    _seekWatchdogTimer = Timer(const Duration(seconds: 8), () {
-      if (!mounted || _backend == null) return;
-      final drift = (_backend!.position.inMilliseconds - target.inMilliseconds).abs();
-      if (drift > 3000) {
-        debugPrint(
-          '[PlayerScreen] seek watchdog: still ${drift}ms from target after 8s',
-        );
-        _showQuickToast('Still seeking… this stream may be slow to respond.');
-      }
     });
   }
 
@@ -683,7 +930,6 @@ class _PlayerScreenState extends State<PlayerScreen>
     _hideTimer?.cancel();
     _leftSeekTimer?.cancel();
     _rightSeekTimer?.cancel();
-    _seekWatchdogTimer?.cancel();
     _seekGraceTimer?.cancel();
     _saveCurrentPosition(); // Save exact position on exit
     _cancelSubscriptions();
@@ -703,9 +949,16 @@ class _PlayerScreenState extends State<PlayerScreen>
     _brightnessSubscription?.cancel();
     VolumeController.instance.removeListener();
     WakelockPlus.disable(); // Allow screen to turn off again
-    // Restore portrait + bring the status bar back now that we're leaving
-    // the watching experience.
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    // Bring the status bar back now that we're leaving the watching
+    // experience. The TV flavor's entry point (main_tv.dart) locks the whole
+    // app landscape at startup — forcing portrait here on the way out fought
+    // that and briefly rotated the whole app vertical before the OS caught
+    // up, on top of being simply wrong for a TV, which has no orientation to
+    // begin with. The phone flavor still restores portrait here so the rest
+    // of the app behaves as before.
+    if (!kIsTv) {
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    }
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
@@ -740,26 +993,17 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Aspect Ratio
+  // Aspect Ratio — always the video's natural aspect ratio.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  double? get _currentAspectRatio {
-    switch (_aspectRatioIndex) {
-      case 1:
-        return null; // Fill — stretch to fit
-      case 2:
-        return 16 / 9;
-      case 3:
-        return 4 / 3;
-      default: // Fit — natural aspect ratio
-        if (_videoWidth != null &&
-            _videoHeight != null &&
-            _videoWidth! > 0 &&
-            _videoHeight! > 0) {
-          return _videoWidth! / _videoHeight!;
-        }
-        return 16 / 9;
+  double get _currentAspectRatio {
+    if (_videoWidth != null &&
+        _videoHeight != null &&
+        _videoWidth! > 0 &&
+        _videoHeight! > 0) {
+      return _videoWidth! / _videoHeight!;
     }
+    return 16 / 9;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -769,67 +1013,73 @@ class _PlayerScreenState extends State<PlayerScreen>
   @override
   Widget build(BuildContext context) {
     final appDirection = Directionality.of(context);
+    final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
 
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) await _stopAndDispose();
       },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // ── Video Layer ──
-            _buildVideoLayer(),
+      child: Focus(
+        autofocus: true,
+        onKeyEvent: _handlePlayerKeyEvent,
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              // ── Video Layer ──
+              _buildVideoLayer(),
 
-            // ── Swipe Indicator ──
-            if (_indicatorMessage.isNotEmpty)
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: Text(
-                      _indicatorMessage,
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+              // ── Swipe Indicator (touchscreen only — see _buildVideoLayer) ──
+              if (!kIsTvRemote && _indicatorMessage.isNotEmpty)
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text(
+                        _indicatorMessage,
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-            // ── Double-tap zones (always active when unlocked) ──
-            if (!_isLocked) _buildDoubleTapZones(),
+              // ── Double-tap zones (always active when unlocked) ──
+              if (!_isLocked) _buildDoubleTapZones(),
 
-            // ── Seek Feedback Overlays ──
-            if (_showLeftSeek) _buildSeekFeedback(isLeft: true),
-            if (_showRightSeek) _buildSeekFeedback(isLeft: false),
+              // ── Seek Feedback Overlays ──
+              if (_showLeftSeek) _buildSeekFeedback(isLeft: true),
+              if (_showRightSeek) _buildSeekFeedback(isLeft: false),
 
-            // ── Lock indicator (when locked, tap to show unlock button) ──
-            if (_isLocked) _buildLockOverlay(),
+              // ── Lock indicator (when locked, tap to show unlock button) ──
+              if (_isLocked) _buildLockOverlay(isArabic),
 
-            // ── Controls Overlay ──
-            if (_showControls && !_isLocked) _buildControlsOverlay(appDirection),
+              // ── Controls Overlay ──
+              if (_showControls && !_isLocked)
+                _buildControlsOverlay(appDirection, isArabic),
 
-            // ── Loading / Error / Buffering States ──
-            if (_isInitializing) _buildLoading(),
-            if (_isBuffering && !_isInitializing) _buildBuffering(),
-            if (_errorMessage != null) _buildError(_errorMessage!),
+              // ── Loading / Error / Buffering States ──
+              if (_isInitializing) _buildLoading(isArabic),
+              if (_isBuffering && !_isInitializing) _buildBuffering(),
+              if (_errorMessage != null) _buildError(_errorMessage!, isArabic),
 
-            // ── First-Run Gesture Tutorial (topmost, blocks interaction) ──
-            if (_showTutorial) _buildGestureTutorial(),
-          ],
+              // ── First-Run Gesture Tutorial (topmost, blocks interaction) ──
+              if (_showTutorial) _buildGestureTutorial(isArabic),
+            ],
+          ),
         ),
       ),
     );
@@ -843,39 +1093,23 @@ class _PlayerScreenState extends State<PlayerScreen>
       return Container(color: Colors.black);
     }
 
-    final aspectRatio = _currentAspectRatio ?? 16 / 9;
+    final aspectRatio = _currentAspectRatio;
 
-    Widget videoWidget;
-    if (_aspectRatioIndex == 1) {
-      // Fill mode — stretch video to fill screen
-      final nativeAspectRatio =
-          (_videoWidth != null && _videoHeight != null && _videoHeight! > 0)
-              ? _videoWidth! / _videoHeight!
-              : 16 / 9;
-      videoWidget = SizedBox.expand(
-        child: FittedBox(
-          fit: BoxFit.fill,
-          child: SizedBox(
-            width: (_videoWidth ?? 1920).toDouble(),
-            height: (_videoHeight ?? 1080).toDouble(),
-            child: backend.buildVideoWidget(
-              key: ValueKey(_currentStreamUrl),
-              aspectRatio: nativeAspectRatio,
-            ),
-          ),
-        ),
-      );
-    } else {
-      videoWidget = Center(
-        child: AspectRatio(
+    final Widget videoWidget = Center(
+      child: AspectRatio(
+        aspectRatio: aspectRatio,
+        child: backend.buildVideoWidget(
+          key: ValueKey(_currentStreamUrl),
           aspectRatio: aspectRatio,
-          child: backend.buildVideoWidget(
-            key: ValueKey(_currentStreamUrl),
-            aspectRatio: aspectRatio,
-          ),
         ),
-      );
-    }
+      ),
+    );
+
+    // An actual remote has no touchscreen, so swipe-to-adjust brightness/
+    // volume can never fire — skip wrapping in the drag-gesture detector
+    // entirely rather than carry a dead GestureDetector around the video.
+    // iPad (kIsTv but not kIsTvRemote) does have a touchscreen and keeps it.
+    if (kIsTvRemote) return videoWidget;
 
     return GestureDetector(
       onVerticalDragStart: (details) async {
@@ -1032,7 +1266,7 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   // ─── Lock Overlay ──────────────────────────────────────────────────────────
 
-  Widget _buildLockOverlay() {
+  Widget _buildLockOverlay(bool isArabic) {
     return GestureDetector(
       onTap: () {
         // Show unlock button temporarily
@@ -1053,7 +1287,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                   child: _buildControlButton(
                     icon: Icons.lock_rounded,
                     onTap: _toggleLock,
-                    tooltip: 'Unlock',
+                    tooltip: isArabic ? 'فتح القفل' : 'Unlock',
                   ),
                 ),
               ),
@@ -1066,7 +1300,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   // CONTROLS OVERLAY
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildControlsOverlay(TextDirection appDirection) {
+  Widget _buildControlsOverlay(TextDirection appDirection, bool isArabic) {
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 250),
       opacity: _showControls ? 1.0 : 0.0,
@@ -1090,21 +1324,25 @@ class _PlayerScreenState extends State<PlayerScreen>
             child: Column(
               children: [
                 // ── Top Bar ──
-                _buildTopBar(),
+                _buildTopBar(isArabic),
 
                 Expanded(
                   child: Row(
                     children: [
-                      // Brightness Sidebar
-                      _buildVerticalSlider(
-                        value: _currentBrightness,
-                        icon: Icons.brightness_6_rounded,
-                        onChanged: (val) {
-                          setState(() => _currentBrightness = val);
-                          ScreenBrightness().setScreenBrightness(val);
-                          _resetHideTimer();
-                        },
-                      ),
+                      // Brightness Sidebar — needs a touchscreen to drag.
+                      // On an actual remote, volume/brightness are handled
+                      // by the TV/remote itself, not the app; iPad has none
+                      // of that, so it keeps this like a phone does.
+                      if (!kIsTvRemote)
+                        _buildVerticalSlider(
+                          value: _currentBrightness,
+                          icon: Icons.brightness_6_rounded,
+                          onChanged: (val) {
+                            setState(() => _currentBrightness = val);
+                            ScreenBrightness().setScreenBrightness(val);
+                            _resetHideTimer();
+                          },
+                        ),
 
                       Expanded(
                         child: Column(
@@ -1122,26 +1360,34 @@ class _PlayerScreenState extends State<PlayerScreen>
                         ),
                       ),
 
-                      // Volume Sidebar
-                      _buildVerticalSlider(
-                        value: _currentVolume,
-                        icon: Icons.volume_up_rounded,
-                        onChanged: (val) {
-                          setState(() => _currentVolume = val);
-                          VolumeController.instance.setVolume(val);
-                          VolumeController.instance.showSystemUI = false;
-                          _resetHideTimer();
-                        },
-                      ),
+                      // Volume Sidebar — see the brightness one above.
+                      if (!kIsTvRemote)
+                        _buildVerticalSlider(
+                          value: _currentVolume,
+                          icon: Icons.volume_up_rounded,
+                          onChanged: (val) {
+                            setState(() => _currentVolume = val);
+                            VolumeController.instance.setVolume(val);
+                            VolumeController.instance.showSystemUI = false;
+                            _resetHideTimer();
+                          },
+                        ),
                     ],
                   ),
                 ),
+
+                // ── TV Transport Row (rewind/play/forward/prev-next episode) ──
+                // Remote-only: it exists because a remote has no on-screen
+                // buttons to tap (see _buildCenterControls's kIsTvRemote
+                // branch below) — iPad gets the full phone-style center row
+                // instead, so it doesn't also need this separate row.
+                if (kIsTvRemote && !widget.isLive) _buildTvTransportRow(),
 
                 // ── Seek Bar ──
                 if (!widget.isLive) _buildSeekBar(),
 
                 // ── Bottom Controls ──
-                _buildBottomControls(),
+                _buildBottomControls(isArabic),
               ],
             ),
           ),
@@ -1173,7 +1419,9 @@ class _PlayerScreenState extends State<PlayerScreen>
                   activeTrackColor: Theme.of(context).primaryColor,
                   inactiveTrackColor: Colors.white24,
                   thumbColor: Colors.white,
-                  overlayColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                  overlayColor: Theme.of(
+                    context,
+                  ).primaryColor.withValues(alpha: 0.2),
                 ),
                 child: Slider(
                   value: value.clamp(0.0, 1.0),
@@ -1198,7 +1446,7 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   // ─── Top Bar ───────────────────────────────────────────────────────────────
 
-  Widget _buildTopBar() {
+  Widget _buildTopBar(bool isArabic) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       child: Row(
@@ -1236,19 +1484,6 @@ class _PlayerScreenState extends State<PlayerScreen>
             ),
 
           const Spacer(),
-
-          // Right side vertical buttons
-          _buildControlButton(
-            icon: Icons.aspect_ratio_rounded,
-            onTap: _cycleAspectRatio,
-            tooltip: 'Aspect: ${_aspectRatioLabels[_aspectRatioIndex]}',
-          ),
-          const SizedBox(width: 4),
-          _buildControlButton(
-            icon: Icons.settings_rounded,
-            onTap: _showSettingsSheet,
-            tooltip: 'Settings',
-          ),
         ],
       ),
     );
@@ -1278,11 +1513,27 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   Widget _buildCenterControls() {
     final hasPlaylist = widget.playlist != null && widget.playlist!.length > 1;
+    // Live has nothing to skip within and nothing to seek through, so the
+    // only meaningful transport control is play/pause — and with the
+    // ±10s and prev/next buttons gone it sits centered on its own.
+    // Changing channel is on D-pad left/right instead (see
+    // _handlePlayerKeyEvent), which is how a TV remote does it anyway.
+    final isLive = _currentIsLive;
+
+    if (kIsTvRemote) {
+      // An actual remote keeps only the big Play/Pause here — rewind/
+      // forward/prev/next episode all live in the dedicated transport row
+      // next to the seek bar instead (see _buildTvTransportRow), so this
+      // stays the one control worth showing on its own regardless of where
+      // the rest of the row's D-pad highlight currently is. iPad falls
+      // through to the full row below, same as a phone.
+      return _buildPlayPauseCircle();
+    }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (hasPlaylist) ...[
+        if (!isLive && hasPlaylist) ...[
           _buildControlButton(
             icon: Icons.skip_previous_rounded,
             onTap: _playPrevious,
@@ -1291,48 +1542,29 @@ class _PlayerScreenState extends State<PlayerScreen>
           const SizedBox(width: 24),
         ],
 
-        // Rewind 10s
-        _buildControlButton(
-          icon: Icons.replay_10_rounded,
-          onTap: () => _seekRelative(-10),
-          size: 36,
-        ),
-        const SizedBox(width: 32),
-
-        // Play/Pause
-        GestureDetector(
-          onTap: _togglePlayPause,
-          child: Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE50914).withValues(alpha: 0.9),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFE50914).withValues(alpha: 0.4),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Icon(
-              _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              color: Colors.white,
-              size: 38,
-            ),
+        if (!isLive) ...[
+          // Rewind 10s
+          _buildControlButton(
+            icon: Icons.replay_10_rounded,
+            onTap: () => _seekRelative(-10),
+            size: 36,
           ),
-        ),
-        const SizedBox(width: 32),
+          const SizedBox(width: 32),
+        ],
 
-        // Forward 10s
-        _buildControlButton(
-          icon: Icons.forward_10_rounded,
-          onTap: () => _seekRelative(10),
-          size: 36,
-        ),
+        _buildPlayPauseCircle(),
+        if (!isLive) ...[
+          const SizedBox(width: 32),
 
-        if (hasPlaylist) ...[
+          // Forward 10s
+          _buildControlButton(
+            icon: Icons.forward_10_rounded,
+            onTap: () => _seekRelative(10),
+            size: 36,
+          ),
+        ],
+
+        if (!isLive && hasPlaylist) ...[
           const SizedBox(width: 24),
           _buildControlButton(
             icon: Icons.skip_next_rounded,
@@ -1341,6 +1573,122 @@ class _PlayerScreenState extends State<PlayerScreen>
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildPlayPauseCircle() {
+    return GestureDetector(
+      onTap: _togglePlayPause,
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE50914).withValues(alpha: 0.9),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFE50914).withValues(alpha: 0.4),
+              blurRadius: 20,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Icon(
+          _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+          color: Colors.white,
+          size: 38,
+        ),
+      ),
+    );
+  }
+
+  // ─── TV Transport Row (rewind/play/forward/prev-episode/next-episode) ─────
+  //
+  // TV-only, VOD/series-only — live keeps its existing left/right-changes-
+  // channel behavior untouched, and has nothing to seek or skip through
+  // anyway. Sits just above the seek bar so Previous/Next Episode read as
+  // part of the same "where am I in this thing" cluster as the timeline,
+  // not as a separate floating group elsewhere on screen.
+  //
+  // Always visible whenever controls are (so Previous/Next Episode are
+  // reachable via their dedicated remote skip buttons — see
+  // _handlePlayerKeyEvent — even mid-playback), but only actually
+  // *highlighted*/D-pad-navigable while paused: while playing, left/right
+  // means seek, not "move along this row", so showing a highlight here at
+  // the same time would visually promise navigation the remote isn't
+  // actually performing right now.
+  Widget _buildTvTransportRow() {
+    if (_currentIsLive) return const SizedBox.shrink();
+    final actions = _tvControlActions;
+    final interactive = _isUserPaused;
+    final highlighted = interactive ? _tvHighlightedControl(actions) : null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (final action in actions) ...[
+            _buildTvTransportButton(
+              action,
+              isHighlighted: action == highlighted,
+            ),
+            if (action != actions.last) const SizedBox(width: 18),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTvTransportButton(
+    _TvControlAction action, {
+    required bool isHighlighted,
+  }) {
+    final IconData icon;
+    final VoidCallback onTap;
+    switch (action) {
+      case _TvControlAction.previous:
+        icon = Icons.skip_previous_rounded;
+        onTap = _playPrevious;
+      case _TvControlAction.rewind:
+        icon = Icons.replay_10_rounded;
+        onTap = () => _seekRelative(-10);
+      case _TvControlAction.playPause:
+        icon = _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded;
+        onTap = _togglePlayPause;
+      case _TvControlAction.forward:
+        icon = Icons.forward_10_rounded;
+        onTap = () => _seekRelative(10);
+      case _TvControlAction.next:
+        icon = Icons.skip_next_rounded;
+        onTap = _playNext;
+    }
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isHighlighted
+              ? const Color(0xFFE50914)
+              : Colors.white.withValues(alpha: 0.14),
+          border: isHighlighted
+              ? Border.all(color: Colors.white, width: 2)
+              : null,
+          boxShadow: isHighlighted
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFE50914).withValues(alpha: 0.5),
+                    blurRadius: 14,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
     );
   }
 
@@ -1427,50 +1775,39 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   // ─── Bottom Controls ───────────────────────────────────────────────────────
 
-  Widget _buildBottomControls() {
+  Widget _buildBottomControls(bool isArabic) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
       child: Row(
         children: [
-          // Lock
-          _buildControlButton(
-            icon: _isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
-            onTap: _toggleLock,
-            tooltip: _isLocked ? 'Unlock' : 'Lock',
-          ),
-
-          const Spacer(),
-
-          // Playback speed badge
-          GestureDetector(
-            onTap: _cyclePlaybackSpeed,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '${_playbackSpeed}x',
-                style: GoogleFonts.outfit(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+          // Lock — a touch-only concept (guards against accidental taps
+          // during playback); a D-pad remote has nothing accidental to
+          // guard against, but a touchscreen does regardless of which
+          // layout is showing, so this follows kIsTvRemote not kIsTv.
+          if (!kIsTvRemote)
+            _buildControlButton(
+              icon: _isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
+              onTap: _toggleLock,
+              tooltip: _isLocked
+                  ? (isArabic ? 'فتح القفل' : 'Unlock')
+                  : (isArabic ? 'قفل' : 'Lock'),
             ),
-          ),
 
           const Spacer(),
 
-          // Rotate video — cycles Vertical / Horizontal Right / Horizontal Left
-          _buildControlButton(
-            icon: Icons.screen_rotation_rounded,
-            onTap: _rotateVideo,
-            tooltip: _rotationIndex == -1
-                ? 'Rotate'
-                : 'Rotate: ${_rotationLabels[_rotationIndex]}',
-          ),
+          // Rotate video — cycles Vertical / Horizontal Right / Horizontal
+          // Left; meaningless on an actual remote-driven TV, which never
+          // physically rotates and has no touch to reach this with anyway.
+          // iPad keeps it like a phone (kIsTvRemote, not kIsTv — see Lock
+          // above).
+          if (!kIsTvRemote)
+            _buildControlButton(
+              icon: Icons.screen_rotation_rounded,
+              onTap: _rotateVideo,
+              tooltip: _rotationIndex == -1
+                  ? (isArabic ? 'تدوير' : 'Rotate')
+                  : '${isArabic ? 'تدوير' : 'Rotate'}: ${_rotationLabel(_rotationIndex, isArabic)}',
+            ),
         ],
       ),
     );
@@ -1506,13 +1843,6 @@ class _PlayerScreenState extends State<PlayerScreen>
   // SETTINGS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  void _cycleAspectRatio() {
-    setState(() {
-      _aspectRatioIndex = (_aspectRatioIndex + 1) % _aspectRatioLabels.length;
-    });
-    _showQuickToast('Aspect Ratio: ${_aspectRatioLabels[_aspectRatioIndex]}');
-  }
-
   /// Cycles the forced screen orientation through all three usable sides —
   /// Vertical → Horizontal Right → Horizontal Left → back to Vertical —
   /// locking the display to exactly that orientation regardless of how the
@@ -1524,16 +1854,12 @@ class _PlayerScreenState extends State<PlayerScreen>
     SystemChrome.setPreferredOrientations([
       _rotationOrientations[_rotationIndex],
     ]);
-    _showQuickToast('Rotated: ${_rotationLabels[_rotationIndex]}');
-  }
-
-  void _cyclePlaybackSpeed() {
-    const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
-    final currentIdx = speeds.indexOf(_playbackSpeed);
-    final nextIdx = (currentIdx + 1) % speeds.length;
-    setState(() => _playbackSpeed = speeds[nextIdx]);
-    _backend?.setRate(_playbackSpeed);
-    _showQuickToast('Speed: ${_playbackSpeed}x');
+    final isArabic = context.read<UserPrefsProvider>().locale == 'ar';
+    _showQuickToast(
+      isArabic
+          ? 'تم التدوير: ${_rotationLabel(_rotationIndex, isArabic)}'
+          : 'Rotated: ${_rotationLabels[_rotationIndex]}',
+    );
   }
 
   void _showQuickToast(String message) {
@@ -1553,33 +1879,11 @@ class _PlayerScreenState extends State<PlayerScreen>
     );
   }
 
-  void _showSettingsSheet() {
-    _hideTimer?.cancel();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => _SettingsSheet(
-        playbackSpeed: _playbackSpeed,
-        aspectRatioIndex: _aspectRatioIndex,
-        aspectRatioLabels: _aspectRatioLabels,
-        isLive: widget.isLive,
-        onPlaybackSpeedChanged: (speed) {
-          setState(() => _playbackSpeed = speed);
-          _backend?.setRate(speed);
-        },
-        onAspectRatioChanged: (index) {
-          setState(() => _aspectRatioIndex = index);
-        },
-      ),
-    ).then((_) => _startHideTimer());
-  }
-
   // ═══════════════════════════════════════════════════════════════════════════
   // Loading, Buffering & Error States
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildLoading() {
+  Widget _buildLoading(bool isArabic) {
     return Container(
       color: Colors.black,
       child: Center(
@@ -1596,9 +1900,38 @@ class _PlayerScreenState extends State<PlayerScreen>
             ),
             const SizedBox(height: 20),
             Text(
-              widget.isLive ? 'Connecting to stream...' : 'Loading video...',
+              widget.isLive
+                  ? (isArabic
+                        ? 'جارٍ الاتصال بالبث...'
+                        : 'Connecting to stream...')
+                  : (isArabic ? 'جارٍ تحميل الفيديو...' : 'Loading video...'),
               style: GoogleFonts.outfit(color: Colors.white54, fontSize: 14),
             ),
+            // Live channels can hang connecting far longer than VOD (a dead
+            // or overloaded channel, a slow panel) with no way to tell how
+            // long it'll take — so unlike VOD loading, give an explicit way
+            // out here instead of only relying on the remote's back key.
+            if (widget.isLive) ...[
+              const SizedBox(height: 28),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await _stopAndDispose();
+                  if (mounted) Navigator.of(context).pop();
+                },
+                icon: const Icon(Icons.arrow_back, color: Colors.white54),
+                label: Text(
+                  isArabic ? 'رجوع' : 'Go Back',
+                  style: GoogleFonts.outfit(color: Colors.white54),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1625,7 +1958,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     );
   }
 
-  Widget _buildError(String message) {
+  Widget _buildError(String message, bool isArabic) {
     return Container(
       color: Colors.black,
       child: Center(
@@ -1641,7 +1974,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               ),
               const SizedBox(height: 20),
               Text(
-                'Playback Error',
+                isArabic ? 'خطأ في التشغيل' : 'Playback Error',
                 style: GoogleFonts.outfit(
                   color: Colors.white,
                   fontSize: 22,
@@ -1662,7 +1995,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.arrow_back, color: Colors.white54),
                     label: Text(
-                      'Go Back',
+                      isArabic ? 'رجوع' : 'Go Back',
                       style: GoogleFonts.outfit(color: Colors.white54),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -1681,7 +2014,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                       color: Colors.white,
                     ),
                     label: Text(
-                      'Retry',
+                      isArabic ? 'إعادة المحاولة' : 'Retry',
                       style: GoogleFonts.outfit(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -1708,7 +2041,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   // First-Run Gesture Tutorial
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildGestureTutorial() {
+  Widget _buildGestureTutorial(bool isArabic) {
     return Positioned.fill(
       child: GestureDetector(
         // Absorb every gesture so it can't leak through to seek/controls
@@ -1724,7 +2057,9 @@ class _PlayerScreenState extends State<PlayerScreen>
               children: [
                 const Spacer(),
                 Text(
-                  'Control Brightness & Volume',
+                  isArabic
+                      ? 'التحكم بالسطوع والصوت'
+                      : 'Control Brightness & Volume',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
                     color: Colors.white,
@@ -1741,14 +2076,18 @@ class _PlayerScreenState extends State<PlayerScreen>
                       Expanded(
                         child: _buildTutorialHalf(
                           icon: Icons.brightness_6_rounded,
-                          label: 'Swipe up or down here\nto adjust brightness',
+                          label: isArabic
+                              ? 'مرر لأعلى أو لأسفل هنا\nلضبط السطوع'
+                              : 'Swipe up or down here\nto adjust brightness',
                         ),
                       ),
                       Container(width: 1, color: Colors.white24),
                       Expanded(
                         child: _buildTutorialHalf(
                           icon: Icons.volume_up_rounded,
-                          label: 'Swipe up or down here\nto adjust volume',
+                          label: isArabic
+                              ? 'مرر لأعلى أو لأسفل هنا\nلضبط الصوت'
+                              : 'Swipe up or down here\nto adjust volume',
                         ),
                       ),
                     ],
@@ -1761,13 +2100,16 @@ class _PlayerScreenState extends State<PlayerScreen>
                     onPressed: _dismissTutorial,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFE50914),
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 14,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
                     child: Text(
-                      'Skip',
+                      isArabic ? 'تخطي' : 'Skip',
                       style: GoogleFonts.outfit(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -1793,7 +2135,11 @@ class _PlayerScreenState extends State<PlayerScreen>
         const SizedBox(height: 2),
         Icon(icon, color: Colors.white, size: 40),
         const SizedBox(height: 2),
-        Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70, size: 26),
+        Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Colors.white70,
+          size: 26,
+        ),
         const SizedBox(height: 14),
         Text(
           label,
@@ -1813,225 +2159,3 @@ class _PlayerScreenState extends State<PlayerScreen>
 // ═══════════════════════════════════════════════════════════════════════════════
 // SETTINGS SHEET
 // ═══════════════════════════════════════════════════════════════════════════════
-
-/// Bottom sheet for player settings: speed, aspect ratio, subtitles, etc.
-class _SettingsSheet extends StatelessWidget {
-  final double playbackSpeed;
-  final int aspectRatioIndex;
-  final List<String> aspectRatioLabels;
-  final bool isLive;
-  final ValueChanged<double> onPlaybackSpeedChanged;
-  final ValueChanged<int> onAspectRatioChanged;
-
-  const _SettingsSheet({
-    required this.playbackSpeed,
-    required this.aspectRatioIndex,
-    required this.aspectRatioLabels,
-    required this.isLive,
-    required this.onPlaybackSpeedChanged,
-    required this.onAspectRatioChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.6,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(top: 12),
-            decoration: BoxDecoration(
-              color: Colors.white24,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Settings',
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const Divider(color: Colors.white10, height: 1),
-
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: [
-                  // Playback Speed
-                  _buildSettingsSection(
-                    context,
-                    icon: Icons.speed_rounded,
-                    title: 'Playback Speed',
-                    value: '${playbackSpeed}x',
-                    onTap: () => _showSpeedPicker(context),
-                  ),
-
-                  // Aspect Ratio
-                  _buildSettingsSection(
-                    context,
-                    icon: Icons.aspect_ratio_rounded,
-                    title: 'Aspect Ratio',
-                    value: aspectRatioLabels[aspectRatioIndex],
-                    onTap: () => _showAspectPicker(context),
-                  ),
-
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsSection(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String value,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: const Color(0xFFE50914), size: 24),
-      title: Text(
-        title,
-        style: GoogleFonts.outfit(
-          color: Colors.white,
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value,
-            style: GoogleFonts.outfit(color: Colors.white54, fontSize: 14),
-          ),
-          const SizedBox(width: 4),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: Colors.white38,
-            size: 20,
-          ),
-        ],
-      ),
-      onTap: onTap,
-    );
-  }
-
-  void _showSpeedPicker(BuildContext context) {
-    const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
-    Navigator.pop(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Playback Speed',
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ...speeds.map(
-            (s) => ListTile(
-              title: Text(
-                '${s}x',
-                style: GoogleFonts.outfit(
-                  color: s == playbackSpeed
-                      ? const Color(0xFFE50914)
-                      : Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              trailing: s == playbackSpeed
-                  ? const Icon(Icons.check_rounded, color: Color(0xFFE50914))
-                  : null,
-              onTap: () {
-                onPlaybackSpeedChanged(s);
-                Navigator.pop(ctx);
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  void _showAspectPicker(BuildContext context) {
-    Navigator.pop(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Aspect Ratio',
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ...List.generate(
-            aspectRatioLabels.length,
-            (i) => ListTile(
-              title: Text(
-                aspectRatioLabels[i],
-                style: GoogleFonts.outfit(
-                  color: i == aspectRatioIndex
-                      ? const Color(0xFFE50914)
-                      : Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              trailing: i == aspectRatioIndex
-                  ? const Icon(Icons.check_rounded, color: Color(0xFFE50914))
-                  : null,
-              onTap: () {
-                onAspectRatioChanged(i);
-                Navigator.pop(ctx);
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-}
