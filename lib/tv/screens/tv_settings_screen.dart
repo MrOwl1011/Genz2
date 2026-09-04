@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../features/devices/presentation/screens/devices_screen.dart';
 import '../../features/profiles/presentation/providers/profile_provider.dart';
 import '../../features/profiles/presentation/screens/profile_picker_screen.dart';
 import '../../providers/auth_provider.dart';
@@ -234,14 +233,6 @@ class _SettingsContent extends StatelessWidget {
                     : (isArabic ? 'غير متصل' : 'Offline'),
                 active: auth.isBackendConnected,
                 onTap: () {},
-              ),
-              _SettingsTile(
-                icon: Icons.devices_rounded,
-                label: isArabic ? 'الأجهزة' : 'Devices',
-                value: '',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const DevicesScreen()),
-                ),
               ),
               _SettingsTile(
                 icon: Icons.support_agent_rounded,
