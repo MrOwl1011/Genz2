@@ -7,6 +7,7 @@ import '../features/profiles/presentation/providers/profile_provider.dart';
 import '../features/sync/services/sync_manager.dart';
 import '../models/playlist_model.dart';
 import '../services/backend_api_service.dart';
+import '../services/account_key.dart';
 import '../services/device_id_service.dart';
 import '../services/device_info_service.dart';
 import '../services/xtream_api_service.dart';
@@ -172,11 +173,70 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// The account key for the current credentials, computed once and then
+  /// read from cache.
+  ///
+  /// Cached against the credentials it was derived from, not just the
+  /// playlist: if the user's panel password changes, the cached value is
+  /// stale by definition and must be recomputed — that recomputation is
+  /// exactly what triggers the account move in [_syncBackendAndProfiles].
+  Future<String?> _loadOrDeriveAccountKey() async {
+    if (_username.trim().isEmpty || _password.trim().isEmpty) return null;
+
+    final fingerprint = '${_username.trim().toLowerCase()}\u0000${_password.trim()}'.hashCode
+        .toRadixString(16);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedFor = prefs.getString(_tokenKey('account_key_for'));
+      final cached = prefs.getString(_tokenKey('account_key_value'));
+      if (cached != null && cachedFor == fingerprint) return cached;
+
+      final derived = await AccountKey.derive(
+        username: _username,
+        password: _password,
+      );
+      await prefs.setString(_tokenKey('account_key_for'), fingerprint);
+      await prefs.setString(_tokenKey('account_key_value'), derived);
+      return derived;
+    } catch (_) {
+      // Storage unavailable: derive it fresh rather than failing the whole
+      // sign-in. Costs one extra derivation on this launch only.
+      return AccountKey.derive(username: _username, password: _password);
+    }
+  }
+
+  /// The account key the currently cached device token belongs to — null
+  /// for a token minted before keys existed, which is precisely the signal
+  /// that an install needs migrating.
+  Future<String?> _readCachedAccountKey() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_tokenKey('token_account_key'));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _cacheAccountKey(String? accountKey) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (accountKey == null) {
+        await prefs.remove(_tokenKey('token_account_key'));
+      } else {
+        await prefs.setString(_tokenKey('token_account_key'), accountKey);
+      }
+    } catch (_) {
+      // Cache-only failure — the in-memory session still works; the worst
+      // case is one redundant re-register on the next launch.
+    }
+  }
+
   Future<void> _clearCachedDeviceToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_tokenKey('device_token'));
       await prefs.remove(_tokenKey('device_token_expires_at'));
+      await prefs.remove(_tokenKey('token_account_key'));
     } catch (_) {}
   }
 
@@ -229,11 +289,21 @@ class AuthProvider extends ChangeNotifier {
     // network — see _loadOrCreateLocalAccountId's doc comment.
     _accountId = await _loadOrCreateLocalAccountId();
 
-    // Reuse a still-valid token from a previous launch instead of
-    // registering again — see the token-cache block above for why this
-    // matters well beyond saving a round trip.
+    // The account this user's credentials resolve to, everywhere. Derived
+    // on-device and cached per playlist: 120k PBKDF2 rounds is cheap once
+    // per credential change but not something to repeat on every launch.
+    // Null only before the user has signed into a panel at all, in which
+    // case registration falls back to an anonymous account exactly as
+    // before.
+    final accountKey = await _loadOrDeriveAccountKey();
+
     final cachedToken = await _readCachedDeviceToken();
-    if (cachedToken != null) {
+    final cachedKey = await _readCachedAccountKey();
+
+    // Fast path: the cached token already belongs to the account these
+    // credentials resolve to, so there is nothing to do. Also covers the
+    // pre-login case, where both keys are null.
+    if (cachedToken != null && cachedKey == accountKey) {
       _deviceToken = cachedToken;
       _backendError = null;
     } else {
@@ -242,16 +312,39 @@ class AuthProvider extends ChangeNotifier {
           deviceId: DeviceIdService.getOrCreate(),
           deviceName: await DeviceInfoService.getDeviceModelName(),
           platform: _platformName,
+          accountKey: accountKey,
         );
         _deviceToken = result.deviceToken;
         _backendError = null;
-        await _cacheDeviceToken(result.deviceToken, result.expiresAt);
 
-        // One-time bridge: fold in any data that already exists under the
-        // old credential-derived account (pre-anonymous-accounts installs),
-        // so switching to this scheme doesn't strand existing users' synced
-        // history. Best-effort — a brand-new install has nothing to find,
-        // and any failure here must never block using the app.
+        // We just landed on a different account than the token we were
+        // holding belongs to. Two ways that happens, both handled the same
+        // way: this install predates credential-derived keys and is moving
+        // off its anonymous account, or the user's IPTV password changed so
+        // their key changed with it. Either way the previous account's
+        // profiles, favorites and history follow them across.
+        //
+        // Best-effort: if it fails the user still has a working app on the
+        // new account, and retrying is safe because merging an
+        // already-merged account is a no-op.
+        if (cachedToken != null && accountKey != null) {
+          try {
+            await BackendApiService().mergeAccount(
+              token: result.deviceToken,
+              previousToken: cachedToken,
+            );
+          } catch (e) {
+            debugPrint('[AuthProvider] account merge failed (non-fatal): $e');
+          }
+        }
+
+        await _cacheDeviceToken(result.deviceToken, result.expiresAt);
+        await _cacheAccountKey(accountKey);
+
+        // One-time bridge for installs older still, which synced under the
+        // original SHA256(server_url + username) scheme. Best-effort — a
+        // brand-new install has nothing to find, and any failure here must
+        // never block using the app.
         if (_serverUrl.isNotEmpty && _username.isNotEmpty) {
           try {
             await BackendApiService().migrateLegacyAccount(
