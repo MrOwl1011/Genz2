@@ -1,0 +1,11 @@
+# Nothing in this directory is meant to be hit directly over HTTP — every
+# file here is only ever loaded via require_once from api/*.php. Block all
+# direct web access, on both old (2.2) and modern (2.4) Apache.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

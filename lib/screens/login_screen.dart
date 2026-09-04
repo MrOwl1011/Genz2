@@ -1025,6 +1025,19 @@ class _LoginScreenState extends State<LoginScreen> {
       // (always false there), where tapping a field should open the
       // keyboard immediately as it always has.
       readOnly: kIsTv && focusNode != null && _activeEditingNode != focusNode,
+      // A remote has a Select key to opt into editing (see _handleTvDpadKey)
+      // — a touchscreen running the TV layout (iPad) has no such key, so
+      // tapping the field is that same explicit signal. Without this the
+      // field stayed read-only forever there and the keyboard never opened,
+      // since _activeEditingNode could only ever be set by a key press.
+      // Identical fix to the one in tv_search_field.dart. Never fires from
+      // mere D-pad focus landing here, only from a real tap, so it doesn't
+      // reintroduce the auto-keyboard-on-focus problem on Android TV.
+      onTap: () {
+        if (focusNode != null && _activeEditingNode != focusNode) {
+          setState(() => _activeEditingNode = focusNode);
+        }
+      },
       onFieldSubmitted: (_) {
         if (onSubmit != null) {
           onSubmit();

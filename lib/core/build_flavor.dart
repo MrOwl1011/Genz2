@@ -36,16 +36,18 @@ const bool _kIsTvFlavor = bool.fromEnvironment('IS_TV', defaultValue: false);
 /// Behavior is unaffected on both Android flavors and on iPhone.
 bool kIsTv = _kIsTvFlavor;
 
-/// True only for an actual D-pad remote with no touchscreen — i.e. the
-/// Android TV flavor. [kIsTv] alone can no longer answer "is there a
-/// touchscreen", now that it's also true on iPad: several call sites that
-/// used to check [kIsTv] to strip out touch-only controls (brightness/
-/// volume swipe gestures, the lock button, on-screen skip/rewind/forward
-/// buttons — see player_screen.dart) were really asking this, not "is this
-/// the TV-style UI". Use this for that; keep using [kIsTv] for anything
-/// that's actually about which *layout* to show (sidebar-based TV screens
-/// vs the phone screens), since that split is still correct for iPad.
-bool get kIsTvRemote => kIsTv && !Platform.isIOS;
+/// True only where input really is a D-pad remote with no pointer — which
+/// is exactly the Android TV flavor and nothing else.
+///
+/// [kIsTv] alone cannot answer "is there a pointer", now that it's also
+/// true on iPad (touch) and desktop (mouse). Several call sites that used
+/// to check [kIsTv] to strip out pointer-only controls — brightness/volume
+/// swipe gestures, the lock button, the on-screen skip/rewind/forward row,
+/// the focus ring (see player_screen.dart, tv_focus.dart, tv_focusable.dart)
+/// — were really asking this. Use this for input questions; keep using
+/// [kIsTv] for which *layout* to show, since the TV layout is correct on
+/// all three.
+bool get kIsTvRemote => _kIsTvFlavor;
 
 /// Call once, very early in `main()` (after `WidgetsFlutterBinding.
 /// ensureInitialized()`, before anything reads [kIsTv]) — decides whether
@@ -63,6 +65,17 @@ bool get kIsTvRemote => kIsTv && !Platform.isIOS;
 /// as the binding is initialized.
 void initIsTv() {
   if (_kIsTvFlavor) return;
+
+  // Desktop is always the TV layout. These are large, far-ish, landscape
+  // screens driven by keyboard and mouse — the sidebar layout suits them
+  // for the same reasons it suits a TV, and the phone layout would just be
+  // a stretched column. Unlike iOS there's no small-screen variant of a
+  // desktop window worth branching on.
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    kIsTv = true;
+    return;
+  }
+
   if (!Platform.isIOS) return;
   final view = WidgetsBinding.instance.platformDispatcher.views.first;
   final shortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;

@@ -1,0 +1,10 @@
+# Nothing here is meant to be hit directly over HTTP — only require_once'd
+# from the admin/*.php pages. Block all direct access.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

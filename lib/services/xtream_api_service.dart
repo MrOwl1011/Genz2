@@ -132,7 +132,9 @@ class XtreamApiService {
         // "Exception: " (turning "FormatException: ..." into
         // "FormatUnexpected character...").
         throw Exception(
-          'The server returned an unexpected response. Please try again.',
+          "This server didn't return a valid response. It may be down, "
+          'blocking this connection, or the Server URL may be wrong. '
+          'Check the address and try again.',
         );
       }
       rethrow;
@@ -198,7 +200,9 @@ class XtreamApiService {
         // reasoning — this is the one that was actually firing for the
         // reported bug, since every content list call goes through here.
         throw Exception(
-          'The server returned an unexpected response. Please try again.',
+          "This server didn't return a valid response. It may be down, "
+          'blocking this connection, or the Server URL may be wrong. '
+          'Check the address and try again.',
         );
       }
       rethrow;

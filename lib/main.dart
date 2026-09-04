@@ -1,6 +1,9 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:media_kit/media_kit.dart' show MediaKit;
 
 import 'package:provider/provider.dart';
 import 'app_root.dart';
@@ -28,6 +31,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   installErrorFallback();
   initIsTv();
+
+  // Desktop plays through libmpv (see MediaKitBackend), which needs this
+  // once before the first Player is constructed. Deliberately not called on
+  // mobile: those platforms use VLCKit/ExoPlayer instead and don't bundle
+  // media_kit's native libraries, so initializing it there would be loading
+  // something that isn't shipped.
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    MediaKit.ensureInitialized();
+  }
 
   if (kIsTv) {
     // Mirrors main_tv.dart's own startup: an iPad running in TV mode gets

@@ -1,0 +1,10 @@
+# schema.sql should never be web-servable. Block all direct access, on both
+# old (2.2) and modern (2.4) Apache.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
