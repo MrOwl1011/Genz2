@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../providers/user_prefs_provider.dart';
 import '../../../../theme/app_colors.dart';
-import '../../../../widgets/sync_pairing_dialogs.dart';
 import '../../../../widgets/tv_focusable.dart';
 import '../../../devices/data/datasources/device_remote_datasource.dart';
 import '../../domain/entities/profile_entity.dart';
@@ -66,16 +65,6 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadDeviceCount(token));
   }
 
-  /// Forces a re-check even if the token hasn't changed — used right after
-  /// joining/pairing, where "show my code" doesn't get a new token at all
-  /// but the account's device count just changed regardless.
-  void _refreshDeviceCount() {
-    final token = context.read<AuthProvider>().deviceToken;
-    if (token == null) return;
-    _fetchedForToken = null;
-    _maybeLoadDeviceCount(token);
-  }
-
   Future<void> _loadDeviceCount(String token) async {
     try {
       final devices = await DeviceRemoteDataSource().list(token);
@@ -88,29 +77,17 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
     }
   }
 
-  // Join-only, deliberately — this screen (Who's Watching) is reached
-  // before/without necessarily being the device someone wants to treat as
-  // the "source of truth" to show a code from; generating/showing a code
-  // to pull *other* devices onto this one is still available from Settings
-  // (see more_screen.dart), which is the intentional place for that. This
-  // used to offer both as a chooser dialog; now there's only one action,
-  // so it goes straight to entering a code instead of a dialog with a
-  // single option in it.
-  void _showSyncOptions(BuildContext context, bool isArabic) {
-    final authProvider = context.read<AuthProvider>();
-    showJoinCodeDialog(context, authProvider: authProvider, isArabic: isArabic)
-        .then((_) => _refreshDeviceCount());
-  }
-
   Widget _buildSyncChip(AppColors colors, bool isArabic) {
     final count = _deviceCount;
     if (count == null) return const SizedBox.shrink();
     final isSynced = count > 1;
 
-    return TvFocusable(
-      onTap: () => _showSyncOptions(context, isArabic),
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
+    // Status only, deliberately not tappable: syncing is automatic now
+    // (the account is derived from the user's own IPTV credentials — see
+    // AccountKey), so there is no code to show, no code to enter, and
+    // nothing here for the user to do. It exists purely to answer "is my
+    // stuff shared with my other devices?".
+    return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: (isSynced ? Colors.green : colors.ink).withValues(alpha: 0.1),
@@ -140,7 +117,6 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

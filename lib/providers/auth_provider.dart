@@ -70,12 +70,22 @@ class AuthProvider extends ChangeNotifier {
   /// 5.6 rejection: a server that authenticates against a user's streaming
   /// service and derives an identity from it reads as operating that
   /// service, not as a neutral player. The backend now mints its own opaque
-  /// account_id (see backend/lib/account_id.php's
-  /// generate_anonymous_account_id()) with no relation to this value or to
-  /// Xtream credentials at all. Multi-device sync still exists; it just
-  /// isn't automatic anymore — devices join the same backend account
-  /// explicitly, with a pairing code (see createSyncPairingCode/
-  /// joinSyncAccount below).
+  /// account_id (see backend/lib/account_id.php) with no relation to this
+  /// value.
+  ///
+  /// Sync is automatic again, but without that problem: the backend account
+  /// is now keyed on a hash derived on-device from the user's credentials
+  /// (see AccountKey and _loadOrDeriveAccountKey below). The server still
+  /// never receives a username, password or panel URL, so it still cannot
+  /// tell which streaming service anyone uses — it just gets the same
+  /// opaque id from the same credentials, which is all sync needs. Pairing
+  /// codes are gone.
+  ///
+  /// This local id is deliberately left as a per-playlist random value
+  /// rather than being switched to the account key: it is only a local
+  /// cache namespace for profiles/favorites/history, the server is the
+  /// source of truth for all three, and repointing it would strand every
+  /// existing install's cached data for no user-visible gain.
   String? _accountId;
   String? get accountId => _accountId;
 
@@ -420,66 +430,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Requests a short-lived pairing code for the current device's backend
-  /// account, to be typed into a second device's [joinSyncAccount] so it
-  /// sees this device's profiles/favorites/history. Returns null if the
-  /// backend isn't reachable or this device hasn't registered with it yet —
-  /// callers (the Settings pairing UI) should show that as "sync
-  /// unavailable right now", not as an error dialog.
-  Future<BackendPairingCode?> createSyncPairingCode() async {
-    final token = _deviceToken;
-    if (token == null) return null;
-    try {
-      return await BackendApiService().createPairingCode(token);
-    } catch (e) {
-      debugPrint('[AuthProvider] createSyncPairingCode failed: $e');
-      return null;
-    }
-  }
 
-  /// Joins the backend account a pairing code was issued for — this
-  /// device's *existing* backend account is abandoned (its device row is
-  /// moved, not merged; see backend/api/account/join.php) and profiles are
-  /// reloaded from the target account. Returns true on success.
-  ///
-  /// Note this only affects the backend-synced account, not
-  /// [_loadOrCreateLocalAccountId]'s local partition key — the freshly
-  /// pulled remote profiles are written into this device's existing local
-  /// partition (via profileProvider.loadForAccount below), which is correct
-  /// as long as this device had no meaningful local-only profiles of its
-  /// own before pairing. A device that already had real local data before
-  /// joining a different account is an edge case the Settings pairing UI
-  /// should warn about, not something to silently overwrite.
-  /// Returns null on success, or a user-facing error message on failure —
-  /// deliberately not a bare bool: a 500 from a server-side bug and a
-  /// genuinely wrong/expired code both used to collapse to the same
-  /// generic "Invalid or expired code" text client-side, which made a real
-  /// server misconfiguration indistinguishable from user error and cost
-  /// real debugging time once. The raw BackendApiException code/message is
-  /// safe to show directly — see json_error's doc comment in the backend.
-  Future<String?> joinSyncAccount(String code) async {
-    final token = _deviceToken;
-    if (token == null) return 'Not connected to the sync backend yet.';
-    try {
-      final result = await BackendApiService().joinAccount(token, code);
-      _deviceToken = result.deviceToken;
-      _backendError = null;
-      await _cacheDeviceToken(result.deviceToken, result.expiresAt);
-      SyncManager.instance.updateSession(
-        accountId: _accountId,
-        deviceToken: _deviceToken,
-      );
-      await profileProvider.loadForAccount(_accountId!, _deviceToken);
-      notifyListeners();
-      return null;
-    } on BackendApiException catch (e) {
-      debugPrint('[AuthProvider] joinSyncAccount failed: ${e.code}: ${e.message}');
-      return e.message;
-    } catch (e) {
-      debugPrint('[AuthProvider] joinSyncAccount failed: $e');
-      return 'Something went wrong. Please try again.';
-    }
-  }
 
   /// Authenticates against the real Xtream server.
   Future<XtreamUser> _authenticate({
