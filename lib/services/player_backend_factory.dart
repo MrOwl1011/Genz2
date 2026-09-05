@@ -13,6 +13,14 @@ import 'player_backend.dart';
 /// ([MediaKitBackend]) — `video_player` has no Windows implementation, so
 /// the Android path would fail there at runtime. Everything else uses
 /// ExoPlayer via the `video_player` package ([ExoPlayerBackend]).
+///
+/// macOS belongs with the other desktops rather than in the default branch:
+/// `video_player` does have a macOS implementation, but it is AVFoundation,
+/// which refuses most of what IPTV panels actually serve — MPEG-TS, and
+/// H.264 in containers it does not recognise — with
+/// `OSStatus -12847 / "media format is not supported"` before a frame is
+/// decoded. libmpv handles those, which is the same reason iOS runs VLCKit
+/// instead of AVPlayer.
 PlayerBackend createPlayerBackend() {
   if (kIsWeb) return ExoPlayerBackend();
   switch (defaultTargetPlatform) {
@@ -20,6 +28,7 @@ PlayerBackend createPlayerBackend() {
       return NativeVlcKitBackend();
     case TargetPlatform.windows:
     case TargetPlatform.linux:
+    case TargetPlatform.macOS:
       return MediaKitBackend();
     default:
       return ExoPlayerBackend();
