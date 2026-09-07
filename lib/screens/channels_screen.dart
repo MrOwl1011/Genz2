@@ -329,7 +329,21 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                                 _backend != null
                                     ? Stack(
                                         children: [
+                                          // Keyed to the backend instance. Without a key Flutter sees the same
+                                          // widget type in the same slot when the backend is swapped for a new
+                                          // channel, reuses the existing Element, and keeps the platform view the
+                                          // *previous* backend created — so the new backend's
+                                          // onPlatformViewCreated never fires and it never gets a view to render
+                                          // into. The panel then shows the stopped view, which reads as "the
+                                          // channel icon and nothing else".
+                                          //
+                                          // iOS only in practice: this backend is a UiKitView, whose native side is
+                                          // created once per Element. Android's VideoPlayer and media_kit's Video
+                                          // re-bind from their controller on every build, so they recover on their
+                                          // own. Fullscreen always worked because PlayerScreen keys this too (see
+                                          // its ValueKey(_currentStreamUrl)).
                                           _backend!.buildVideoWidget(
+                                            key: ObjectKey(_backend),
                                             aspectRatio: 16 / 9,
                                           ),
                                           // Channel name overlay
