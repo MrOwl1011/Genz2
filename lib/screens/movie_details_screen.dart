@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../core/build_flavor.dart' show kIsTv;
@@ -448,7 +447,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                     overflow: kIsTv
                                         ? TextOverflow.ellipsis
                                         : TextOverflow.clip,
-                                    style: GoogleFonts.archivo(
+                                    style: AppType.sans(
                                       color: colors
                                           .brandPrimary, // Brand-colored description per user request
                                       fontSize: kIsTv ? 13 : 15,
@@ -461,7 +460,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 if (cast.isNotEmpty) ...[
                                   Text(
                                     cast,
-                                    style: GoogleFonts.archivo(
+                                    style: AppType.sans(
                                       color: colors.ink.withValues(alpha: 0.7),
                                       fontSize: 14,
                                     ),
@@ -471,7 +470,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 if (director.isNotEmpty) ...[
                                   Text(
                                     director,
-                                    style: GoogleFonts.archivo(
+                                    style: AppType.sans(
                                       color: colors.ink.withValues(alpha: 0.7),
                                       fontSize: 14,
                                     ),

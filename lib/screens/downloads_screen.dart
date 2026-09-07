@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +6,7 @@ import '../models/download_item.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 import '../widgets/state_view.dart';
 import '../widgets/dialog_buttons.dart';
 import '../widgets/resume_dialog.dart';
@@ -102,7 +102,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         ),
         title: Text(
           isArabic ? 'حذف التنزيل؟' : 'Delete Download?',
-          style: GoogleFonts.archivo(
+          style: AppType.sans(
             color: colors.ink,
             fontWeight: FontWeight.bold,
           ),
@@ -111,7 +111,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           isArabic
               ? 'هل أنت متأكد أنك تريد حذف "${item.title}"؟ سيتم حذف الملف من جهازك.'
               : 'Are you sure you want to delete "${item.title}"? This removes the file from your device.',
-          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -168,7 +168,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     Expanded(
                       child: Text(
                         isArabic ? 'التنزيلات' : 'DOWNLOADS',
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,
@@ -236,7 +236,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             transform: Matrix4.skewX(0.25),
             child: Text(
               label,
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 color: isSelected
                     ? Colors.white
                     : colors.ink.withValues(alpha: 0.7),
@@ -254,7 +254,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     return Center(
       child: Text(
         message,
-        style: GoogleFonts.archivo(
+        style: AppType.sans(
           color: colors.ink.withValues(alpha: 0.38),
           fontSize: 16,
         ),
@@ -342,7 +342,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       item.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.archivo(
+                      style: AppType.sans(
                         color: colors.ink,
                         fontWeight: FontWeight.bold,
                       ),
@@ -366,7 +366,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     const SizedBox(height: 6),
                     Text(
                       statusLine,
-                      style: GoogleFonts.archivo(
+                      style: AppType.sans(
                         color: colors.ink.withValues(alpha: 0.54),
                         fontSize: 12,
                       ),
@@ -461,7 +461,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         item.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           color: colors.ink,
                           fontWeight: FontWeight.bold,
                         ),
@@ -471,7 +471,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         isFailed
                             ? (isArabic ? 'فشل التنزيل' : 'Download failed')
                             : _formatBytes(item.totalBytes),
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           color: isFailed
                               ? colors.error
                               : colors.ink.withValues(alpha: 0.54),

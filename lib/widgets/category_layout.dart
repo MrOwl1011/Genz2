@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../core/build_flavor.dart' show kIsTv;
@@ -18,8 +17,7 @@ import 'tv_search_field.dart';
 
 /// Two caption lines under a grid poster. Fixed rather than measured: cell
 /// height comes from childAspectRatio, so a caption even a pixel taller than
-/// predicted overflows the cell instead of shrinking it — and the predicted
-/// height is wrong until google_fonts has finished fetching Archivo.
+/// predicted overflows the cell instead of shrinking it.
 const double _gridCaptionHeight = 34;
 
 class CategoryLayout extends StatefulWidget {
@@ -135,7 +133,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                       ),
                     Text(
                       widget.title.toUpperCase(),
-                      style: GoogleFonts.archivo(
+                      style: AppType.sans(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
                         fontStyle: FontStyle.italic,
@@ -184,10 +182,10 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                                 focusNode: _searchFocus,
                                 onChanged: (val) =>
                                     setState(() => _searchQuery = val),
-                                style: GoogleFonts.archivo(color: colors.ink),
+                                style: AppType.sans(color: colors.ink),
                                 decoration: InputDecoration(
                                   hintText: searchHint,
-                                  hintStyle: GoogleFonts.archivo(
+                                  hintStyle: AppType.sans(
                                     color: colors.ink.withValues(alpha: 0.38),
                                   ),
                                   prefixIcon: Icon(
@@ -267,7 +265,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                             transform: Matrix4.skewX(0.25),
                             child: Text(
                               widget.tabs[index],
-                              style: GoogleFonts.archivo(
+                              style: AppType.sans(
                                 color: isSelected
                                     ? Colors.white
                                     : colors.ink.withValues(alpha: 0.7),
@@ -318,7 +316,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             Text(
               widget.error!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 color: colors.ink.withValues(alpha: 0.54),
               ),
             ),
@@ -400,7 +398,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
         return Center(
           child: Text(
             isArabic ? 'لا توجد نتائج.' : 'No results found.',
-            style: GoogleFonts.archivo(
+            style: AppType.sans(
               color: colors.ink.withValues(alpha: 0.38),
               fontSize: 16,
             ),
@@ -414,7 +412,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
           return Center(
             child: Text(
               isArabic ? 'لا توجد فئات.' : 'No categories found.',
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 color: colors.ink.withValues(alpha: 0.38),
                 fontSize: 16,
               ),
@@ -454,7 +452,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             isArabic
                 ? 'لا توجد عناصر في هذا القسم.'
                 : 'No items available in this section.',
-            style: GoogleFonts.archivo(
+            style: AppType.sans(
               color: colors.ink.withValues(alpha: 0.38),
               fontSize: 16,
             ),

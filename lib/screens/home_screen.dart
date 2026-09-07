@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/content_provider.dart';
 import '../providers/user_prefs_provider.dart';
@@ -77,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ).createShader(bounds),
                     child: Text(
                       'GenZ+',
-                      style: GoogleFonts.archivo(
+                      style: AppType.sans(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
@@ -107,10 +106,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     controller: _searchController,
                     focusNode: _searchFocus,
                     onChanged: (val) => setState(() => _searchQuery = val),
-                    style: GoogleFonts.archivo(color: colors.ink),
+                    style: AppType.sans(color: colors.ink),
                     decoration: InputDecoration(
                       hintText: 'Global Search (Movies, Series, Live)',
-                      hintStyle: GoogleFonts.archivo(
+                      hintStyle: AppType.sans(
                         color: colors.ink.withValues(alpha: 0.38),
                       ),
                       prefixIcon: Icon(
@@ -615,9 +614,10 @@ class _PosterCard extends StatelessWidget {
   static const double posterHeight = 174;
 
   /// Two caption lines, in a fixed box. Not derived from the text style: the
-  /// rendered height of two lines depends on the font's own metrics, and
-  /// google_fonts serves a fallback face until Archivo finishes downloading,
-  /// so a computed value is right only after the first launch.
+  /// rendered height of two lines depends on the font's own metrics plus the
+  /// device's text-scale setting, so a computed value is a prediction rather
+  /// than arithmetic. Fixed means an oversized caption clips instead of
+  /// overflowing its row.
   static const double captionHeight = 34;
 
   /// What a row's SizedBox has to be tall enough for.

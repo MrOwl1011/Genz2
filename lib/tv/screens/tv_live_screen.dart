@@ -3,7 +3,6 @@ import 'dart:io' show Platform;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/xtream_models.dart';
@@ -13,6 +12,7 @@ import '../../screens/player_screen.dart';
 import '../../services/player_backend.dart';
 import '../../services/player_backend_factory.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../tv_metrics.dart';
 import '../tv_route.dart';
 import '../widgets/tv_focus.dart';
@@ -598,7 +598,7 @@ class _CategoryRow extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.archivo(
+            style: AppType.sans(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: selected
@@ -641,7 +641,7 @@ class _ChannelList extends StatelessWidget {
       return Center(
         child: Text(
           isArabic ? 'لا توجد قنوات' : 'No channels',
-          style: GoogleFonts.archivo(
+          style: AppType.sans(
             fontSize: 12,
             color: colors.ink.withValues(alpha: 0.4),
           ),
@@ -748,7 +748,7 @@ class _ChannelRowState extends State<_ChannelRow> {
                     children: [
                       Text(
                         '${widget.index}',
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           fontSize: 11,
                           color: colors.ink.withValues(alpha: 0.4),
                         ),
@@ -790,7 +790,7 @@ class _ChannelRowState extends State<_ChannelRow> {
                           channel.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.archivo(
+                          style: AppType.sans(
                             fontSize: 11,
                             fontWeight: active
                                 ? FontWeight.w700
@@ -917,7 +917,7 @@ class _PreviewPanel extends StatelessWidget {
                         isArabic
                             ? 'اختر قناة للمعاينة'
                             : 'Select a channel to preview',
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           color: Colors.white38,
                           fontSize: 13,
                         ),
@@ -935,7 +935,7 @@ class _PreviewPanel extends StatelessWidget {
                               current.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.archivo(
+                              style: AppType.sans(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 13,
@@ -1008,7 +1008,7 @@ class _PreviewPanel extends StatelessWidget {
                             isArabic
                                 ? 'تعذر تحميل المعاينة'
                                 : "Couldn't load preview",
-                            style: GoogleFonts.archivo(
+                            style: AppType.sans(
                               color: Colors.white54,
                               fontSize: 12,
                             ),
@@ -1034,7 +1034,7 @@ class _PreviewPanel extends StatelessWidget {
                               ),
                               child: Text(
                                 isArabic ? 'إعادة المحاولة' : 'Retry',
-                                style: GoogleFonts.archivo(
+                                style: AppType.sans(
                                   color: Colors.white,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -1108,7 +1108,7 @@ class _EpgCard extends StatelessWidget {
                   listing.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: colors.ink,
@@ -1123,7 +1123,7 @@ class _EpgCard extends StatelessWidget {
               listing.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 fontSize: 11.5,
                 height: 1.35,
                 color: colors.ink.withValues(alpha: 0.7),
@@ -1144,7 +1144,7 @@ class _EpgCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               '${formatTime(start)} - ${formatTime(end)}',
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 fontSize: 10.5,
                 color: colors.ink.withValues(alpha: 0.5),
               ),

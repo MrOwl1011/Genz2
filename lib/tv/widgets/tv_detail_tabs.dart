@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import 'tv_focus.dart';
 
 /// The tab row on the right-hand column of a detail screen (Episodes / More
@@ -38,7 +38,7 @@ class TvDetailTabs extends StatelessWidget {
                 children: [
                   Text(
                     labels[i],
-                    style: GoogleFonts.archivo(
+                    style: AppType.sans(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,

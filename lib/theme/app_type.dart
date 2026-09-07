@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Every text style in the app, in one place.
 ///
@@ -26,8 +25,49 @@ import 'package:google_fonts/google_fonts.dart';
 class AppType {
   AppType._();
 
+  /// The bundled Latin family. Declared in pubspec under this exact name.
+  static const String family = 'Archivo';
+
+  /// The bundled Arabic family.
+  static const String arabicFamily = 'IBMPlexSansArabic';
+
+  /// Builds a style on the bundled variable font.
+  ///
+  /// Sets `fontVariations` as well as `fontWeight`. Archivo ships as a single
+  /// variable file whose default weight is 600, and `fontWeight` alone does
+  /// not reliably drive the `wght` axis across every platform Flutter
+  /// targets — without the explicit variation, regular text renders
+  /// semibold on some of them.
+  static TextStyle sans({
+    double fontSize = 14,
+    FontWeight fontWeight = FontWeight.w400,
+    double? height,
+    double? letterSpacing,
+    Color? color,
+    FontStyle? fontStyle,
+    TextDecoration? decoration,
+    List<Shadow>? shadows,
+    double? wdth,
+  }) {
+    return TextStyle(
+      fontFamily: family,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      fontVariations: <FontVariation>[
+        FontVariation('wght', fontWeight.value.toDouble()),
+        if (wdth != null) FontVariation('wdth', wdth),
+      ],
+      height: height,
+      letterSpacing: letterSpacing,
+      color: color,
+      fontStyle: fontStyle,
+      decoration: decoration,
+      shadows: shadows,
+    );
+  }
+
   /// Hero titles: detail pages, the home backdrop.
-  static TextStyle hero(Color color) => GoogleFonts.archivo(
+  static TextStyle hero(Color color) => sans(
     fontSize: 32,
     height: 1.06,
     fontWeight: FontWeight.w800,
@@ -37,7 +77,7 @@ class AppType {
 
   /// The ten-foot variant of [hero] — read at distance, so it grows rather
   /// than simply scaling with the layout.
-  static TextStyle heroTv(Color color) => GoogleFonts.archivo(
+  static TextStyle heroTv(Color color) => sans(
     fontSize: 44,
     height: 1.04,
     fontWeight: FontWeight.w800,
@@ -46,7 +86,7 @@ class AppType {
   );
 
   /// Screen headings and section titles.
-  static TextStyle heading(Color color) => GoogleFonts.archivo(
+  static TextStyle heading(Color color) => sans(
     fontSize: 22,
     height: 1.18,
     fontWeight: FontWeight.w700,
@@ -55,7 +95,7 @@ class AppType {
   );
 
   /// Content-row headers ("Continue Watching", "Action").
-  static TextStyle rowHeader(Color color) => GoogleFonts.archivo(
+  static TextStyle rowHeader(Color color) => sans(
     fontSize: 16,
     height: 1.25,
     fontWeight: FontWeight.w600,
@@ -63,7 +103,7 @@ class AppType {
   );
 
   /// Titles on cards, list rows and episode rows.
-  static TextStyle cardTitle(Color color) => GoogleFonts.archivo(
+  static TextStyle cardTitle(Color color) => sans(
     fontSize: 14,
     height: 1.28,
     fontWeight: FontWeight.w600,
@@ -71,7 +111,7 @@ class AppType {
   );
 
   /// Synopsis and any running prose.
-  static TextStyle body(Color color) => GoogleFonts.archivo(
+  static TextStyle body(Color color) => sans(
     fontSize: 14,
     height: 1.57,
     fontWeight: FontWeight.w400,
@@ -79,7 +119,7 @@ class AppType {
   );
 
   /// Captions beneath posters. Two lines maximum, by convention.
-  static TextStyle caption(Color color) => GoogleFonts.archivo(
+  static TextStyle caption(Color color) => sans(
     fontSize: 12,
     height: 1.33,
     fontWeight: FontWeight.w500,
@@ -91,7 +131,7 @@ class AppType {
   /// The wide tracking is not decorative: at this size it is what keeps
   /// uppercase legible, and it is the visual counterweight to the tight
   /// tracking on [hero].
-  static TextStyle meta(Color color) => GoogleFonts.archivo(
+  static TextStyle meta(Color color) => sans(
     fontSize: 10.5,
     height: 1.3,
     fontWeight: FontWeight.w600,
@@ -100,7 +140,7 @@ class AppType {
   );
 
   /// Button and action labels.
-  static TextStyle label(Color color) => GoogleFonts.archivo(
+  static TextStyle label(Color color) => sans(
     fontSize: 14,
     height: 1.2,
     fontWeight: FontWeight.w600,
@@ -113,6 +153,11 @@ class AppType {
   /// Call this for Arabic strings instead of letting the renderer fall back:
   /// a fallback face has different proportions and vertical metrics, so a
   /// mixed screen ends up with rows that do not share a baseline.
-  static TextStyle arabic(TextStyle base) =>
-      GoogleFonts.ibmPlexSansArabic(textStyle: base);
+  static TextStyle arabic(TextStyle base) => base.copyWith(
+    fontFamily: arabicFamily,
+    // Plex Arabic ships as static weights, so the variable-axis instruction
+    // meant for Archivo has to be cleared or it is applied to a font that
+    // has no such axis.
+    fontVariations: const <FontVariation>[],
+  );
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 
 /// A D-pad-safe search field: stays read-only (no on-screen keyboard) until
 /// explicitly selected, exactly like the TV login screen's fields — see
@@ -205,10 +205,10 @@ class _TvSearchFieldState extends State<TvSearchField> {
           setState(() => _editing = false);
           widget.onSubmit?.call(value);
         },
-        style: GoogleFonts.archivo(color: colors.ink),
+        style: AppType.sans(color: colors.ink),
         decoration: InputDecoration(
           hintText: widget.hint,
-          hintStyle: GoogleFonts.archivo(
+          hintStyle: AppType.sans(
             color: colors.ink.withValues(alpha: 0.38),
           ),
           prefixIcon: Icon(

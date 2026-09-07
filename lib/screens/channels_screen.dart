@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/player_backend.dart';
 import '../services/player_backend_factory.dart';
@@ -8,6 +7,7 @@ import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 import '../widgets/state_view.dart';
 import '../widgets/tv_focusable.dart';
 import 'player_screen.dart';
@@ -228,7 +228,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                       Expanded(
                         child: Text(
                           '- ${widget.category.categoryName.toUpperCase()}',
-                          style: GoogleFonts.archivo(
+                          style: AppType.sans(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                             fontStyle: FontStyle.italic,
@@ -278,13 +278,13 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                           child: TextField(
                             controller: _searchController,
                             onChanged: _onSearch,
-                            style: GoogleFonts.archivo(
+                            style: AppType.sans(
                               color: colors.ink,
                               fontSize: 14,
                             ),
                             decoration: InputDecoration(
                               hintText: isArabic ? 'بحث' : 'Search',
-                              hintStyle: GoogleFonts.archivo(
+                              hintStyle: AppType.sans(
                                 color: colors.ink.withValues(alpha: 0.3),
                                 fontSize: 14,
                               ),
@@ -341,7 +341,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                                             left: 12,
                                             child: Text(
                                               _currentChannel!.name,
-                                              style: GoogleFonts.archivo(
+                                              style: AppType.sans(
                                                 color: Colors.white70,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
@@ -517,7 +517,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 color: colors.ink.withValues(alpha: 0.54),
               ),
             ),
@@ -529,7 +529,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
               ),
               child: Text(
                 isArabic ? 'إعادة المحاولة' : 'Retry',
-                style: GoogleFonts.archivo(color: Colors.white),
+                style: AppType.sans(color: Colors.white),
               ),
             ),
           ],
@@ -648,7 +648,7 @@ class _ChannelTile extends StatelessWidget {
                     channel.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.archivo(
+                    style: AppType.sans(
                       color: colors.ink,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -657,7 +657,7 @@ class _ChannelTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     isArabic ? 'لا توجد معلومات' : 'No Information',
-                    style: GoogleFonts.archivo(
+                    style: AppType.sans(
                       color: colors.ink.withValues(alpha: 0.38),
                       fontSize: 12,
                     ),

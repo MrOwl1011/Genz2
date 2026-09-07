@@ -1,11 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/xtream_models.dart';
 import '../../providers/user_prefs_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../tv_metrics.dart';
 import '../tv_route.dart';
 import '../widgets/tv_focus.dart';
@@ -103,7 +103,7 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
                   const SizedBox(width: 12),
                   Text(
                     isArabic ? 'المفضلة' : 'FAVORITES',
-                    style: GoogleFonts.archivo(
+                    style: AppType.sans(
                       fontSize: 30,
                       fontWeight: FontWeight.w900,
                       fontStyle: FontStyle.italic,
@@ -126,7 +126,7 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
                             isArabic
                                 ? 'لا توجد عناصر في المفضلة بعد.'
                                 : 'Nothing in your favorites yet.',
-                            style: GoogleFonts.archivo(
+                            style: AppType.sans(
                               color: colors.ink.withValues(alpha: 0.45),
                               fontSize: 18,
                             ),
@@ -241,7 +241,7 @@ class _FavoriteCard extends StatelessWidget {
                   item.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: focused

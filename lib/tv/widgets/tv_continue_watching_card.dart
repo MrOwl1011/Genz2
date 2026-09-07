@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/user_prefs_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../../widgets/category_card.dart' show CategoryType;
 import '../../widgets/tv_focusable.dart';
 import '../screens/tv_media_grid_screen.dart';
@@ -58,7 +58,7 @@ class TvContinueWatchingCard extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           'Nothing to continue yet — start watching something!',
-          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.45)),
+          style: AppType.sans(color: colors.ink.withValues(alpha: 0.45)),
         ),
       );
     }
@@ -126,7 +126,7 @@ class TvContinueWatchingCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           'CONTINUE WATCHING',
-                          style: GoogleFonts.archivo(
+                          style: AppType.sans(
                             color: colors.ink,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -142,7 +142,7 @@ class TvContinueWatchingCard extends StatelessWidget {
                         current.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,

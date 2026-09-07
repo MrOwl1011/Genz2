@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/build_flavor.dart' show kIsTvRemote;
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../tv_metrics.dart';
 import 'tv_focus.dart';
 
@@ -85,7 +85,7 @@ class _TvContentRowState extends State<TvContentRow> {
             padding: const EdgeInsets.only(bottom: 10),
             child: AnimatedDefaultTextStyle(
               duration: TvMetrics.focusAnim,
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 fontSize: 13,
                 fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,
@@ -209,7 +209,7 @@ class _SeeAllTile extends StatelessWidget {
                   Text(
                     isArabic ? 'عرض الكل' : 'See All',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.archivo(
+                    style: AppType.sans(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w600,
                       color: focused

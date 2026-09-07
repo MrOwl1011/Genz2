@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../providers/auth_provider.dart';
 import '../../../../providers/user_prefs_provider.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../theme/app_type.dart';
 import '../../../../widgets/tv_focusable.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../providers/profile_provider.dart';
@@ -108,7 +108,7 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
               const Spacer(),
               Text(
                 isArabic ? 'من يشاهد؟' : "Who's Watching?",
-                style: GoogleFonts.archivo(
+                style: AppType.sans(
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
                   fontStyle: FontStyle.italic,
@@ -168,7 +168,7 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
                       : (isArabic
                             ? 'إدارة الملفات الشخصية'
                             : 'Manage Profiles'),
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     color: colors.ink.withValues(alpha: 0.6),
                     fontSize: 14,
                     letterSpacing: 1,
@@ -207,7 +207,7 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
           const SizedBox(height: 8),
           Text(
             isArabic ? 'إضافة ملف شخصي' : 'Add Profile',
-            style: GoogleFonts.archivo(
+            style: AppType.sans(
               color: colors.ink.withValues(alpha: 0.6),
               fontSize: 14,
             ),

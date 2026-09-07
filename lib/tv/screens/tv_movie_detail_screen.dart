@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/download_item.dart';
@@ -10,6 +9,7 @@ import '../../providers/downloads_provider.dart';
 import '../../providers/user_prefs_provider.dart';
 import '../../screens/player_screen.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../../widgets/resume_dialog.dart';
 import '../tv_metrics.dart';
 import '../tv_route.dart';
@@ -227,7 +227,7 @@ class _TvMovieDetailScreenState extends State<TvMovieDetailScreen> {
                                 title.toUpperCase(),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.archivo(
+                                style: AppType.sans(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w900,
                                   fontStyle: FontStyle.italic,
@@ -242,7 +242,7 @@ class _TvMovieDetailScreenState extends State<TvMovieDetailScreen> {
                                   if (year.isNotEmpty)
                                     Text(
                                       year,
-                                      style: GoogleFonts.archivo(
+                                      style: AppType.sans(
                                         fontSize: 12,
                                         color: colors.ink.withValues(
                                           alpha: 0.6,
@@ -252,7 +252,7 @@ class _TvMovieDetailScreenState extends State<TvMovieDetailScreen> {
                                   if (duration.isNotEmpty)
                                     Text(
                                       duration,
-                                      style: GoogleFonts.archivo(
+                                      style: AppType.sans(
                                         fontSize: 12,
                                         color: colors.ink.withValues(
                                           alpha: 0.6,
@@ -281,7 +281,7 @@ class _TvMovieDetailScreenState extends State<TvMovieDetailScreen> {
                                         genre,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.archivo(
+                                        style: AppType.sans(
                                           fontSize: 12,
                                           color: colors.ink.withValues(
                                             alpha: 0.6,
@@ -300,7 +300,7 @@ class _TvMovieDetailScreenState extends State<TvMovieDetailScreen> {
                                   // more lines fit before truncating.
                                   maxLines: 8,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.archivo(
+                                  style: AppType.sans(
                                     fontSize: 14.5,
                                     height: 1.45,
                                     color: colors.ink.withValues(alpha: 0.85),

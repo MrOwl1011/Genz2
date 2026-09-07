@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 
 /// The "Cast" tab: labelled text blocks for whatever Xtream actually
 /// provides. There's no per-actor endpoint (no photos, no individual
@@ -52,7 +52,7 @@ class TvCastInfo extends StatelessWidget {
           children: [
             Text(
               label.toUpperCase(),
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1,
@@ -62,7 +62,7 @@ class TvCastInfo extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               value,
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 fontSize: 13,
                 height: 1.4,
                 color: colors.ink.withValues(alpha: 0.85),

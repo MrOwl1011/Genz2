@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 // For ScrollCacheExtent — not re-exported by material.dart.
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart' show SystemNavigator;
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/xtream_models.dart';
 import '../../providers/content_provider.dart';
 import '../../providers/user_prefs_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../../widgets/category_card.dart' show CategoryType;
 import '../../widgets/tv_focusable.dart';
 import '../tv_metrics.dart';
@@ -230,7 +230,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               children: [
                 Text(
                   isArabic ? 'الخروج من التطبيق؟' : 'Exit the app?',
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
                     color: colors.ink,
@@ -258,7 +258,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                         ),
                         child: Text(
                           isArabic ? 'رجوع' : 'Back',
-                          style: GoogleFonts.archivo(
+                          style: AppType.sans(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: colors.ink,
@@ -289,7 +289,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                         ),
                         child: Text(
                           isArabic ? 'خروج' : 'Exit',
-                          style: GoogleFonts.archivo(
+                          style: AppType.sans(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -458,7 +458,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             Text(
               error,
               textAlign: TextAlign.center,
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 color: colors.ink.withValues(alpha: 0.6),
               ),
             ),
@@ -479,7 +479,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                 ),
                 child: Text(
                   isArabic ? 'إعادة المحاولة' : 'Retry',
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
@@ -767,7 +767,7 @@ class _RowSkeleton extends StatelessWidget {
             title.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.archivo(
+            style: AppType.sans(
               fontSize: 15,
               fontWeight: FontWeight.w900,
               fontStyle: FontStyle.italic,

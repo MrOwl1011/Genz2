@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_type.dart';
@@ -164,7 +163,7 @@ class TvPosterCard extends StatelessWidget {
                     subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.archivo(
+                    style: AppType.sans(
                       fontSize: 8.5,
                       color: colors.ink.withValues(alpha: 0.5),
                     ),

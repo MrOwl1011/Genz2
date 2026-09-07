@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'features/profiles/presentation/providers/profile_provider.dart';
@@ -10,6 +9,7 @@ import 'screens/login_screen.dart';
 import 'screens/playlists_screen.dart';
 import 'services/connectivity_service.dart';
 import 'theme/app_colors.dart';
+import 'theme/app_type.dart';
 
 /// The reactive root of the app, shared by both the phone and TV entry
 /// points ([main.dart]/[main_tv.dart]): loading/no-internet gates, then
@@ -169,7 +169,7 @@ class _AppRootState extends State<AppRoot> {
                 Text(
                   'No Internet Connection',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     color: colors.ink,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -180,7 +180,7 @@ class _AppRootState extends State<AppRoot> {
                   "You're offline. Connect to the internet to load live TV, "
                   "movies and series, or watch what you've already downloaded.",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     color: colors.ink.withValues(alpha: 0.6),
                     fontSize: 14,
                   ),
@@ -211,7 +211,7 @@ class _AppRootState extends State<AppRoot> {
                           ),
                     label: Text(
                       'Retry',
-                      style: GoogleFonts.archivo(
+                      style: AppType.sans(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -240,7 +240,7 @@ class _AppRootState extends State<AppRoot> {
                     ),
                     label: Text(
                       'Go to Downloads',
-                      style: GoogleFonts.archivo(
+                      style: AppType.sans(
                         color: colors.ink.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w600,
                         fontSize: 15,

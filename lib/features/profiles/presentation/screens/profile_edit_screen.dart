@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../providers/user_prefs_provider.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../theme/app_type.dart';
 import '../../../../widgets/dialog_buttons.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../providers/profile_provider.dart';
@@ -48,7 +48,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: colors.error,
-        content: Text(message, style: GoogleFonts.archivo(color: Colors.white)),
+        content: Text(message, style: AppType.sans(color: Colors.white)),
       ),
     );
   }
@@ -94,7 +94,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           isArabic ? 'حذف الملف الشخصي؟' : 'Delete Profile?',
-          style: GoogleFonts.archivo(
+          style: AppType.sans(
             color: colors.ink,
             fontWeight: FontWeight.bold,
           ),
@@ -103,7 +103,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           isArabic
               ? 'سيؤدي هذا إلى إزالة "${widget.existingProfile!.name}" من هذا الحساب.'
               : 'This removes "${widget.existingProfile!.name}" from this account.',
-          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -195,7 +195,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             ? (isArabic ? 'تعديل الملف الشخصي' : 'EDIT PROFILE')
                             : (isArabic ? 'إضافة ملف شخصي' : 'ADD PROFILE'),
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,
@@ -224,18 +224,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         controller: _nameController,
                         maxLength: 60,
                         textCapitalization: TextCapitalization.words,
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           color: colors.ink,
                           fontSize: 16,
                         ),
                         decoration: InputDecoration(
                           labelText: isArabic ? 'الاسم' : 'Name',
-                          labelStyle: GoogleFonts.archivo(
+                          labelStyle: AppType.sans(
                             color: colors.ink.withValues(alpha: 0.6),
                           ),
                           filled: true,
                           fillColor: colors.surface,
-                          counterStyle: GoogleFonts.archivo(
+                          counterStyle: AppType.sans(
                             color: colors.ink.withValues(alpha: 0.4),
                           ),
                           border: OutlineInputBorder(
@@ -260,7 +260,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           isArabic ? 'لون الصورة الرمزية' : 'Avatar Color',
-                          style: GoogleFonts.archivo(
+                          style: AppType.sans(
                             color: colors.ink.withValues(alpha: 0.7),
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -316,7 +316,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                       : (isArabic
                                             ? 'إنشاء ملف شخصي'
                                             : 'Create Profile'),
-                                  style: GoogleFonts.archivo(
+                                  style: AppType.sans(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -341,7 +341,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             ),
                             child: Text(
                               isArabic ? 'حذف الملف الشخصي' : 'Delete Profile',
-                              style: GoogleFonts.archivo(
+                              style: AppType.sans(
                                 color: colors.error,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,

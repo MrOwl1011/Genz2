@@ -6,8 +6,8 @@
 // filled or outlined pill so it looks like the button it is.
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 
 /// The highlighted action in a dialog — e.g. "Delete", "Select Episodes...",
 /// "OK". Pass [color] to override the default brand fill (e.g.
@@ -38,7 +38,7 @@ class DialogPrimaryButton extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.archivo(fontWeight: FontWeight.bold, fontSize: 14),
+        style: AppType.sans(fontWeight: FontWeight.bold, fontSize: 14),
       ),
     );
   }
@@ -69,7 +69,7 @@ class DialogSecondaryButton extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.archivo(fontWeight: FontWeight.w600, fontSize: 14),
+        style: AppType.sans(fontWeight: FontWeight.w600, fontSize: 14),
       ),
     );
   }

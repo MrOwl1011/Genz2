@@ -2,7 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_root.dart';
 import '../core/build_flavor.dart' show kIsTv;
@@ -245,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(width: 10),
             Text(
               isArabic ? 'خطأ في الاتصال' : 'Connection Error',
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 color: colors.ink,
                 fontWeight: FontWeight.bold,
               ),
@@ -254,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         content: Text(
           message,
-          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -330,7 +329,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               Text(
                                 'GenZ',
-                                style: GoogleFonts.archivo(
+                                style: AppType.sans(
                                   fontSize: kIsTv ? 34 : 50,
                                   fontWeight: FontWeight.w900,
                                   fontStyle: FontStyle.italic,
@@ -340,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               Text(
                                 '+',
-                                style: GoogleFonts.archivo(
+                                style: AppType.sans(
                                   fontSize: kIsTv ? 34 : 50,
                                   fontWeight: FontWeight.w900,
                                   fontStyle: FontStyle.italic,
@@ -358,7 +357,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             maxLines: 1,
                             softWrap: false,
                             overflow: TextOverflow.visible,
-                            style: GoogleFonts.archivo(
+                            style: AppType.sans(
                               fontSize: kIsTv ? 9 : 10,
                               fontWeight: FontWeight.w600,
                               color: colors.ink.withValues(alpha: 0.38),
@@ -410,7 +409,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     : 'GENz+ is a player only. It provides no channels, '
                                           'movies or playlists — sign in with your own '
                                           'service to continue.',
-                                style: GoogleFonts.archivo(
+                                style: AppType.sans(
                                   color: colors.ink.withValues(alpha: 0.7),
                                   fontSize: kIsTv ? 10.5 : 12.5,
                                   height: 1.35,
@@ -618,7 +617,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         label: Text(
                           isArabic ? 'المستخدمون' : 'Users',
-                          style: GoogleFonts.archivo(
+                          style: AppType.sans(
                             color: colors.ink.withValues(alpha: 0.7),
                             fontSize: kIsTv ? 11 : 13,
                             fontWeight: FontWeight.w500,
@@ -654,7 +653,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        style: GoogleFonts.archivo(
+        style: AppType.sans(
           fontSize: 12,
           color: colors.ink.withValues(alpha: 0.54),
         ),
@@ -668,7 +667,7 @@ class _LoginScreenState extends State<LoginScreen> {
             text: isArabic
                 ? 'الشروط وسياسة الخصوصية'
                 : 'Terms & Privacy Policy',
-            style: GoogleFonts.archivo(
+            style: AppType.sans(
               fontSize: 12,
               fontWeight: FontWeight.bold,
               color: colors.brandPrimary,
@@ -707,7 +706,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         isArabic
                             ? 'الشروط وسياسة الخصوصية'
                             : 'Terms & Privacy Policy',
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: colors.ink,
@@ -733,7 +732,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(
                         isArabic ? 'عن GENz+' : 'About GENz+',
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: colors.brandPrimary,
@@ -860,7 +859,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   isArabic ? 'تواصل معنا' : 'Contact Us',
-                                  style: GoogleFonts.archivo(
+                                  style: AppType.sans(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
@@ -889,7 +888,7 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
         title,
-        style: GoogleFonts.archivo(
+        style: AppType.sans(
           fontSize: 15,
           fontWeight: FontWeight.bold,
           color: colors.brandPrimary,
@@ -901,7 +900,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _termsParagraph(AppColors colors, String text) {
     return Text(
       text,
-      style: GoogleFonts.archivo(
+      style: AppType.sans(
         fontSize: 13,
         height: 1.5,
         color: colors.ink.withValues(alpha: 0.7),
@@ -934,7 +933,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: EdgeInsets.only(left: 8.0, bottom: kIsTv ? 4.0 : 8.0),
           child: Text(
             label.toUpperCase(),
-            style: GoogleFonts.archivo(
+            style: AppType.sans(
               fontSize: kIsTv ? 10 : 11,
               fontWeight: FontWeight.bold,
               color: colors.ink.withValues(alpha: 0.6),
@@ -1045,12 +1044,12 @@ class _LoginScreenState extends State<LoginScreen> {
           focusNode?.unfocus();
         }
       },
-      style: GoogleFonts.archivo(color: colors.ink, fontSize: kIsTv ? 13 : 15),
+      style: AppType.sans(color: colors.ink, fontSize: kIsTv ? 13 : 15),
       decoration: InputDecoration(
         filled: true,
         fillColor: colors.surface,
         hintText: hint,
-        hintStyle: GoogleFonts.archivo(
+        hintStyle: AppType.sans(
           color: colors.ink.withValues(alpha: 0.3),
           fontSize: kIsTv ? 12 : 14,
         ),
@@ -1111,7 +1110,7 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide(color: colors.error, width: 1.5),
         ),
-        errorStyle: GoogleFonts.archivo(color: colors.error, fontSize: 11),
+        errorStyle: AppType.sans(color: colors.error, fontSize: 11),
       ),
     );
   }

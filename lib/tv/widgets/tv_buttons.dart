@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../tv_metrics.dart';
 import 'tv_focus.dart';
 
@@ -84,7 +84,7 @@ class TvDestinationTile extends StatelessWidget {
                   label.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     fontStyle: FontStyle.italic,
@@ -169,7 +169,7 @@ class TvActionPill extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.archivo(
+                    style: AppType.sans(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                       color: focused

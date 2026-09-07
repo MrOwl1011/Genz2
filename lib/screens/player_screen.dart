@@ -6,7 +6,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -15,6 +14,7 @@ import '../core/build_flavor.dart' show kIsTv, kIsTvRemote;
 import '../providers/user_prefs_provider.dart';
 import '../services/player_backend.dart';
 import '../services/player_backend_factory.dart';
+import '../theme/app_type.dart';
 
 /// The TV transport row's buttons, left to right — VOD/series only (see
 /// _tvControlActions; live never builds this list at all, its own
@@ -1053,7 +1053,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                       textDirection: TextDirection.ltr,
                       child: Text(
                         _indicatorMessage,
-                        style: GoogleFonts.archivo(
+                        style: AppType.sans(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -1256,7 +1256,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                 const SizedBox(height: 2),
                 Text(
                   '10s',
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -1439,7 +1439,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           const SizedBox(height: 8),
           Text(
             '${(value * 100).toInt()}%',
-            style: GoogleFonts.archivo(
+            style: AppType.sans(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -1481,7 +1481,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               ),
               child: Text(
                 _qualityLabel,
-                style: GoogleFonts.archivo(
+                style: AppType.sans(
                   color: Colors.white70,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -1505,7 +1505,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         textAlign: TextAlign.center,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.archivo(
+        style: AppType.sans(
           color: Colors.white,
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -1718,7 +1718,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ? Duration(milliseconds: (_dragSeekValue * totalMs).toInt())
                     : position,
               ),
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 color: Colors.white70,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -1765,7 +1765,7 @@ class _PlayerScreenState extends State<PlayerScreen>
             child: Text(
               _formatDuration(duration),
               textAlign: TextAlign.end,
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 color: Colors.white70,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -1872,7 +1872,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.archivo(fontWeight: FontWeight.w600),
+          style: AppType.sans(fontWeight: FontWeight.w600),
         ),
         backgroundColor: const Color(0xFF1E1E1E),
         behavior: SnackBarBehavior.floating,
@@ -1909,7 +1909,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                         ? 'جارٍ الاتصال بالبث...'
                         : 'Connecting to stream...')
                   : (isArabic ? 'جارٍ تحميل الفيديو...' : 'Loading video...'),
-              style: GoogleFonts.archivo(color: Colors.white54, fontSize: 14),
+              style: AppType.sans(color: Colors.white54, fontSize: 14),
             ),
             // Live channels can hang connecting far longer than VOD (a dead
             // or overloaded channel, a slow panel) with no way to tell how
@@ -1925,7 +1925,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                 icon: const Icon(Icons.arrow_back, color: Colors.white54),
                 label: Text(
                   isArabic ? 'رجوع' : 'Go Back',
-                  style: GoogleFonts.archivo(color: Colors.white54),
+                  style: AppType.sans(color: Colors.white54),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.white24),
@@ -1979,7 +1979,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               const SizedBox(height: 20),
               Text(
                 isArabic ? 'خطأ في التشغيل' : 'Playback Error',
-                style: GoogleFonts.archivo(
+                style: AppType.sans(
                   color: Colors.white,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -1989,7 +1989,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.archivo(color: Colors.white60, fontSize: 14),
+                style: AppType.sans(color: Colors.white60, fontSize: 14),
               ),
               const SizedBox(height: 32),
               Row(
@@ -2000,7 +2000,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     icon: const Icon(Icons.arrow_back, color: Colors.white54),
                     label: Text(
                       isArabic ? 'رجوع' : 'Go Back',
-                      style: GoogleFonts.archivo(color: Colors.white54),
+                      style: AppType.sans(color: Colors.white54),
                     ),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Colors.white24),
@@ -2019,7 +2019,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ),
                     label: Text(
                       isArabic ? 'إعادة المحاولة' : 'Retry',
-                      style: GoogleFonts.archivo(
+                      style: AppType.sans(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -2065,7 +2065,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                       ? 'التحكم بالسطوع والصوت'
                       : 'Control Brightness & Volume',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -2114,7 +2114,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ),
                     child: Text(
                       isArabic ? 'تخطي' : 'Skip',
-                      style: GoogleFonts.archivo(
+                      style: AppType.sans(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -2148,7 +2148,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         Text(
           label,
           textAlign: TextAlign.center,
-          style: GoogleFonts.archivo(
+          style: AppType.sans(
             color: Colors.white,
             fontSize: 13,
             fontWeight: FontWeight.w600,

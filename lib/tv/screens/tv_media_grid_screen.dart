@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/responsive.dart';
@@ -8,6 +7,7 @@ import '../../models/xtream_models.dart';
 import '../../providers/content_provider.dart';
 import '../../providers/user_prefs_provider.dart' show HistoryItem, MediaType;
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../../widgets/category_card.dart' show CategoryType;
 import '../../widgets/tv_focusable.dart';
 import '../../widgets/tv_search_field.dart';
@@ -260,7 +260,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
                             title.toUpperCase(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.archivo(
+                            style: AppType.sans(
                               fontSize: 26,
                               fontWeight: FontWeight.w900,
                               fontStyle: FontStyle.italic,
@@ -316,7 +316,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
           children: [
             Text(
               _error!,
-              style: GoogleFonts.archivo(
+              style: AppType.sans(
                 color: colors.ink.withValues(alpha: 0.54),
               ),
             ),
@@ -335,7 +335,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
                 ),
                 child: Text(
                   'Retry',
-                  style: GoogleFonts.archivo(
+                  style: AppType.sans(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -360,7 +360,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
       return Center(
         child: Text(
           query.isEmpty ? 'Nothing here yet.' : 'No results found.',
-          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.38)),
+          style: AppType.sans(color: colors.ink.withValues(alpha: 0.38)),
         ),
       );
     }
@@ -444,7 +444,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
                               _titleOf(item),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.archivo(
+                              style: AppType.sans(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 12.5,
