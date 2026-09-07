@@ -58,7 +58,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor:
           Colors.transparent, // Background handled by MainNavigation
+      // top: false — the hero runs under the status bar, which is what makes
+      // it read as full-bleed rather than as a large card. Everything below
+      // it is inset by the hero's own bottom padding.
       body: SafeArea(
+        top: false,
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.only(
@@ -67,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (_searchQuery.isEmpty) _buildHero(content, userPrefs),
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20.0),
@@ -148,6 +153,67 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  /// Chooses what the hero shows, and routes its action.
+  ///
+  /// Continue Watching first — a half-finished episode is a better guess at
+  /// what someone opened the app for than a new arrival. Falls back to the
+  /// newest movie, then the newest series. Renders nothing at all rather than
+  /// a placeholder if the provider has returned neither: an empty hero is
+  /// worse than no hero.
+  Widget _buildHero(ContentProvider content, UserPrefsProvider userPrefs) {
+    final isArabic = userPrefs.locale == 'ar';
+
+    if (userPrefs.history.isNotEmpty) {
+      final item = userPrefs.history.first;
+      return _HomeHero(
+        title: item.title,
+        imageUrl: item.posterUrl,
+        meta: isArabic ? 'متابعة المشاهدة' : 'CONTINUE WATCHING',
+        isResume: true,
+        isArabic: isArabic,
+        onOpen: () => _openHistoryItem(item),
+      );
+    }
+
+    if (content.newMovies.isNotEmpty) {
+      final movie = content.newMovies.first;
+      return _HomeHero(
+        title: movie.name,
+        imageUrl: movie.streamIcon,
+        meta: [
+          movie.releaseDate,
+          movie.genre,
+        ].where((v) => v.isNotEmpty).join('  ·  '),
+        isResume: false,
+        isArabic: isArabic,
+        onOpen: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => MovieDetailsScreen(movie: movie)),
+        ),
+      );
+    }
+
+    if (content.newSeries.isNotEmpty) {
+      final series = content.newSeries.first;
+      return _HomeHero(
+        title: series.name,
+        imageUrl: series.cover,
+        meta: [
+          series.releaseDate,
+          series.genre,
+        ].where((v) => v.isNotEmpty).join('  ·  '),
+        isResume: false,
+        isArabic: isArabic,
+        onOpen: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => SeriesDetailsScreen(series: series),
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _buildHomeContent(
@@ -532,43 +598,47 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHistoryCard(BuildContext context, HistoryItem item) {
     return TvFocusable(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        if (item.type == MediaType.movie) {
-          final movie = XtreamVodStream.fromJson(item.rawData);
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => MovieDetailsScreen(movie: movie)),
-          );
-        } else if (item.type == MediaType.series) {
-          // Because rawData could be the episode or the series depending on how it was stored,
-          // Let's create a stub series from the raw data if it was stored properly.
-          // In series_details_screen we stored: series_id, name, cover, etc.
-          final series = XtreamSeries(
-            seriesId: item.rawData['series_id'] ?? int.tryParse(item.id) ?? 0,
-            name: item.rawData['series_name'] ?? item.title,
-            cover: item.rawData['series_cover'] ?? item.posterUrl,
-            categoryId: item.rawData['category_id']?.toString() ?? '',
-            plot: '',
-            cast: '',
-            director: '',
-            genre: '',
-            releaseDate: '',
-            rating: '',
-            lastModified:
-                int.tryParse(
-                  item.rawData['last_modified']?.toString() ?? '0',
-                ) ??
-                0,
-          );
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => SeriesDetailsScreen(series: series),
-            ),
-          );
-        }
-      },
+      borderRadius: BorderRadius.circular(4),
+      onTap: () => _openHistoryItem(item),
       child: _HistoryCard(item: item),
     );
+  }
+
+  /// Opens the detail page for a history entry.
+  ///
+  /// Shared by the Continue Watching card and the hero rather than
+  /// duplicated: the detail page already owns resume — it offers the resume
+  /// dialog on arrival — so routing there is both less code and the correct
+  /// behaviour. A hero that started playback itself would need its own copy
+  /// of the URL building and resume handling.
+  void _openHistoryItem(HistoryItem item) {
+    if (item.type == MediaType.movie) {
+      final movie = XtreamVodStream.fromJson(item.rawData);
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => MovieDetailsScreen(movie: movie)),
+      );
+    } else if (item.type == MediaType.series) {
+      // Because rawData could be the episode or the series depending on how it was stored,
+      // Let's create a stub series from the raw data if it was stored properly.
+      // In series_details_screen we stored: series_id, name, cover, etc.
+      final series = XtreamSeries(
+        seriesId: item.rawData['series_id'] ?? int.tryParse(item.id) ?? 0,
+        name: item.rawData['series_name'] ?? item.title,
+        cover: item.rawData['series_cover'] ?? item.posterUrl,
+        categoryId: item.rawData['category_id']?.toString() ?? '',
+        plot: '',
+        cast: '',
+        director: '',
+        genre: '',
+        releaseDate: '',
+        rating: '',
+        lastModified:
+            int.tryParse(item.rawData['last_modified']?.toString() ?? '0') ?? 0,
+      );
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => SeriesDetailsScreen(series: series)),
+      );
+    }
   }
 
   Widget _buildSeriesCard(BuildContext context, XtreamSeries series) {
@@ -817,4 +887,155 @@ class _LiveCardMetrics {
   static const double captionHeight = 34;
   static const double totalHeight =
       artworkHeight + 8 + captionHeight + TvFocusable.focusInset;
+}
+
+/// The full-bleed opener at the top of Home.
+///
+/// The screen previously began with a wordmark, a search field and then rows
+/// — which reads as a catalogue browser rather than a place to watch
+/// something. Every service in this category opens on one title at full
+/// width, because the first job of a home screen is to answer "what am I
+/// watching now", not "what would you like to search for".
+///
+/// The subject is whatever the viewer is partway through, falling back to the
+/// newest thing the provider has. Continue Watching first is deliberate: a
+/// half-finished episode is a far better guess at intent than a new arrival.
+///
+/// One action, not two. The brief's benchmark pairs Play with More info, but
+/// both would land on the same detail page here — this hero routes there
+/// rather than starting playback itself, because that page already owns
+/// resume and the URL building. Two controls with one destination is worse
+/// than one honest control.
+class _HomeHero extends StatelessWidget {
+  const _HomeHero({
+    required this.title,
+    required this.imageUrl,
+    required this.meta,
+    required this.isResume,
+    required this.isArabic,
+    required this.onOpen,
+  });
+
+  final String title;
+  final String imageUrl;
+  final String meta;
+  final bool isResume;
+  final bool isArabic;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final media = MediaQuery.of(context);
+
+    // Just under half the viewport, which leaves the first content row
+    // peeking above the fold — the cue that tells a viewer to keep
+    // scrolling. A full-height opener hides the rest of the app.
+    final height = (media.size.height * 0.46).clamp(280.0, 460.0);
+
+    return GestureDetector(
+      onTap: onOpen,
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (imageUrl.isNotEmpty)
+              CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                // Xtream exposes no backdrop field — the models carry only
+                // the 2:3 poster (see XtreamVodStream.streamIcon and
+                // XtreamSeries.cover), so this is a portrait image filling a
+                // near-square box. Aligned to the top rather than centred
+                // because key art puts its subject in the upper half, and a
+                // centred crop takes the bottom of a face and the top of a
+                // title block.
+                alignment: Alignment.topCenter,
+                errorWidget: (_, _, _) =>
+                    ColoredBox(color: colors.surfaceMuted),
+              )
+            else
+              ColoredBox(color: colors.surfaceMuted),
+
+            // Two stops, not a wash across the whole image: the artwork stays
+            // legible down to 40% and only then falls to the page ground, so
+            // the hero joins the rows beneath it without a visible seam.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    colors.background.withValues(alpha: 0.55),
+                    colors.background,
+                  ],
+                  stops: const [0.40, 0.78, 1.0],
+                ),
+              ),
+            ),
+
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 22,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppType.hero(colors.ink),
+                  ),
+                  if (meta.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      meta,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppType.meta(colors.ink.withValues(alpha: 0.65)),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  // Solid ink on a dark ground is the highest-contrast
+                  // control the palette allows, which is what the one
+                  // primary action on the screen should be.
+                  ElevatedButton.icon(
+                    onPressed: onOpen,
+                    icon: Icon(
+                      isResume
+                          ? Icons.play_arrow_rounded
+                          : Icons.info_outline_rounded,
+                      color: colors.background,
+                      size: 22,
+                    ),
+                    label: Text(
+                      isResume
+                          ? (isArabic ? 'متابعة' : 'Resume')
+                          : (isArabic ? 'التفاصيل' : 'More info'),
+                      style: AppType.label(colors.background),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.ink,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 13,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
