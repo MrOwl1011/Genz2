@@ -140,12 +140,7 @@ class MoreScreen extends StatelessWidget {
                         children: [
                           Text(
                             user?.username.toUpperCase() ?? 'NX GUEST',
-                            style: AppType.sans(
-                              color: colors.ink,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              letterSpacing: 1,
-                            ),
+                            style: AppType.title(colors.ink),
                           ),
                           const SizedBox(height: 4),
                           Container(
@@ -166,11 +161,8 @@ class MoreScreen extends StatelessWidget {
                             ),
                             child: Text(
                               user?.status.toUpperCase() ?? 'ACTIVE',
-                              style: AppType.sans(
-                                color: Theme.of(context).primaryColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                                letterSpacing: 0.5,
+                              style: AppType.meta(
+                                Theme.of(context).primaryColor,
                               ),
                             ),
                           ),
@@ -236,20 +228,15 @@ class MoreScreen extends StatelessWidget {
                                   (isArabic
                                       ? 'اختر ملفاً شخصياً'
                                       : 'Select a profile'),
-                              style: AppType.sans(
-                                color: colors.ink,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
+                              style: AppType.cardTitle(colors.ink),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               isArabic
                                   ? 'إدارة أو تبديل الملفات الشخصية'
                                   : 'Switch, add, edit or delete profiles',
-                              style: AppType.sans(
-                                color: colors.ink.withValues(alpha: 0.5),
-                                fontSize: 12,
+                              style: AppType.caption(
+                                colors.ink.withValues(alpha: 0.5),
                               ),
                             ),
                           ],
@@ -330,11 +317,8 @@ class MoreScreen extends StatelessWidget {
                           isArabic
                               ? 'تواصل معنا عبر الواتساب'
                               : 'CONTACT US ON WHATSAPP',
-                          style: AppType.sans(
-                            color: colors.ink.withValues(alpha: 0.7),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            letterSpacing: 1.5,
+                          style: AppType.cardTitle(
+                            colors.ink.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -380,11 +364,7 @@ class MoreScreen extends StatelessWidget {
                                       : (isArabic
                                             ? 'غير متصل'
                                             : 'Not connected'),
-                                  style: AppType.sans(
-                                    color: colors.ink,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: AppType.cardTitle(colors.ink),
                                 ),
                                 if (!ok) ...[
                                   const SizedBox(height: 4),
@@ -394,10 +374,8 @@ class MoreScreen extends StatelessWidget {
                                   // specific device won't sync.
                                   Text(
                                     err ?? 'No error recorded yet.',
-                                    style: AppType.sans(
-                                      color: colors.ink.withValues(alpha: 0.6),
-                                      fontSize: 11.5,
-                                      height: 1.35,
+                                    style: AppType.caption(
+                                      colors.ink.withValues(alpha: 0.6),
                                     ),
                                   ),
                                 ],
@@ -502,11 +480,8 @@ class MoreScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           isArabic ? 'تسجيل الخروج' : 'LOG OUT ACCOUNT',
-                          style: AppType.sans(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            letterSpacing: 1.5,
+                          style: AppType.cardTitle(
+                            Theme.of(context).primaryColor,
                           ),
                         ),
                       ],
@@ -543,12 +518,7 @@ class MoreScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           isArabic ? 'حذف الحساب' : 'DELETE ACCOUNT',
-                          style: AppType.sans(
-                            color: colors.error,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            letterSpacing: 1.5,
-                          ),
+                          style: AppType.cardTitle(colors.error),
                         ),
                       ],
                     ),
@@ -582,10 +552,7 @@ class MoreScreen extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               isArabic ? 'حذف الحساب؟' : 'Delete Account?',
-              style: AppType.sans(
-                color: colors.ink,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppType.cardTitle(colors.ink),
             ),
           ],
         ),
@@ -593,7 +560,7 @@ class MoreScreen extends StatelessWidget {
           isArabic
               ? 'سيتم حذف هذا الحساب نهائياً مع كل السجل والمفضلة المرتبطة به. لا يمكن التراجع عن هذا الإجراء.'
               : 'This will permanently delete this account along with all its associated history and favorites. This action cannot be undone.',
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -647,11 +614,7 @@ class MoreScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Text(
                 userPrefs.locale == 'ar' ? 'اختر اللغة' : 'Select Language',
-                style: AppType.sans(
-                  color: colors.ink,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppType.title(colors.ink),
               ),
             ),
             Divider(color: colors.ink.withValues(alpha: 0.1), height: 1),
@@ -685,10 +648,8 @@ class MoreScreen extends StatelessWidget {
     return ListTile(
       title: Text(
         label,
-        style: AppType.sans(
-          color: isSelected ? Theme.of(context).primaryColor : colors.ink,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
+        style: AppType.rowHeader(
+          isSelected ? Theme.of(context).primaryColor : colors.ink,
         ),
       ),
       trailing: isSelected
@@ -731,11 +692,7 @@ class MoreScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Text(
                 isArabic ? 'اختر المظهر' : 'Select Theme',
-                style: AppType.sans(
-                  color: colors.ink,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppType.title(colors.ink),
               ),
             ),
             Divider(color: colors.ink.withValues(alpha: 0.1), height: 1),
@@ -775,10 +732,8 @@ class MoreScreen extends StatelessWidget {
     return ListTile(
       title: Text(
         label,
-        style: AppType.sans(
-          color: isSelected ? Theme.of(context).primaryColor : colors.ink,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
+        style: AppType.rowHeader(
+          isSelected ? Theme.of(context).primaryColor : colors.ink,
         ),
       ),
       trailing: isSelected
@@ -835,11 +790,7 @@ class MoreScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppType.sans(
-              color: colors.ink.withValues(alpha: 0.6),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+            style: AppType.bodySmall(colors.ink.withValues(alpha: 0.6)),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -848,11 +799,7 @@ class MoreScreen extends StatelessWidget {
               textAlign: TextAlign.right,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppType.sans(
-                color: colors.ink,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppType.bodySmall(colors.ink),
             ),
           ),
         ],
@@ -879,21 +826,10 @@ class MoreScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Text(
               label,
-              style: AppType.sans(
-                color: colors.ink.withValues(alpha: 0.6),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+              style: AppType.bodySmall(colors.ink.withValues(alpha: 0.6)),
             ),
             const Spacer(),
-            Text(
-              value,
-              style: AppType.sans(
-                color: colors.ink,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text(value, style: AppType.bodySmall(colors.ink)),
             const SizedBox(width: 8),
             Icon(
               Icons.chevron_right_rounded,
@@ -926,11 +862,7 @@ class MoreScreen extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppType.sans(
-                color: colors.ink.withValues(alpha: 0.6),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+              style: AppType.bodySmall(colors.ink.withValues(alpha: 0.6)),
             ),
           ),
           Switch.adaptive(

@@ -598,12 +598,8 @@ class _CategoryRow extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppType.sans(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: selected
-                  ? Colors.white
-                  : colors.ink.withValues(alpha: 0.85),
+            style: AppType.caption(
+              selected ? Colors.white : colors.ink.withValues(alpha: 0.85),
             ),
           ),
         );
@@ -641,10 +637,7 @@ class _ChannelList extends StatelessWidget {
       return Center(
         child: Text(
           isArabic ? 'لا توجد قنوات' : 'No channels',
-          style: AppType.sans(
-            fontSize: 12,
-            color: colors.ink.withValues(alpha: 0.4),
-          ),
+          style: AppType.caption(colors.ink.withValues(alpha: 0.4)),
         ),
       );
     }
@@ -748,9 +741,8 @@ class _ChannelRowState extends State<_ChannelRow> {
                     children: [
                       Text(
                         '${widget.index}',
-                        style: AppType.sans(
-                          fontSize: 11,
-                          color: colors.ink.withValues(alpha: 0.4),
+                        style: AppType.captionSmall(
+                          colors.ink.withValues(alpha: 0.4),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -790,12 +782,8 @@ class _ChannelRowState extends State<_ChannelRow> {
                           channel.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: AppType.sans(
-                            fontSize: 11,
-                            fontWeight: active
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: active
+                          style: AppType.captionSmall(
+                            active
                                 ? colors.ink
                                 : colors.ink.withValues(alpha: 0.8),
                           ),
@@ -917,10 +905,7 @@ class _PreviewPanel extends StatelessWidget {
                         isArabic
                             ? 'اختر قناة للمعاينة'
                             : 'Select a channel to preview',
-                        style: AppType.sans(
-                          color: Colors.white38,
-                          fontSize: 13,
-                        ),
+                        style: AppType.bodySmall(Colors.white38),
                       ),
                     ),
                   if (current != null)
@@ -1008,10 +993,7 @@ class _PreviewPanel extends StatelessWidget {
                             isArabic
                                 ? 'تعذر تحميل المعاينة'
                                 : "Couldn't load preview",
-                            style: AppType.sans(
-                              color: Colors.white54,
-                              fontSize: 12,
-                            ),
+                            style: AppType.caption(Colors.white54),
                           ),
                           const SizedBox(height: 10),
                           TvFocusScope(
@@ -1034,11 +1016,7 @@ class _PreviewPanel extends StatelessWidget {
                               ),
                               child: Text(
                                 isArabic ? 'إعادة المحاولة' : 'Retry',
-                                style: AppType.sans(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: AppType.caption(Colors.white),
                               ),
                             ),
                           ),
@@ -1108,11 +1086,7 @@ class _EpgCard extends StatelessWidget {
                   listing.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppType.sans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: colors.ink,
-                  ),
+                  style: AppType.bodySmall(colors.ink),
                 ),
               ),
             ],
@@ -1123,11 +1097,7 @@ class _EpgCard extends StatelessWidget {
               listing.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: AppType.sans(
-                fontSize: 11.5,
-                height: 1.35,
-                color: colors.ink.withValues(alpha: 0.7),
-              ),
+              style: AppType.caption(colors.ink.withValues(alpha: 0.7)),
             ),
           ],
           if (progress != null && start != null && end != null) ...[
@@ -1144,10 +1114,7 @@ class _EpgCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               '${formatTime(start)} - ${formatTime(end)}',
-              style: AppType.sans(
-                fontSize: 10.5,
-                color: colors.ink.withValues(alpha: 0.5),
-              ),
+              style: AppType.captionSmall(colors.ink.withValues(alpha: 0.5)),
             ),
           ],
         ],

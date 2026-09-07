@@ -169,21 +169,14 @@ class _AppRootState extends State<AppRoot> {
                 Text(
                   'No Internet Connection',
                   textAlign: TextAlign.center,
-                  style: AppType.sans(
-                    color: colors.ink,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppType.heading(colors.ink),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   "You're offline. Connect to the internet to load live TV, "
                   "movies and series, or watch what you've already downloaded.",
                   textAlign: TextAlign.center,
-                  style: AppType.sans(
-                    color: colors.ink.withValues(alpha: 0.6),
-                    fontSize: 14,
-                  ),
+                  style: AppType.body(colors.ink.withValues(alpha: 0.6)),
                 ),
                 const SizedBox(height: 24),
 
@@ -211,11 +204,7 @@ class _AppRootState extends State<AppRoot> {
                           ),
                     label: Text(
                       'Retry',
-                      style: AppType.sans(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
+                      style: AppType.cardTitle(Colors.white),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colors.brandPrimary,
@@ -240,10 +229,8 @@ class _AppRootState extends State<AppRoot> {
                     ),
                     label: Text(
                       'Go to Downloads',
-                      style: AppType.sans(
-                        color: colors.ink.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                      style: AppType.cardTitle(
+                        colors.ink.withValues(alpha: 0.7),
                       ),
                     ),
                     style: OutlinedButton.styleFrom(

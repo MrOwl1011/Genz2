@@ -126,9 +126,8 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
                             isArabic
                                 ? 'لا توجد عناصر في المفضلة بعد.'
                                 : 'Nothing in your favorites yet.',
-                            style: AppType.sans(
-                              color: colors.ink.withValues(alpha: 0.45),
-                              fontSize: 18,
+                            style: AppType.title(
+                              colors.ink.withValues(alpha: 0.45),
                             ),
                           ),
                         )
@@ -241,12 +240,8 @@ class _FavoriteCard extends StatelessWidget {
                   item.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppType.sans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: focused
-                        ? colors.ink
-                        : colors.ink.withValues(alpha: 0.8),
+                  style: AppType.bodySmall(
+                    focused ? colors.ink : colors.ink.withValues(alpha: 0.8),
                   ),
                 ),
               ],

@@ -293,10 +293,7 @@ class _SettingsContent extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               isArabic ? 'حذف الحساب؟' : 'Delete Account?',
-              style: AppType.sans(
-                color: colors.ink,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppType.cardTitle(colors.ink),
             ),
           ],
         ),
@@ -304,7 +301,7 @@ class _SettingsContent extends StatelessWidget {
           isArabic
               ? 'سيتم حذف هذا الحساب نهائياً مع كل السجل والمفضلة المرتبطة به. لا يمكن التراجع عن هذا الإجراء.'
               : 'This will permanently delete this account along with all its associated history and favorites. This action cannot be undone.',
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -340,7 +337,7 @@ class _SettingsContent extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           userPrefs.locale == 'ar' ? 'اختر اللغة' : 'Select Language',
-          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
+          style: AppType.cardTitle(colors.ink),
         ),
         children: [
           _dialogOption(ctx, colors, 'English', userPrefs.locale == 'en', () {
@@ -369,7 +366,7 @@ class _SettingsContent extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           isArabic ? 'اختر المظهر' : 'Select Theme',
-          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
+          style: AppType.cardTitle(colors.ink),
         ),
         children: [
           _dialogOption(
@@ -434,11 +431,7 @@ class _SettingsContent extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: AppType.sans(
-                    color: selected ? colors.ink : colors.ink,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                  style: AppType.cardTitle(selected ? colors.ink : colors.ink),
                 ),
               ),
               if (selected)
@@ -497,23 +490,14 @@ class _InfoStrip extends StatelessWidget {
                 children: [
                   Text(
                     label.toUpperCase(),
-                    style: AppType.sans(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: colors.ink.withValues(alpha: 0.45),
-                      letterSpacing: 1,
-                    ),
+                    style: AppType.meta(colors.ink.withValues(alpha: 0.45)),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppType.sans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: colors.ink,
-                    ),
+                    style: AppType.bodySmall(colors.ink),
                   ),
                 ],
               ),
@@ -597,10 +581,8 @@ class _SettingsTile extends StatelessWidget {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppType.sans(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: danger ? colors.error : colors.ink,
+                      style: AppType.caption(
+                        danger ? colors.error : colors.ink,
                       ),
                     ),
                     if (value.isNotEmpty)
@@ -608,9 +590,8 @@ class _SettingsTile extends StatelessWidget {
                         value,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppType.sans(
-                          fontSize: 11,
-                          color: colors.ink.withValues(alpha: 0.55),
+                        style: AppType.captionSmall(
+                          colors.ink.withValues(alpha: 0.55),
                         ),
                       ),
                   ],

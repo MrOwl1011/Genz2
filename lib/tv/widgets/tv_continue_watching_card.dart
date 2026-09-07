@@ -58,7 +58,7 @@ class TvContinueWatchingCard extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           'Nothing to continue yet — start watching something!',
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.45)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.45)),
         ),
       );
     }
@@ -126,12 +126,7 @@ class TvContinueWatchingCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           'CONTINUE WATCHING',
-                          style: AppType.sans(
-                            color: colors.ink,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            letterSpacing: 1.5,
-                          ),
+                          style: AppType.caption(colors.ink),
                         ),
                       ],
                     ),

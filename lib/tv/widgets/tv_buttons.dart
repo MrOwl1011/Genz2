@@ -169,10 +169,8 @@ class TvActionPill extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppType.sans(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: focused
+                    style: AppType.title(
+                      focused
                           ? Colors.white
                           : colors.ink.withValues(alpha: 0.85),
                     ),

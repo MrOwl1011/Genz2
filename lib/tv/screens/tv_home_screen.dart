@@ -230,11 +230,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               children: [
                 Text(
                   isArabic ? 'الخروج من التطبيق؟' : 'Exit the app?',
-                  style: AppType.sans(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: colors.ink,
-                  ),
+                  style: AppType.title(colors.ink),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -258,11 +254,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                         ),
                         child: Text(
                           isArabic ? 'رجوع' : 'Back',
-                          style: AppType.sans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: colors.ink,
-                          ),
+                          style: AppType.bodySmall(colors.ink),
                         ),
                       ),
                     ),
@@ -289,11 +281,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                         ),
                         child: Text(
                           isArabic ? 'خروج' : 'Exit',
-                          style: AppType.sans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
+                          style: AppType.bodySmall(Colors.white),
                         ),
                       ),
                     ),
@@ -458,7 +446,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             Text(
               error,
               textAlign: TextAlign.center,
-              style: AppType.sans(color: colors.ink.withValues(alpha: 0.6)),
+              style: AppType.body(colors.ink.withValues(alpha: 0.6)),
             ),
             const SizedBox(height: 16),
             TvFocusable(
@@ -477,10 +465,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                 ),
                 child: Text(
                   isArabic ? 'إعادة المحاولة' : 'Retry',
-                  style: AppType.sans(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppType.cardTitle(Colors.white),
                 ),
               ),
             ),

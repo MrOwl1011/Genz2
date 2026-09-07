@@ -242,21 +242,15 @@ class _TvMovieDetailScreenState extends State<TvMovieDetailScreen> {
                                   if (year.isNotEmpty)
                                     Text(
                                       year,
-                                      style: AppType.sans(
-                                        fontSize: 12,
-                                        color: colors.ink.withValues(
-                                          alpha: 0.6,
-                                        ),
+                                      style: AppType.caption(
+                                        colors.ink.withValues(alpha: 0.6),
                                       ),
                                     ),
                                   if (duration.isNotEmpty)
                                     Text(
                                       duration,
-                                      style: AppType.sans(
-                                        fontSize: 12,
-                                        color: colors.ink.withValues(
-                                          alpha: 0.6,
-                                        ),
+                                      style: AppType.caption(
+                                        colors.ink.withValues(alpha: 0.6),
                                       ),
                                     ),
                                   if (genre.isNotEmpty)
@@ -281,11 +275,8 @@ class _TvMovieDetailScreenState extends State<TvMovieDetailScreen> {
                                         genre,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: AppType.sans(
-                                          fontSize: 12,
-                                          color: colors.ink.withValues(
-                                            alpha: 0.6,
-                                          ),
+                                        style: AppType.caption(
+                                          colors.ink.withValues(alpha: 0.6),
                                         ),
                                       ),
                                     ),
@@ -300,10 +291,8 @@ class _TvMovieDetailScreenState extends State<TvMovieDetailScreen> {
                                   // more lines fit before truncating.
                                   maxLines: 8,
                                   overflow: TextOverflow.ellipsis,
-                                  style: AppType.sans(
-                                    fontSize: 14.5,
-                                    height: 1.45,
-                                    color: colors.ink.withValues(alpha: 0.85),
+                                  style: AppType.body(
+                                    colors.ink.withValues(alpha: 0.85),
                                   ),
                                 ),
                               ],

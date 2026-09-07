@@ -209,12 +209,8 @@ class _SeeAllTile extends StatelessWidget {
                   Text(
                     isArabic ? 'عرض الكل' : 'See All',
                     textAlign: TextAlign.center,
-                    style: AppType.sans(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w600,
-                      color: focused
-                          ? colors.ink
-                          : colors.ink.withValues(alpha: 0.6),
+                    style: AppType.meta(
+                      focused ? colors.ink : colors.ink.withValues(alpha: 0.6),
                     ),
                   ),
                 ],

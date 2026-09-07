@@ -168,11 +168,7 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
                       : (isArabic
                             ? 'إدارة الملفات الشخصية'
                             : 'Manage Profiles'),
-                  style: AppType.sans(
-                    color: colors.ink.withValues(alpha: 0.6),
-                    fontSize: 14,
-                    letterSpacing: 1,
-                  ),
+                  style: AppType.body(colors.ink.withValues(alpha: 0.6)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -207,10 +203,7 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
           const SizedBox(height: 8),
           Text(
             isArabic ? 'إضافة ملف شخصي' : 'Add Profile',
-            style: AppType.sans(
-              color: colors.ink.withValues(alpha: 0.6),
-              fontSize: 14,
-            ),
+            style: AppType.body(colors.ink.withValues(alpha: 0.6)),
           ),
         ],
       ),

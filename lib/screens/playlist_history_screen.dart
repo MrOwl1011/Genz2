@@ -58,7 +58,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
           backgroundColor: colors.surfaceMuted,
           content: Text(
             'Log in to "${widget.playlist.playlistName}" to resume watching this.',
-            style: AppType.sans(color: colors.ink),
+            style: AppType.body(colors.ink),
           ),
         ),
       );
@@ -138,10 +138,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                 padding: const EdgeInsets.fromLTRB(56, 0, 24, 0),
                 child: Text(
                   isArabic ? 'سجل المشاهدة' : 'Watch History',
-                  style: AppType.sans(
-                    color: colors.ink.withValues(alpha: 0.38),
-                    fontSize: 13,
-                  ),
+                  style: AppType.bodySmall(colors.ink.withValues(alpha: 0.38)),
                 ),
               ),
               if (!_isActivePlaylist)
@@ -172,9 +169,8 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                             isArabic
                                 ? 'سجل عرض فقط. سجل الدخول لهذه القائمة للمتابعة من هنا.'
                                 : 'View-only. Log in to this playlist to resume from here.',
-                            style: AppType.sans(
-                              color: colors.ink.withValues(alpha: 0.54),
-                              fontSize: 12,
+                            style: AppType.caption(
+                              colors.ink.withValues(alpha: 0.54),
                             ),
                           ),
                         ),
@@ -203,10 +199,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
           isArabic
               ? 'لا يوجد سجل مشاهدة لهذه القائمة.'
               : 'No watch history for this playlist.',
-          style: AppType.sans(
-            color: colors.ink.withValues(alpha: 0.38),
-            fontSize: 15,
-          ),
+          style: AppType.body(colors.ink.withValues(alpha: 0.38)),
         ),
       );
     }
@@ -287,18 +280,13 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                         item.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppType.sans(
-                          color: colors.ink,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                        style: AppType.cardTitle(colors.ink),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${item.lastWatched.day}/${item.lastWatched.month}/${item.lastWatched.year}',
-                        style: AppType.sans(
-                          color: colors.ink.withValues(alpha: 0.38),
-                          fontSize: 11,
+                        style: AppType.captionSmall(
+                          colors.ink.withValues(alpha: 0.38),
                         ),
                       ),
                       const SizedBox(height: 6),

@@ -38,11 +38,8 @@ class TvDetailTabs extends StatelessWidget {
                 children: [
                   Text(
                     labels[i],
-                    style: AppType.sans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      color: isSelected
+                    style: AppType.bodySmall(
+                      isSelected
                           ? colors.ink
                           : (focused
                                 ? colors.ink

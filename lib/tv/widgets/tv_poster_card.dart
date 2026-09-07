@@ -163,10 +163,7 @@ class TvPosterCard extends StatelessWidget {
                     subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppType.sans(
-                      fontSize: 8.5,
-                      color: colors.ink.withValues(alpha: 0.5),
-                    ),
+                    style: AppType.meta(colors.ink.withValues(alpha: 0.5)),
                   ),
               ],
             ),

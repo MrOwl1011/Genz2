@@ -183,11 +183,11 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                                 focusNode: _searchFocus,
                                 onChanged: (val) =>
                                     setState(() => _searchQuery = val),
-                                style: AppType.sans(color: colors.ink),
+                                style: AppType.body(colors.ink),
                                 decoration: InputDecoration(
                                   hintText: searchHint,
-                                  hintStyle: AppType.sans(
-                                    color: colors.ink.withValues(alpha: 0.38),
+                                  hintStyle: AppType.body(
+                                    colors.ink.withValues(alpha: 0.38),
                                   ),
                                   prefixIcon: Icon(
                                     Icons.search,
@@ -266,12 +266,10 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                             transform: Matrix4.skewX(0.25),
                             child: Text(
                               widget.tabs[index],
-                              style: AppType.sans(
-                                color: isSelected
+                              style: AppType.rowHeader(
+                                isSelected
                                     ? Colors.white
                                     : colors.ink.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
                               ),
                             ),
                           ),
@@ -313,7 +311,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             Text(
               widget.error!,
               textAlign: TextAlign.center,
-              style: AppType.sans(color: colors.ink.withValues(alpha: 0.54)),
+              style: AppType.body(colors.ink.withValues(alpha: 0.54)),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -393,10 +391,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
         return Center(
           child: Text(
             isArabic ? 'لا توجد نتائج.' : 'No results found.',
-            style: AppType.sans(
-              color: colors.ink.withValues(alpha: 0.38),
-              fontSize: 16,
-            ),
+            style: AppType.rowHeader(colors.ink.withValues(alpha: 0.38)),
           ),
         );
       }
@@ -407,10 +402,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
           return Center(
             child: Text(
               isArabic ? 'لا توجد فئات.' : 'No categories found.',
-              style: AppType.sans(
-                color: colors.ink.withValues(alpha: 0.38),
-                fontSize: 16,
-              ),
+              style: AppType.rowHeader(colors.ink.withValues(alpha: 0.38)),
             ),
           );
         }
@@ -447,10 +439,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             isArabic
                 ? 'لا توجد عناصر في هذا القسم.'
                 : 'No items available in this section.',
-            style: AppType.sans(
-              color: colors.ink.withValues(alpha: 0.38),
-              fontSize: 16,
-            ),
+            style: AppType.rowHeader(colors.ink.withValues(alpha: 0.38)),
           ),
         );
       }

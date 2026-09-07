@@ -108,7 +108,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
             backgroundColor: colors.error,
             content: Text(
               auth.errorMessage ?? 'Failed to connect to playlist',
-              style: AppType.sans(color: Colors.white),
+              style: AppType.body(Colors.white),
             ),
           ),
         );
@@ -146,13 +146,13 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
         backgroundColor: colors.surface,
         title: Text(
           isArabic ? 'حذف القائمة؟' : 'Delete Playlist?',
-          style: AppType.sans(color: colors.ink),
+          style: AppType.body(colors.ink),
         ),
         content: Text(
           isArabic
               ? 'هل أنت متأكد من حذف "$name"؟\nسيتم حذف كل السجل والمفضلة المرتبطة بها.'
               : 'Are you sure you want to delete "$name"?\nThis will remove all associated history and favorites.',
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -312,10 +312,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
           Text(
             isArabic ? 'لا توجد قوائم محفوظة بعد' : 'No saved playlists yet',
             textAlign: TextAlign.center,
-            style: AppType.sans(
-              color: colors.ink.withValues(alpha: 0.54),
-              fontSize: 15,
-            ),
+            style: AppType.body(colors.ink.withValues(alpha: 0.54)),
           ),
           const SizedBox(height: 24),
           _buildAddNewCard(isArabic),
@@ -413,11 +410,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                     playlist.playlistName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppType.sans(
-                      color: colors.ink,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppType.rowHeader(colors.ink),
                   ),
                 ),
               ],
@@ -525,22 +518,14 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: AppType.sans(
-            color: colors.ink.withValues(alpha: 0.38),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppType.caption(colors.ink.withValues(alpha: 0.38)),
         ),
         Expanded(
           child: Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppType.sans(
-              color: colors.ink.withValues(alpha: 0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppType.caption(colors.ink.withValues(alpha: 0.7)),
           ),
         ),
         ?trailing,
@@ -607,11 +592,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
             Text(
               isArabic ? 'إضافة قائمة جديدة' : 'Add New Playlist',
               textAlign: TextAlign.center,
-              style: AppType.sans(
-                color: colors.ink,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppType.cardTitle(colors.ink),
             ),
           ],
         ),

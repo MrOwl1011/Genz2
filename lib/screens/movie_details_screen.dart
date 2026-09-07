@@ -354,9 +354,8 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 if (cast.isNotEmpty) ...[
                                   Text(
                                     cast,
-                                    style: AppType.sans(
-                                      color: colors.ink.withValues(alpha: 0.7),
-                                      fontSize: 14,
+                                    style: AppType.body(
+                                      colors.ink.withValues(alpha: 0.7),
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -364,9 +363,8 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 if (director.isNotEmpty) ...[
                                   Text(
                                     director,
-                                    style: AppType.sans(
-                                      color: colors.ink.withValues(alpha: 0.7),
-                                      fontSize: 14,
+                                    style: AppType.body(
+                                      colors.ink.withValues(alpha: 0.7),
                                     ),
                                   ),
                                 ],

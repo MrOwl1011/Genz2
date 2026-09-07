@@ -279,15 +279,11 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                           child: TextField(
                             controller: _searchController,
                             onChanged: _onSearch,
-                            style: AppType.sans(
-                              color: colors.ink,
-                              fontSize: 14,
-                            ),
+                            style: AppType.body(colors.ink),
                             decoration: InputDecoration(
                               hintText: isArabic ? 'بحث' : 'Search',
-                              hintStyle: AppType.sans(
-                                color: colors.ink.withValues(alpha: 0.3),
-                                fontSize: 14,
+                              hintStyle: AppType.body(
+                                colors.ink.withValues(alpha: 0.3),
                               ),
                               prefixIcon: Icon(
                                 Icons.search,
@@ -514,7 +510,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: AppType.sans(color: colors.ink.withValues(alpha: 0.54)),
+              style: AppType.body(colors.ink.withValues(alpha: 0.54)),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -524,7 +520,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
               ),
               child: Text(
                 isArabic ? 'إعادة المحاولة' : 'Retry',
-                style: AppType.sans(color: Colors.white),
+                style: AppType.body(Colors.white),
               ),
             ),
           ],
@@ -643,19 +639,12 @@ class _ChannelTile extends StatelessWidget {
                     channel.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppType.sans(
-                      color: colors.ink,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                    style: AppType.cardTitle(colors.ink),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     isArabic ? 'لا توجد معلومات' : 'No Information',
-                    style: AppType.sans(
-                      color: colors.ink.withValues(alpha: 0.38),
-                      fontSize: 12,
-                    ),
+                    style: AppType.caption(colors.ink.withValues(alpha: 0.38)),
                   ),
                 ],
               ),

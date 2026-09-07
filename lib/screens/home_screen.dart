@@ -79,15 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     shaderCallback: (bounds) => LinearGradient(
                       colors: colors.brandGradient,
                     ).createShader(bounds),
-                    child: Text(
-                      'GenZ+',
-                      style: AppType.sans(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 4,
-                      ),
-                    ),
+                    child: Text('GenZ+', style: AppType.hero(Colors.white)),
                   ),
                 ),
               ),
@@ -111,11 +103,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     controller: _searchController,
                     focusNode: _searchFocus,
                     onChanged: (val) => setState(() => _searchQuery = val),
-                    style: AppType.sans(color: colors.ink),
+                    style: AppType.body(colors.ink),
                     decoration: InputDecoration(
                       hintText: 'Global Search (Movies, Series, Live)',
-                      hintStyle: AppType.sans(
-                        color: colors.ink.withValues(alpha: 0.38),
+                      hintStyle: AppType.body(
+                        colors.ink.withValues(alpha: 0.38),
                       ),
                       prefixIcon: Icon(
                         Icons.search,

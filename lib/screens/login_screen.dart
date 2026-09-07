@@ -244,16 +244,13 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(width: 10),
             Text(
               isArabic ? 'خطأ في الاتصال' : 'Connection Error',
-              style: AppType.sans(
-                color: colors.ink,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppType.cardTitle(colors.ink),
             ),
           ],
         ),
         content: Text(
           message,
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -380,41 +377,49 @@ class _LoginScreenState extends State<LoginScreen> {
                       // the app, and burying it in the Terms page meant it
                       // was read only after the app already looked like an
                       // empty shell.
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: kIsTv ? 6 : 9,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.ink.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: colors.ink.withValues(alpha: 0.1),
+                      // Hugs the sentence rather than spanning the form: a
+                      // full-width panel above the fields reads as a section
+                      // of the form, which this is not — it is a footnote
+                      // that happens to sit high on the page.
+                      Center(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 11,
+                            vertical: kIsTv ? 5 : 7,
                           ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              size: kIsTv ? 12 : 15,
-                              color: colors.ink.withValues(alpha: 0.45),
+                          decoration: BoxDecoration(
+                            color: colors.ink.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: colors.ink.withValues(alpha: 0.1),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                isArabic
-                                    ? 'يعمل GENz+ كمشغّل فقط ولا يوفّر أي قنوات أو أفلام.'
-                                    : 'GENz+ is a player only. It provides no '
-                                          'channels, movies or playlists.',
-                                style: AppType.sans(
-                                  color: colors.ink.withValues(alpha: 0.6),
-                                  fontSize: kIsTv ? 9.5 : 11,
-                                  height: 1.3,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                size: kIsTv ? 12 : 15,
+                                color: colors.ink.withValues(alpha: 0.45),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  isArabic
+                                      ? 'يعمل GENz+ كمشغّل فقط ولا يوفّر أي محتوى.'
+                                      : 'GENz+ is a player only — it provides no content.',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppType.sans(
+                                    color: colors.ink.withValues(alpha: 0.6),
+                                    fontSize: kIsTv ? 9.5 : 10.5,
+                                    height: 1.2,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
 
@@ -651,10 +656,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        style: AppType.sans(
-          fontSize: 12,
-          color: colors.ink.withValues(alpha: 0.54),
-        ),
+        style: AppType.caption(colors.ink.withValues(alpha: 0.54)),
         children: [
           TextSpan(
             text: isArabic
@@ -704,11 +706,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         isArabic
                             ? 'الشروط وسياسة الخصوصية'
                             : 'Terms & Privacy Policy',
-                        style: AppType.sans(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: colors.ink,
-                        ),
+                        style: AppType.title(colors.ink),
                       ),
                     ),
                     IconButton(
@@ -730,11 +728,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(
                         isArabic ? 'عن GENz+' : 'About GENz+',
-                        style: AppType.sans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: colors.brandPrimary,
-                        ),
+                        style: AppType.cardTitle(colors.brandPrimary),
                       ),
                       const SizedBox(height: 8),
                       _termsParagraph(
@@ -857,12 +851,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   isArabic ? 'تواصل معنا' : 'Contact Us',
-                                  style: AppType.sans(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    letterSpacing: 1,
-                                  ),
+                                  style: AppType.cardTitle(Colors.white),
                                 ),
                               ],
                             ),
@@ -884,25 +873,14 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildTermsSectionTitle(String title, AppColors colors) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(
-        title,
-        style: AppType.sans(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-          color: colors.brandPrimary,
-        ),
-      ),
+      child: Text(title, style: AppType.cardTitle(colors.brandPrimary)),
     );
   }
 
   Widget _termsParagraph(AppColors colors, String text) {
     return Text(
       text,
-      style: AppType.sans(
-        fontSize: 13,
-        height: 1.5,
-        color: colors.ink.withValues(alpha: 0.7),
-      ),
+      style: AppType.bodySmall(colors.ink.withValues(alpha: 0.7)),
     );
   }
 
@@ -1108,7 +1086,7 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colors.error, width: 1.5),
         ),
-        errorStyle: AppType.sans(color: colors.error, fontSize: 11),
+        errorStyle: AppType.captionSmall(colors.error),
       ),
     );
   }

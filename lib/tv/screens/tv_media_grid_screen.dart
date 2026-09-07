@@ -319,7 +319,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
           children: [
             Text(
               _error!,
-              style: AppType.sans(color: colors.ink.withValues(alpha: 0.54)),
+              style: AppType.body(colors.ink.withValues(alpha: 0.54)),
             ),
             const SizedBox(height: 16),
             TvFocusable(
@@ -334,13 +334,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
                   gradient: LinearGradient(colors: colors.brandGradient),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(
-                  'Retry',
-                  style: AppType.sans(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text('Retry', style: AppType.cardTitle(Colors.white)),
               ),
             ),
           ],
@@ -361,7 +355,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
       return Center(
         child: Text(
           query.isEmpty ? 'Nothing here yet.' : 'No results found.',
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.38)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.38)),
         ),
       );
     }

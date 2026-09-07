@@ -164,13 +164,13 @@ class _SeriesScreenState extends State<SeriesScreen> {
                   child: TextField(
                     controller: _searchController,
                     onChanged: _onSearch,
-                    style: AppType.sans(color: colors.ink),
+                    style: AppType.body(colors.ink),
                     decoration: InputDecoration(
                       hintText: isArabic
                           ? 'ابحث عن مسلسلات...'
                           : 'Search series...',
-                      hintStyle: AppType.sans(
-                        color: colors.ink.withValues(alpha: 0.3),
+                      hintStyle: AppType.body(
+                        colors.ink.withValues(alpha: 0.3),
                       ),
                       prefixIcon: Icon(
                         Icons.search,
@@ -214,7 +214,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: AppType.sans(color: colors.ink.withValues(alpha: 0.54)),
+              style: AppType.body(colors.ink.withValues(alpha: 0.54)),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -224,7 +224,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
               ),
               child: Text(
                 isArabic ? 'إعادة المحاولة' : 'Retry',
-                style: AppType.sans(color: Colors.white),
+                style: AppType.body(Colors.white),
               ),
             ),
           ],
@@ -236,10 +236,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
       return Center(
         child: Text(
           isArabic ? 'لا توجد مسلسلات.' : 'No series found.',
-          style: AppType.sans(
-            color: colors.ink.withValues(alpha: 0.38),
-            fontSize: 16,
-          ),
+          style: AppType.rowHeader(colors.ink.withValues(alpha: 0.38)),
         ),
       );
     }
@@ -327,11 +324,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                 series.name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: AppType.sans(
-                  color: colors.ink,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
+                style: AppType.caption(colors.ink),
               ),
             ],
           ),

@@ -295,7 +295,7 @@ class _TvSearchScreenState extends State<TvSearchScreen> {
             Text(
               content.allContentError!,
               textAlign: TextAlign.center,
-              style: AppType.sans(color: colors.ink.withValues(alpha: 0.6)),
+              style: AppType.body(colors.ink.withValues(alpha: 0.6)),
             ),
             const SizedBox(height: 16),
             TvFocusable(
@@ -311,10 +311,7 @@ class _TvSearchScreenState extends State<TvSearchScreen> {
                 ),
                 child: Text(
                   isArabic ? 'إعادة المحاولة' : 'Retry',
-                  style: AppType.sans(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppType.cardTitle(Colors.white),
                 ),
               ),
             ),
@@ -326,10 +323,7 @@ class _TvSearchScreenState extends State<TvSearchScreen> {
       return Center(
         child: Text(
           isArabic ? 'ابدأ الكتابة للبحث' : 'Start typing to search',
-          style: AppType.sans(
-            color: colors.ink.withValues(alpha: 0.4),
-            fontSize: 14,
-          ),
+          style: AppType.body(colors.ink.withValues(alpha: 0.4)),
         ),
       );
     }
@@ -340,10 +334,7 @@ class _TvSearchScreenState extends State<TvSearchScreen> {
       return Center(
         child: Text(
           isArabic ? 'لا توجد نتائج' : 'No results',
-          style: AppType.sans(
-            color: colors.ink.withValues(alpha: 0.4),
-            fontSize: 14,
-          ),
+          style: AppType.body(colors.ink.withValues(alpha: 0.4)),
         ),
       );
     }

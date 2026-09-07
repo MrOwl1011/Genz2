@@ -102,13 +102,13 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         ),
         title: Text(
           isArabic ? 'حذف التنزيل؟' : 'Delete Download?',
-          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
+          style: AppType.cardTitle(colors.ink),
         ),
         content: Text(
           isArabic
               ? 'هل أنت متأكد أنك تريد حذف "${item.title}"؟ سيتم حذف الملف من جهازك.'
               : 'Are you sure you want to delete "${item.title}"? This removes the file from your device.',
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -233,12 +233,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             transform: Matrix4.skewX(0.25),
             child: Text(
               label,
-              style: AppType.sans(
-                color: isSelected
-                    ? Colors.white
-                    : colors.ink.withValues(alpha: 0.7),
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+              style: AppType.cardTitle(
+                isSelected ? Colors.white : colors.ink.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -251,10 +247,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     return Center(
       child: Text(
         message,
-        style: AppType.sans(
-          color: colors.ink.withValues(alpha: 0.38),
-          fontSize: 16,
-        ),
+        style: AppType.rowHeader(colors.ink.withValues(alpha: 0.38)),
       ),
     );
   }
@@ -339,10 +332,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       item.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppType.sans(
-                        color: colors.ink,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppType.cardTitle(colors.ink),
                     ),
                     const SizedBox(height: 8),
                     ClipRRect(
@@ -363,9 +353,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     const SizedBox(height: 6),
                     Text(
                       statusLine,
-                      style: AppType.sans(
-                        color: colors.ink.withValues(alpha: 0.54),
-                        fontSize: 12,
+                      style: AppType.caption(
+                        colors.ink.withValues(alpha: 0.54),
                       ),
                     ),
                   ],
@@ -458,24 +447,17 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         item.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppType.sans(
-                          color: colors.ink,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppType.cardTitle(colors.ink),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         isFailed
                             ? (isArabic ? 'فشل التنزيل' : 'Download failed')
                             : _formatBytes(item.totalBytes),
-                        style: AppType.sans(
-                          color: isFailed
+                        style: AppType.caption(
+                          isFailed
                               ? colors.error
                               : colors.ink.withValues(alpha: 0.54),
-                          fontSize: 12,
-                          fontWeight: isFailed
-                              ? FontWeight.w600
-                              : FontWeight.normal,
                         ),
                       ),
                     ],

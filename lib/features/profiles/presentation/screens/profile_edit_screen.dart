@@ -48,7 +48,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: colors.error,
-        content: Text(message, style: AppType.sans(color: Colors.white)),
+        content: Text(message, style: AppType.body(Colors.white)),
       ),
     );
   }
@@ -94,13 +94,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           isArabic ? 'حذف الملف الشخصي؟' : 'Delete Profile?',
-          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
+          style: AppType.cardTitle(colors.ink),
         ),
         content: Text(
           isArabic
               ? 'سيؤدي هذا إلى إزالة "${widget.existingProfile!.name}" من هذا الحساب.'
               : 'This removes "${widget.existingProfile!.name}" from this account.',
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -221,16 +221,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         controller: _nameController,
                         maxLength: 60,
                         textCapitalization: TextCapitalization.words,
-                        style: AppType.sans(color: colors.ink, fontSize: 16),
+                        style: AppType.rowHeader(colors.ink),
                         decoration: InputDecoration(
                           labelText: isArabic ? 'الاسم' : 'Name',
-                          labelStyle: AppType.sans(
-                            color: colors.ink.withValues(alpha: 0.6),
+                          labelStyle: AppType.body(
+                            colors.ink.withValues(alpha: 0.6),
                           ),
                           filled: true,
                           fillColor: colors.surface,
-                          counterStyle: AppType.sans(
-                            color: colors.ink.withValues(alpha: 0.4),
+                          counterStyle: AppType.body(
+                            colors.ink.withValues(alpha: 0.4),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -254,10 +254,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           isArabic ? 'لون الصورة الرمزية' : 'Avatar Color',
-                          style: AppType.sans(
-                            color: colors.ink.withValues(alpha: 0.7),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                          style: AppType.bodySmall(
+                            colors.ink.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -310,11 +308,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                       : (isArabic
                                             ? 'إنشاء ملف شخصي'
                                             : 'Create Profile'),
-                                  style: AppType.sans(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
+                                  style: AppType.rowHeader(Colors.white),
                                 ),
                         ),
                       ),
@@ -335,11 +329,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             ),
                             child: Text(
                               isArabic ? 'حذف الملف الشخصي' : 'Delete Profile',
-                              style: AppType.sans(
-                                color: colors.error,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
+                              style: AppType.cardTitle(colors.error),
                             ),
                           ),
                         ),

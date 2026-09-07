@@ -50,23 +50,11 @@ class TvCastInfo extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label.toUpperCase(),
-              style: AppType.sans(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1,
-                color: colors.ink,
-              ),
-            ),
+            Text(label.toUpperCase(), style: AppType.captionSmall(colors.ink)),
             const SizedBox(height: 4),
             Text(
               value,
-              style: AppType.sans(
-                fontSize: 13,
-                height: 1.4,
-                color: colors.ink.withValues(alpha: 0.85),
-              ),
+              style: AppType.bodySmall(colors.ink.withValues(alpha: 0.85)),
             ),
           ],
         );

@@ -1053,11 +1053,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                       textDirection: TextDirection.ltr,
                       child: Text(
                         _indicatorMessage,
-                        style: AppType.sans(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppType.display(Colors.white),
                       ),
                     ),
                   ),
@@ -1254,14 +1250,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                   size: 28,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '10s',
-                  style: AppType.sans(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text('10s', style: AppType.caption(Colors.white)),
               ],
             ),
           ),
@@ -1439,11 +1428,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           const SizedBox(height: 8),
           Text(
             '${(value * 100).toInt()}%',
-            style: AppType.sans(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppType.cardTitle(Colors.white),
           ),
         ],
       ),
@@ -1481,11 +1466,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               ),
               child: Text(
                 _qualityLabel,
-                style: AppType.sans(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppType.caption(Colors.white70),
               ),
             ),
 
@@ -1718,11 +1699,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ? Duration(milliseconds: (_dragSeekValue * totalMs).toInt())
                     : position,
               ),
-              style: AppType.sans(
-                color: Colors.white70,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppType.caption(Colors.white70),
             ),
           ),
 
@@ -1765,11 +1742,7 @@ class _PlayerScreenState extends State<PlayerScreen>
             child: Text(
               _formatDuration(duration),
               textAlign: TextAlign.end,
-              style: AppType.sans(
-                color: Colors.white70,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppType.caption(Colors.white70),
             ),
           ),
         ],
@@ -1909,7 +1882,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                         ? 'جارٍ الاتصال بالبث...'
                         : 'Connecting to stream...')
                   : (isArabic ? 'جارٍ تحميل الفيديو...' : 'Loading video...'),
-              style: AppType.sans(color: Colors.white54, fontSize: 14),
+              style: AppType.body(Colors.white54),
             ),
             // Live channels can hang connecting far longer than VOD (a dead
             // or overloaded channel, a slow panel) with no way to tell how
@@ -1925,7 +1898,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                 icon: const Icon(Icons.arrow_back, color: Colors.white54),
                 label: Text(
                   isArabic ? 'رجوع' : 'Go Back',
-                  style: AppType.sans(color: Colors.white54),
+                  style: AppType.body(Colors.white54),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.white24),
@@ -1975,17 +1948,13 @@ class _PlayerScreenState extends State<PlayerScreen>
               const SizedBox(height: 20),
               Text(
                 isArabic ? 'خطأ في التشغيل' : 'Playback Error',
-                style: AppType.sans(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppType.heading(Colors.white),
               ),
               const SizedBox(height: 12),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: AppType.sans(color: Colors.white60, fontSize: 14),
+                style: AppType.body(Colors.white60),
               ),
               const SizedBox(height: 32),
               Row(
@@ -1996,7 +1965,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     icon: const Icon(Icons.arrow_back, color: Colors.white54),
                     label: Text(
                       isArabic ? 'رجوع' : 'Go Back',
-                      style: AppType.sans(color: Colors.white54),
+                      style: AppType.body(Colors.white54),
                     ),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Colors.white24),
@@ -2015,10 +1984,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ),
                     label: Text(
                       isArabic ? 'إعادة المحاولة' : 'Retry',
-                      style: AppType.sans(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppType.cardTitle(Colors.white),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _playerAccent,
@@ -2061,11 +2027,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                       ? 'التحكم بالسطوع والصوت'
                       : 'Control Brightness & Volume',
                   textAlign: TextAlign.center,
-                  style: AppType.sans(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppType.heading(Colors.white),
                 ),
                 const SizedBox(height: 32),
                 IntrinsicHeight(
@@ -2110,12 +2072,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ),
                     child: Text(
                       isArabic ? 'تخطي' : 'Skip',
-                      style: AppType.sans(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        letterSpacing: 1,
-                      ),
+                      style: AppType.cardTitle(Colors.white),
                     ),
                   ),
                 ),
@@ -2144,12 +2101,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         Text(
           label,
           textAlign: TextAlign.center,
-          style: AppType.sans(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            height: 1.4,
-          ),
+          style: AppType.bodySmall(Colors.white),
         ),
       ],
     );

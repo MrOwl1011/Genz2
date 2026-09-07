@@ -95,12 +95,31 @@ class AppType {
     color: color,
   );
 
+  /// Between [hero] and [heading] — the largest thing on a screen that is
+  /// not the screen's subject.
+  static TextStyle display(Color color) => sans(
+    fontSize: 24,
+    height: 1.14,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.48,
+    color: color,
+  );
+
   /// Screen headings and section titles.
   static TextStyle heading(Color color) => sans(
     fontSize: 22,
     height: 1.18,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.44,
+    color: color,
+  );
+
+  /// Sub-headings inside a screen — a card's own heading, a dialog title.
+  static TextStyle title(Color color) => sans(
+    fontSize: 18,
+    height: 1.22,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.18,
     color: color,
   );
 
@@ -128,10 +147,26 @@ class AppType {
     color: color,
   );
 
+  /// Secondary prose — the line under a title, a row's supporting text.
+  static TextStyle bodySmall(Color color) => sans(
+    fontSize: 13,
+    height: 1.46,
+    fontWeight: FontWeight.w500,
+    color: color,
+  );
+
   /// Captions beneath posters. Two lines maximum, by convention.
   static TextStyle caption(Color color) => sans(
     fontSize: 12,
     height: 1.33,
+    fontWeight: FontWeight.w500,
+    color: color,
+  );
+
+  /// The smallest readable step — dense TV rows, badge text.
+  static TextStyle captionSmall(Color color) => sans(
+    fontSize: 11,
+    height: 1.3,
     fontWeight: FontWeight.w500,
     color: color,
   );

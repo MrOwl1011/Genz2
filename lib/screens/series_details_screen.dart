@@ -434,9 +434,8 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                 if (cast.isNotEmpty) ...[
                                   Text(
                                     cast,
-                                    style: AppType.sans(
-                                      color: colors.ink.withValues(alpha: 0.7),
-                                      fontSize: 14,
+                                    style: AppType.body(
+                                      colors.ink.withValues(alpha: 0.7),
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -444,9 +443,8 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                 if (director.isNotEmpty) ...[
                                   Text(
                                     director,
-                                    style: AppType.sans(
-                                      color: colors.ink.withValues(alpha: 0.7),
-                                      fontSize: 14,
+                                    style: AppType.body(
+                                      colors.ink.withValues(alpha: 0.7),
                                     ),
                                   ),
                                   const SizedBox(height: 24),
@@ -696,10 +694,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
               child: Center(
                 child: Text(
                   ep.episodeNum.toString(),
-                  style: AppType.sans(
-                    color: colors.ink,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppType.cardTitle(colors.ink),
                 ),
               ),
             ),
@@ -709,10 +704,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                   : (isArabic
                         ? 'الحلقة ${ep.episodeNum}'
                         : 'Episode ${ep.episodeNum}'),
-              style: AppType.sans(
-                color: colors.ink,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppType.cardTitle(colors.ink),
             ),
             subtitle: position > 0
                 ? Text(
@@ -875,13 +867,13 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           isArabic ? 'تنزيل الحلقات' : 'Download Episodes',
-          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
+          style: AppType.cardTitle(colors.ink),
         ),
         content: Text(
           isArabic
               ? 'تنزيل هذه الحلقة فقط، أم اختيار عدة حلقات لتنزيلها معاً؟'
               : 'Download just this episode, or pick several episodes to download together?',
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.7)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -983,8 +975,8 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                             onPressed: () => Navigator.of(ctx).pop(),
                             child: Text(
                               isArabic ? 'إلغاء' : 'Cancel',
-                              style: AppType.sans(
-                                color: colors.ink.withValues(alpha: 0.6),
+                              style: AppType.body(
+                                colors.ink.withValues(alpha: 0.6),
                               ),
                             ),
                           ),
@@ -1047,18 +1039,15 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                           : (isArabic
                                                 ? 'الحلقة ${ep.episodeNum}'
                                                 : 'Episode ${ep.episodeNum}'),
-                                      style: AppType.sans(color: colors.ink),
+                                      style: AppType.body(colors.ink),
                                     ),
                                     subtitle: already
                                         ? Text(
                                             isArabic
                                                 ? 'تم تنزيلها بالفعل'
                                                 : 'Already downloaded',
-                                            style: AppType.sans(
-                                              color: colors.ink.withValues(
-                                                alpha: 0.4,
-                                              ),
-                                              fontSize: 12,
+                                            style: AppType.caption(
+                                              colors.ink.withValues(alpha: 0.4),
                                             ),
                                           )
                                         : (!downloadable
@@ -1066,10 +1055,10 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                                   isArabic
                                                       ? 'غير قابلة للتنزيل'
                                                       : 'Not downloadable',
-                                                  style: AppType.sans(
-                                                    color: colors.ink
-                                                        .withValues(alpha: 0.4),
-                                                    fontSize: 12,
+                                                  style: AppType.caption(
+                                                    colors.ink.withValues(
+                                                      alpha: 0.4,
+                                                    ),
                                                   ),
                                                 )
                                               : null),
@@ -1111,10 +1100,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                   : (isArabic
                                         ? 'تنزيل ${selected.length} حلقة'
                                         : 'Download ${selected.length} Episode${selected.length == 1 ? '' : 's'}'),
-                              style: AppType.sans(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: AppType.cardTitle(Colors.white),
                             ),
                           ),
                         ),
