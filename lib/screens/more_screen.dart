@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 import '../features/profiles/presentation/providers/profile_provider.dart';
 import '../features/profiles/presentation/screens/profile_picker_screen.dart';
 import '../features/profiles/presentation/widgets/profile_avatar_tile.dart';
@@ -796,12 +797,9 @@ class MoreScreen extends StatelessWidget {
       padding: const EdgeInsets.only(left: 8.0),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.archivo(
-          color: colors.ink.withValues(alpha: 0.54),
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.5,
-        ),
+        // Uppercase group labels in the metadata style — the iOS Settings
+        // convention every OTT app on the platform follows for inset groups.
+        style: AppType.meta(colors.ink.withValues(alpha: 0.5)),
       ),
     );
   }
@@ -811,7 +809,7 @@ class MoreScreen extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: colors.border, width: 1),
       ),
       child: Column(

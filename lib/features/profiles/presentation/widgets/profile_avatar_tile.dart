@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../theme/app_colors.dart';
+import '../../../../theme/app_type.dart';
 import '../../../../widgets/tv_focusable.dart';
 import '../../domain/entities/profile_entity.dart';
 
@@ -76,25 +76,29 @@ class ProfileAvatarTile extends StatelessWidget {
 
     return TvFocusable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // A rounded square, not a circle. Netflix, Prime and Shahid all use
+          // one on this screen; a circular avatar reads as a social app, and
+          // this is the screen users benchmark the app against hardest.
           Container(
             width: size,
             height: size,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(4),
               color: color,
               border: Border.all(
-                color: selected ? colors.brandAccent : Colors.transparent,
-                width: 3,
+                color: selected ? colors.ink : Colors.transparent,
+                width: 2,
               ),
               boxShadow: selected
                   ? [
                       BoxShadow(
-                        color: colors.brandAccent.withValues(alpha: 0.5),
-                        blurRadius: 16,
+                        color: colors.brandPrimary.withValues(alpha: 0.40),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
                       ),
                     ]
                   : null,
@@ -102,10 +106,8 @@ class ProfileAvatarTile extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               initial,
-              style: GoogleFonts.archivo(
-                color: Colors.white,
-                fontSize: size * 0.4,
-                fontWeight: FontWeight.bold,
+              style: AppType.hero(Colors.white).copyWith(
+                fontSize: size * 0.38,
               ),
             ),
           ),
@@ -118,11 +120,9 @@ class ProfileAvatarTile extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.archivo(
-                  color: colors.ink,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppType.cardTitle(
+                  colors.ink.withValues(alpha: 0.8),
+                ).copyWith(fontSize: 13),
               ),
             ),
           ],
