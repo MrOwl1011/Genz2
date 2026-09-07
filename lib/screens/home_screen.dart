@@ -377,7 +377,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     final colors = context.colors;
     return TvFocusable(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(4),
       onTap: () {
         final playlist = allStreams.map((l) {
           return {
@@ -621,7 +621,12 @@ class _PosterCard extends StatelessWidget {
   static const double captionHeight = 34;
 
   /// What a row's SizedBox has to be tall enough for.
-  static const double totalHeight = posterHeight + 8 + captionHeight;
+  ///
+  /// Includes TvFocusable's always-painted focus ring: every card is wrapped
+  /// in one, and the ring is 3px on each edge whether or not it is visible.
+  /// Leaving it out is what overflowed these rows by exactly 6px.
+  static const double totalHeight =
+      posterHeight + 8 + captionHeight + TvFocusable.focusInset;
 
   final String title;
   final String imageUrl;
@@ -725,7 +730,8 @@ class _HistoryCard extends StatelessWidget {
   static const double width = 160;
   static const double stillHeight = 90;
   static const double captionHeight = 34;
-  static const double totalHeight = stillHeight + 8 + captionHeight;
+  static const double totalHeight =
+      stillHeight + 8 + captionHeight + TvFocusable.focusInset;
 
   final HistoryItem item;
 
@@ -809,5 +815,6 @@ class _LiveCardMetrics {
   const _LiveCardMetrics._();
   static const double artworkHeight = 74;
   static const double captionHeight = 34;
-  static const double totalHeight = artworkHeight + 8 + captionHeight;
+  static const double totalHeight =
+      artworkHeight + 8 + captionHeight + TvFocusable.focusInset;
 }

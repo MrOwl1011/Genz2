@@ -22,6 +22,18 @@ import '../core/build_flavor.dart' show kIsTv, kIsTvRemote;
 /// elevation is what mainstream TV interfaces use and stays legible over
 /// arbitrary poster art of any colour.
 class TvFocusable extends StatefulWidget {
+  /// Width of the focus ring, which is painted at all times — transparent
+  /// when unfocused — so a card never changes size as focus moves.
+  ///
+  /// It is therefore permanent padding around every child: a card inside one
+  /// of these occupies its own height plus [focusInset]. Any row or grid
+  /// sizing a TvFocusable child has to include that, or the child overflows
+  /// by exactly this much. See _PosterCard.totalHeight and friends.
+  static const double focusBorderWidth = 3;
+
+  /// Total vertical (and horizontal) space the ring adds to a child.
+  static const double focusInset = focusBorderWidth * 2;
+
   final Widget child;
   final VoidCallback? onTap;
   final BorderRadiusGeometry borderRadius;
@@ -131,7 +143,7 @@ class _TvFocusableState extends State<TvFocusable> {
               // appears from nothing would reflow the whole grid row.
               border: Border.all(
                 color: showFocusVisuals ? Colors.white : Colors.transparent,
-                width: 3,
+                width: TvFocusable.focusBorderWidth,
               ),
               boxShadow: showFocusVisuals
                   ? const [
