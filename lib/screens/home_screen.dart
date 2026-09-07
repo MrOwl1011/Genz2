@@ -7,11 +7,13 @@ import '../providers/auth_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../models/xtream_models.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 import 'series_screen.dart';
 import 'movies_screen.dart';
 import 'movie_details_screen.dart';
 import 'series_details_screen.dart';
 import 'player_screen.dart';
+import '../widgets/skeleton.dart';
 import '../widgets/tv_focusable.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -166,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 180,
+          height: _HistoryCard.totalHeight,
           child: userPrefs.history.isEmpty
               ? Center(
                   child: Text(
@@ -204,11 +206,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 180,
+          height: _PosterCard.totalHeight,
           child: content.isLoadingNewContent
-              ? Center(
-                  child: CircularProgressIndicator(color: colors.brandPrimary),
-                )
+              // A skeleton, not a spinner: the row geometry is known, so the
+              // placeholder can be the shape of what is arriving and nothing
+              // shifts when it does.
+              ? const SkeletonRow()
               : (content.newSeries.isEmpty
                     ? Center(
                         child: Text(
@@ -251,11 +254,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 180,
+          height: _PosterCard.totalHeight,
           child: content.isLoadingNewContent
-              ? Center(
-                  child: CircularProgressIndicator(color: colors.brandPrimary),
-                )
+              // A skeleton, not a spinner: the row geometry is known, so the
+              // placeholder can be the shape of what is arriving and nothing
+              // shifts when it does.
+              ? const SkeletonRow()
               : (content.newMovies.isEmpty
                     ? Center(
                         child: Text(
@@ -318,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildSectionHeader(isArabic ? 'الأفلام' : 'Movies', ''),
           const SizedBox(height: 12),
           SizedBox(
-            height: 180,
+            height: _PosterCard.totalHeight,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -334,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildSectionHeader(isArabic ? 'المسلسلات' : 'Series', ''),
           const SizedBox(height: 12),
           SizedBox(
-            height: 180,
+            height: _PosterCard.totalHeight,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -350,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildSectionHeader(isArabic ? 'البث المباشر' : 'Live TV', ''),
           const SizedBox(height: 12),
           SizedBox(
-            height: 180,
+            height: _PosterCard.totalHeight,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -464,39 +468,40 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// A row header — type and a chevron, nothing else.
+  ///
+  /// This was a filled `surfaceMuted` box, which gave every section the same
+  /// visual weight as a content card and flattened the page. Streaming rows
+  /// are titled with plain type; the container was doing no work.
   Widget _buildSectionHeader(
     String title,
     String actionText, {
     VoidCallback? onActionTap,
   }) {
     final colors = context.colors;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20.0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colors.surfaceMuted, // Neutral card background
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: GoogleFonts.archivo(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: colors.ink,
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.rowHeader(colors.ink),
             ),
           ),
           if (actionText.isNotEmpty)
             GestureDetector(
               onTap: onActionTap,
-              child: Text(
-                actionText,
-                style: GoogleFonts.archivo(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: colors.brandPrimary,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: colors.ink.withValues(alpha: 0.45),
                 ),
               ),
             ),
@@ -505,8 +510,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+
   Widget _buildHistoryCard(BuildContext context, HistoryItem item) {
-    final colors = context.colors;
     return TvFocusable(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
@@ -543,280 +548,218 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       },
-      child: Container(
-        width: 120,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: colors.surfaceMuted,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
+      child: _HistoryCard(item: item),
+    );
+  }
+
+  Widget _buildSeriesCard(BuildContext context, XtreamSeries series) {
+    return _PosterCard(
+      title: series.name,
+      imageUrl: series.cover,
+      rating: series.rating,
+      fallbackIcon: Icons.video_library_outlined,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => SeriesDetailsScreen(series: series)),
+      ),
+    );
+  }
+
+
+  Widget _buildMovieCard(BuildContext context, XtreamVodStream movie) {
+    return _PosterCard(
+      title: movie.name,
+      imageUrl: movie.streamIcon,
+      rating: movie.rating,
+      fallbackIcon: Icons.movie_outlined,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => MovieDetailsScreen(movie: movie)),
+      ),
+    );
+  }
+
+
+}
+
+/// The one poster card behind every 2:3 row on this screen.
+///
+/// Geometry is fixed at 116x174 so rows line up across sections, and the
+/// caption gets exactly two lines beneath the artwork — enough for a long
+/// title, bounded so a row never grows a ragged bottom edge.
+class _PosterCard extends StatelessWidget {
+  const _PosterCard({
+    required this.title,
+    required this.imageUrl,
+    required this.onTap,
+    required this.fallbackIcon,
+    this.rating = '',
+  });
+
+  static const double width = 116;
+  static const double posterHeight = 174;
+
+  /// Artwork plus caption plus the gap between them — what a row's SizedBox
+  /// has to be tall enough for.
+  static const double totalHeight = posterHeight + 8 + 34;
+
+  final String title;
+  final String imageUrl;
+  final String rating;
+  final IconData fallbackIcon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return TvFocusable(
+      borderRadius: BorderRadius.circular(4),
+      onTap: onTap,
+      child: SizedBox(
+        width: width,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            item.posterUrl.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: item.posterUrl,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, _, _) => Icon(
-                      Icons.movie,
-                      color: colors.ink.withValues(alpha: 0.24),
-                    ),
-                  )
-                : Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
-            // Title overlay — fixed dark scrim, see note in _buildLiveCard.
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
               child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [Colors.black, Colors.transparent],
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+                width: width,
+                height: posterHeight,
+                color: colors.surfaceMuted,
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Text(
-                      item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.archivo(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Progress bar — brand color is theme-invariant so it's
-                    // safe to use even atop the fixed dark scrim above.
-                    if (item.durationMilliseconds > 0)
-                      LinearProgressIndicator(
-                        value:
-                            (item.positionMilliseconds /
-                                    item.durationMilliseconds)
-                                .clamp(0.0, 1.0),
-                        backgroundColor: Colors.white24,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colors.brandPrimary,
+                    if (imageUrl.isNotEmpty)
+                      CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, _, _) => Icon(
+                          fallbackIcon,
+                          color: colors.ink.withValues(alpha: 0.24),
                         ),
-                        minHeight: 3,
+                      )
+                    else
+                      Icon(
+                        fallbackIcon,
+                        color: colors.ink.withValues(alpha: 0.24),
+                      ),
+                    // Rating stays on the artwork: it is a badge, not a label,
+                    // and it reads fine against any image at this size.
+                    if (rating.isNotEmpty)
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.62),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            rating,
+                            style: AppType.meta(Colors.white),
+                          ),
+                        ),
                       ),
                   ],
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSeriesCard(BuildContext context, XtreamSeries series) {
-    final colors = context.colors;
-    return TvFocusable(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => SeriesDetailsScreen(series: series),
-          ),
-        );
-      },
-      child: Container(
-        width: 120,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: colors.surfaceMuted,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            series.cover.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: series.cover,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, _, _) => Icon(
-                      Icons.movie,
-                      color: colors.ink.withValues(alpha: 0.24),
-                    ),
-                  )
-                : Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
-            // Title overlay — fixed dark scrim, see note in _buildLiveCard.
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [Colors.black, Colors.transparent],
-                  ),
-                ),
-                child: Text(
-                  series.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.archivo(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildMovieCard(BuildContext context, XtreamVodStream movie) {
+/// Continue Watching: a 16:9 still with the progress bar *inside* the
+/// artwork's bottom edge.
+///
+/// Progress belongs on the image, not under it — it is the single most
+/// recognised affordance in streaming, and putting it below turns a glanceable
+/// mark into another row of chrome.
+class _HistoryCard extends StatelessWidget {
+  const _HistoryCard({required this.item});
+
+  static const double width = 160;
+  static const double stillHeight = 90;
+  static const double totalHeight = stillHeight + 8 + 34;
+
+  final HistoryItem item;
+
+  @override
+  Widget build(BuildContext context) {
     final colors = context.colors;
-    return TvFocusable(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => MovieDetailsScreen(movie: movie)),
-        );
-      },
-      child: Container(
-        width: 120,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: colors.surfaceMuted,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            movie.streamIcon.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: movie.streamIcon,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, _, _) => Icon(
-                      Icons.movie,
-                      color: colors.ink.withValues(alpha: 0.24),
-                    ),
-                  )
-                : Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
-            // Title overlay — fixed dark scrim, see note in _buildLiveCard.
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [Colors.black, Colors.transparent],
-                  ),
-                ),
-                child: Text(
-                  movie.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.archivo(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            // Rating badge on top left — sits directly on the poster image,
-            // same "fixed regardless of theme" treatment as the scrim above.
-            if (movie.rating.isNotEmpty)
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.star_outline,
-                        color: Colors.white,
-                        size: 12,
+    final progress = item.durationMilliseconds > 0
+        ? (item.positionMilliseconds / item.durationMilliseconds)
+              .clamp(0.0, 1.0)
+        : 0.0;
+
+    return SizedBox(
+      width: width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Container(
+              width: width,
+              height: stillHeight,
+              color: colors.surfaceMuted,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (item.posterUrl.isNotEmpty)
+                    CachedNetworkImage(
+                      imageUrl: item.posterUrl,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, _, _) => Icon(
+                        Icons.play_circle_outline,
+                        color: colors.ink.withValues(alpha: 0.24),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        movie.rating,
-                        style: GoogleFonts.archivo(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    )
+                  else
+                    Icon(
+                      Icons.play_circle_outline,
+                      color: colors.ink.withValues(alpha: 0.24),
+                    ),
+                  if (progress > 0)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        height: 3,
+                        color: Colors.black.withValues(alpha: 0.45),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress,
+                          child: ColoredBox(color: colors.brandPrimary),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSlantedButton(BuildContext context, String title, int tabIndex) {
-    final colors = context.colors;
-    // We can use a slanted container using Transform.skew
-    return GestureDetector(
-      onTap: () {
-        // Need to change the tab of MainNavigation.
-        // We can do this by finding the state of MainNavigation (though not ideal if it's far up the tree).
-        // Since we are inside MainNavigation, we can use an event or provider.
-        // For now, let's try pushing the actual screen just to see it work,
-        // or if possible, we should communicate with MainNavigation via an inherited widget or provider.
-        // Because MainNavigation controls the index, we can't easily change it without a GlobalKey or Provider.
-        // For this UI mockup, I'll just show the visual button.
-      },
-      child: Transform(
-        transform: Matrix4.skewX(-0.3), // Slant to the left
-        alignment: Alignment.center,
-        child: Container(
-          height: 100,
-          decoration: BoxDecoration(
-            color: colors.surfaceMuted,
-            border: Border.all(color: colors.border, width: 2),
-          ),
-          alignment: Alignment.center,
-          child: Transform(
-            transform: Matrix4.skewX(0.3), // Un-slant the text
-            alignment: Alignment.center,
-            child: Text(
-              title,
-              style: GoogleFonts.archivo(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                fontStyle: FontStyle.italic,
-                color: colors.ink,
-                letterSpacing: 1,
+                    ),
+                ],
               ),
             ),
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            item.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+          ),
+        ],
       ),
     );
   }

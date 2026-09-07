@@ -1,9 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
+import '../widgets/glass.dart';
 import '../widgets/tv_focusable.dart';
 import 'home_screen.dart';
 import 'live_screen.dart'; // will update this next
@@ -62,29 +62,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   Widget _buildFloatingBottomBar() {
     final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
-    final colors = context.colors;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          height: 75,
-          decoration: BoxDecoration(
-            color: colors.surface.withValues(alpha: 0.65),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: colors.ink.withValues(alpha: 0.08),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+    // Chrome tier, radius 18 rather than a 30pt capsule: a fully rounded bar
+    // reads as a floating widget, while a soft rectangle reads as chrome the
+    // content is passing beneath — which is what it is.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+        ],
+      ),
+      child: Glass(
+        tier: GlassTier.chrome,
+        radius: BorderRadius.circular(18),
+        child: SizedBox(
+          height: 64,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -126,39 +122,44 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final activeColor = colors.brandPrimary;
     final inactiveColor = colors.ink.withValues(alpha: 0.38);
 
+    // A 3x18 bar above the icon, not a filled pill behind it. The pill is a
+    // Material default and reads immediately as an unstyled Flutter app; every
+    // benchmark app marks the active tab with a rule or nothing at all.
     return TvFocusable(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(10),
       onTap: () {
         setState(() {
           _currentIndex = index;
         });
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? activeColor.withValues(alpha: 0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: 18,
+              height: 3,
+              decoration: BoxDecoration(
+                color: isSelected ? activeColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 9),
             Icon(
               icon,
-              color: isSelected ? activeColor : inactiveColor,
+              color: isSelected ? colors.ink : inactiveColor,
               size: 22,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Text(
               label,
-              style: GoogleFonts.archivo(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
+              style: AppType.meta(
+                isSelected ? colors.ink : inactiveColor,
+              ).copyWith(fontSize: 9.5, letterSpacing: 0.9),
             ),
           ],
         ),
