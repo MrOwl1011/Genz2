@@ -304,8 +304,12 @@ class _SidebarItemTile extends StatelessWidget {
       builder: (context, focused) {
         return AnimatedContainer(
           duration: TvMetrics.focusAnim,
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          // The collapsed rail is only TvMetrics.sidebarCollapsedWidth wide,
+          // and margin + padding + border all come out of it before the icon
+          // gets any. At 12/14 the 24pt icon slot did not fit and ClipRect
+          // quietly shaved it; these values leave it room.
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             color: focused ? colors.surfaceElevated : Colors.transparent,
@@ -320,67 +324,80 @@ class _SidebarItemTile extends StatelessWidget {
           // overflow warning in debug builds (invisible either way in
           // release, but the underlying transient mismatch is real either
           // build).
-          child: ClipRect(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Marks the section currently showing, independently of where
-                // focus happens to be.
-                AnimatedContainer(
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: AlignmentDirectional.centerStart,
+            children: [
+              // Marks the section currently showing, independently of where
+              // focus happens to be.
+              //
+              // Drawn as an overlay rather than as a Row child: as a child it
+              // consumed 14pt of a rail that has about 20pt to spend, which
+              // pushed the icon out of the clip and left the collapsed
+              // sidebar rendering as a sliver of half-icons.
+              PositionedDirectional(
+                start: -6,
+                child: AnimatedContainer(
                   duration: TvMetrics.focusAnim,
                   width: 3,
                   height: 20,
-                  margin: const EdgeInsets.only(right: 11),
                   decoration: BoxDecoration(
                     color: active ? colors.brandPrimary : Colors.transparent,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                // Fixed-width slot so every item's icon lines up on the same
-                // left edge regardless of that particular glyph's own
-                // intrinsic bounding-box width (Icons.movie_rounded and
-                // Icons.settings_rounded, for instance, aren't the same
-                // visual width at the same `size`).
-                SizedBox(
-                  width: 24,
-                  child: Icon(
-                    icon,
-                    size: 22,
-                    color: active || focused
-                        ? colors.ink
-                        : colors.ink.withValues(alpha: 0.5),
-                  ),
-                ),
-                AnimatedAlign(
-                  // Matches the rail's own width animation exactly (not
-                  // focusAnim, which is faster) — the label's reveal must
-                  // never outpace how wide the rail has actually grown, or
-                  // it demands more width than exists yet for a few frames.
-                  duration: TvMetrics.sidebarAnim,
-                  curve: Curves.easeOut,
-                  alignment: Alignment.centerLeft,
-                  widthFactor: expanded ? 1 : 0,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: AnimatedOpacity(
+              ),
+              ClipRect(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Fixed-width slot so every item's icon lines up on the same
+                    // left edge regardless of that particular glyph's own
+                    // intrinsic bounding-box width (Icons.movie_rounded and
+                    // Icons.settings_rounded, for instance, aren't the same
+                    // visual width at the same `size`).
+                    SizedBox(
+                      width: 24,
+                      child: Icon(
+                        icon,
+                        size: 22,
+                        color: active || focused
+                            ? colors.ink
+                            : colors.ink.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    AnimatedAlign(
+                      // Matches the rail's own width animation exactly (not
+                      // focusAnim, which is faster) — the label's reveal must
+                      // never outpace how wide the rail has actually grown, or
+                      // it demands more width than exists yet for a few frames.
                       duration: TvMetrics.sidebarAnim,
-                      opacity: expanded ? 1 : 0,
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.clip,
-                        softWrap: false,
-                        style: AppType.label(
-                          colors.ink.withValues(
-                            alpha: active || focused ? 1.0 : 0.5,
+                      curve: Curves.easeOut,
+                      alignment: Alignment.centerLeft,
+                      widthFactor: expanded ? 1 : 0,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: AnimatedOpacity(
+                          duration: TvMetrics.sidebarAnim,
+                          opacity: expanded ? 1 : 0,
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.clip,
+                            softWrap: false,
+                            style: AppType.label(
+                              colors.ink.withValues(
+                                alpha: active || focused ? 1.0 : 0.5,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
