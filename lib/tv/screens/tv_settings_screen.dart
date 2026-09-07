@@ -429,7 +429,7 @@ class _SettingsContent extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: focused ? colors.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: focused ? colors.ink : Colors.transparent,
               width: 1.5,
@@ -490,7 +490,7 @@ class _InfoStrip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: colors.surface.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: colors.border, width: 1),
       ),
       child: Row(
@@ -569,7 +569,7 @@ class _SettingsTile extends StatelessWidget {
           duration: TvMetrics.focusAnim,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
             color: focused
                 ? accentColor.withValues(alpha: 0.16)
                 : colors.surface.withValues(alpha: 0.7),

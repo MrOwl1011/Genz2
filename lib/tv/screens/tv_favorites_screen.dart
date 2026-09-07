@@ -193,7 +193,7 @@ class _FavoriteCard extends StatelessWidget {
           child: AnimatedContainer(
             duration: TvMetrics.focusAnim,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: focused ? colors.ink : Colors.transparent,
                 width: 3,

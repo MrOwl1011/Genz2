@@ -355,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildSectionHeader(isArabic ? 'البث المباشر' : 'Live TV', ''),
           const SizedBox(height: 12),
           SizedBox(
-            height: _PosterCard.totalHeight,
+            height: _LiveCardMetrics.totalHeight,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -411,57 +411,82 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
-      child: Container(
-        width: 120,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: colors.surfaceMuted,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
+      child: SizedBox(
+        width: 132,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            live.streamIcon.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: live.streamIcon,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, _, _) => Icon(
-                      Icons.live_tv,
-                      color: colors.ink.withValues(alpha: 0.24),
-                    ),
-                  )
-                : Icon(
-                    Icons.live_tv,
-                    color: colors.ink.withValues(alpha: 0.24),
-                  ),
-            // Title overlay — fixed dark scrim for legibility over the poster
-            // image itself, intentionally not theme-reactive (see player_screen
-            // and category cards for the same pattern).
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
               child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [Colors.black, Colors.transparent],
-                  ),
-                ),
-                child: Text(
-                  live.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.archivo(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
+                width: 132,
+                // 16:9, matching how channel artwork is actually shaped —
+                // the 2:3 poster frame cropped most logos.
+                height: 74,
+                color: colors.surfaceMuted,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (live.streamIcon.isNotEmpty)
+                      CachedNetworkImage(
+                        imageUrl: live.streamIcon,
+                        fit: BoxFit.contain,
+                        errorWidget: (_, _, _) => Icon(
+                          Icons.live_tv,
+                          color: colors.ink.withValues(alpha: 0.24),
+                        ),
+                      )
+                    else
+                      Icon(
+                        Icons.live_tv,
+                        color: colors.ink.withValues(alpha: 0.24),
+                      ),
+                    // The one place cyan appears in the app. Reserving a hue
+                    // for a single meaning is what makes it read as a signal
+                    // rather than decoration.
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.62),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: BoxDecoration(
+                                color: colors.brandAccent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'LIVE',
+                              style: AppType.meta(Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              live.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
             ),
           ],
         ),
@@ -764,4 +789,12 @@ class _HistoryCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Geometry for the live channel card, kept beside the poster metrics so a
+/// row's SizedBox never has to guess.
+class _LiveCardMetrics {
+  const _LiveCardMetrics._();
+  static const double artworkHeight = 74;
+  static const double totalHeight = artworkHeight + 8 + 34;
 }

@@ -23,8 +23,11 @@ class TvMetrics {
 
   static const Duration focusAnim = Duration(milliseconds: 150);
 
-  static const double tileRadius = 20;
-  static const double pillRadius = 14;
+  /// Buttons and action tiles. Near-rectangular: Netflix and Prime both
+  /// keep ten-foot actions square-shouldered, and a capsule reads as a
+  /// consumer app rather than broadcast chrome.
+  static const double tileRadius = 6;
+  static const double pillRadius = 999;
 
   // ─── Row-based home layout ─────────────────────────────────────────────
 

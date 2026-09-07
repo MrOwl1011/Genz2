@@ -219,7 +219,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
       barrierColor: Colors.black87,
       builder: (ctx) => Dialog(
         backgroundColor: colors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 360),
           child: Padding(
@@ -248,7 +248,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                           vertical: 10,
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(10),
                           color: focused
                               ? colors.surfaceElevated
                               : Colors.transparent,
@@ -278,7 +278,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                           vertical: 10,
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(10),
                           gradient: focused
                               ? LinearGradient(colors: colors.brandGradient)
                               : null,
