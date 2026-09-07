@@ -64,12 +64,12 @@ android {
         create("phone") {
             dimension = "platform"
             applicationId = "com.genzplus.app"
-            versionCode = 53
+            versionCode = 55
         }
         create("tv") {
             dimension = "platform"
             applicationId = "com.genzplus.app"
-            versionCode = 54
+            versionCode = 56
         }
     }
 
