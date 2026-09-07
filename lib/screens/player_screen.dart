@@ -52,6 +52,12 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => _PlayerScreenState();
 }
 
+/// The player's accent — scrubber, progress and TV focus.
+///
+/// A constant rather than a theme lookup: the player is always true black in
+/// every theme, so a token that flips with brightness would be wrong here.
+const Color _playerAccent = Color(0xFF9B3BAF);
+
 class _PlayerScreenState extends State<PlayerScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // ─── Video Controller ──────────────────────────────────────────────────────
@@ -1576,27 +1582,25 @@ class _PlayerScreenState extends State<PlayerScreen>
     );
   }
 
+  /// The one filled control in the transport.
+  ///
+  /// White fill, black glyph, no glow. Fixed rather than themed because the
+  /// player is always on true black — and the previous fill was #E50914,
+  /// which is Netflix's own brand red, not this app's.
   Widget _buildPlayPauseCircle() {
     return GestureDetector(
       onTap: _togglePlayPause,
       child: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE50914).withValues(alpha: 0.9),
+        width: 72,
+        height: 72,
+        decoration: const BoxDecoration(
+          color: Colors.white,
           shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFE50914).withValues(alpha: 0.4),
-              blurRadius: 20,
-              spreadRadius: 2,
-            ),
-          ],
         ),
         child: Icon(
           _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          color: Colors.white,
-          size: 38,
+          color: Colors.black,
+          size: 40,
         ),
       ),
     );
@@ -1672,7 +1676,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: isHighlighted
-              ? const Color(0xFFE50914)
+              ? _playerAccent
               : Colors.white.withValues(alpha: 0.14),
           border: isHighlighted
               ? Border.all(color: Colors.white, width: 2)
@@ -1680,7 +1684,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           boxShadow: isHighlighted
               ? [
                   BoxShadow(
-                    color: const Color(0xFFE50914).withValues(alpha: 0.5),
+                    color: _playerAccent.withValues(alpha: 0.5),
                     blurRadius: 14,
                     spreadRadius: 1,
                   ),
@@ -1728,10 +1732,10 @@ class _PlayerScreenState extends State<PlayerScreen>
               data: SliderThemeData(
                 trackHeight: 3,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-                activeTrackColor: const Color(0xFFE50914),
+                activeTrackColor: _playerAccent,
                 inactiveTrackColor: Colors.white24,
-                thumbColor: const Color(0xFFE50914),
-                overlayColor: const Color(0xFFE50914).withValues(alpha: 0.2),
+                thumbColor: _playerAccent,
+                overlayColor: _playerAccent.withValues(alpha: 0.2),
               ),
               child: Slider(
                 value: _isDraggingSeek ? _dragSeekValue : progress,
@@ -1894,7 +1898,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               width: 48,
               height: 48,
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE50914)),
+                valueColor: AlwaysStoppedAnimation<Color>(_playerAccent),
                 strokeWidth: 3,
               ),
             ),
@@ -1950,7 +1954,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           width: 36,
           height: 36,
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE50914)),
+            valueColor: AlwaysStoppedAnimation<Color>(_playerAccent),
             strokeWidth: 3,
           ),
         ),
@@ -1969,7 +1973,7 @@ class _PlayerScreenState extends State<PlayerScreen>
             children: [
               const Icon(
                 Icons.error_outline,
-                color: Color(0xFFE50914),
+                color: _playerAccent,
                 size: 56,
               ),
               const SizedBox(height: 20),
@@ -2021,7 +2025,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE50914),
+                      backgroundColor: _playerAccent,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 12,
@@ -2099,7 +2103,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                   child: ElevatedButton(
                     onPressed: _dismissTutorial,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE50914),
+                      backgroundColor: _playerAccent,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 40,
                         vertical: 14,

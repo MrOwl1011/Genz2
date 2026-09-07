@@ -9,6 +9,7 @@ import '../providers/content_provider.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 import '../widgets/resume_dialog.dart';
 import 'player_screen.dart';
 
@@ -230,8 +231,8 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
               decoration: BoxDecoration(
                 color: colors.surfaceMuted,
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
               ),
               child: Stack(
@@ -366,12 +367,19 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Thumbnail
+                                    // Poster: radius 4 and a hairline, so it
+                                    // reads as a printed sheet laid on the
+                                    // page rather than a rounded app tile.
                                     Container(
-                                      width: kIsTv ? 76 : 100,
-                                      height: kIsTv ? 114 : 150,
+                                      width: kIsTv ? 76 : 108,
+                                      height: kIsTv ? 114 : 162,
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: colors.ink.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                        ),
                                         image: DecorationImage(
                                           image: CachedNetworkImageProvider(
                                             cover,
@@ -387,50 +395,45 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
+                                          // Sentence case, upright. The old
+                                          // uppercase italic w900 was styling
+                                          // the title twice over; weight and
+                                          // tight tracking carry it alone.
                                           Text(
-                                            title.toUpperCase(),
-                                            style: GoogleFonts.archivo(
-                                              fontSize: kIsTv ? 19 : 24,
-                                              fontWeight: FontWeight.w900,
-                                              fontStyle: FontStyle.italic,
-                                              color: colors.ink,
+                                            title,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppType.hero(colors.ink)
+                                                .copyWith(
+                                                  fontSize: kIsTv ? 22 : 26,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          // One metadata line, separated by
+                                          // middots — the broadcast
+                                          // convention. Stacked rows of year
+                                          // and duration read as form fields.
+                                          Text(
+                                            [
+                                              releaseDate,
+                                              duration,
+                                              genre,
+                                            ].where((v) => v.isNotEmpty).join(
+                                              '  ·  ',
+                                            ),
+                                            maxLines: 2,
+                                            style: AppType.meta(
+                                              colors.ink.withValues(
+                                                alpha: 0.55,
+                                              ),
                                             ),
                                           ),
-                                          const SizedBox(height: 8),
-                                          if (releaseDate.isNotEmpty)
-                                            Text(
-                                              releaseDate,
-                                              style: GoogleFonts.archivo(
-                                                color: colors.ink.withValues(
-                                                  alpha: 0.7,
-                                                ),
-                                              ),
-                                            ),
-                                          if (duration.isNotEmpty)
-                                            Text(
-                                              duration,
-                                              style: GoogleFonts.archivo(
-                                                color: colors.ink.withValues(
-                                                  alpha: 0.7,
-                                                ),
-                                              ),
-                                            ),
                                         ],
                                       ),
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: kIsTv ? 10 : 16),
-                                if (genre.isNotEmpty)
-                                  Text(
-                                    genre,
-                                    style: GoogleFonts.archivo(
-                                      color: colors.ink,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: kIsTv ? 14 : 16,
-                                    ),
-                                  ),
-                                SizedBox(height: kIsTv ? 8 : 12),
+                                SizedBox(height: kIsTv ? 12 : 18),
                                 // TV: capped rather than left to run on —
                                 // there's no scroll-hint affordance like a
                                 // phone's drag handle, so a description that

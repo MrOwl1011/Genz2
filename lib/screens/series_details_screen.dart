@@ -9,6 +9,7 @@ import '../providers/content_provider.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 import '../widgets/dialog_buttons.dart';
 import '../widgets/resume_dialog.dart';
 import 'player_screen.dart';
@@ -297,8 +298,8 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
               decoration: BoxDecoration(
                 color: colors.surfaceMuted,
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
               ),
               child: Stack(
@@ -406,12 +407,19 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Thumbnail
+                                    // Poster — same treatment as the movie
+                                    // detail page, so the two pages are one
+                                    // template with different data.
                                     Container(
-                                      width: kIsTv ? 76 : 100,
-                                      height: kIsTv ? 114 : 150,
+                                      width: kIsTv ? 76 : 108,
+                                      height: kIsTv ? 114 : 162,
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: colors.ink.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                        ),
                                         image: DecorationImage(
                                           image: CachedNetworkImageProvider(
                                             cover,
@@ -428,40 +436,35 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            title.toUpperCase(),
-                                            style: GoogleFonts.archivo(
-                                              fontSize: kIsTv ? 19 : 24,
-                                              fontWeight: FontWeight.w900,
-                                              fontStyle: FontStyle.italic,
-                                              color: colors.ink,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          if (releaseDate.isNotEmpty)
-                                            Text(
-                                              releaseDate,
-                                              style: GoogleFonts.archivo(
-                                                color: colors.ink.withValues(
-                                                  alpha: 0.7,
+                                            title,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: AppType.hero(colors.ink)
+                                                .copyWith(
+                                                  fontSize: kIsTv ? 22 : 26,
                                                 ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            [
+                                              releaseDate,
+                                              genre,
+                                            ].where((v) => v.isNotEmpty).join(
+                                              '  ·  ',
+                                            ),
+                                            maxLines: 2,
+                                            style: AppType.meta(
+                                              colors.ink.withValues(
+                                                alpha: 0.55,
                                               ),
                                             ),
+                                          ),
                                         ],
                                       ),
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: kIsTv ? 10 : 16),
-                                if (genre.isNotEmpty)
-                                  Text(
-                                    genre,
-                                    style: GoogleFonts.archivo(
-                                      color: colors.ink,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: kIsTv ? 14 : 16,
-                                    ),
-                                  ),
-                                SizedBox(height: kIsTv ? 8 : 12),
+                                SizedBox(height: kIsTv ? 12 : 18),
                                 // TV: capped rather than left to run on —
                                 // there's no scroll-hint affordance like a
                                 // phone's drag handle, so a description that
@@ -545,13 +548,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Text(
             isArabic ? 'الموسم $season' : 'SEASON $season',
-            style: GoogleFonts.archivo(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              fontStyle: FontStyle.italic,
-              color: colors.brandPrimary,
-              letterSpacing: 1.5,
-            ),
+            style: AppType.rowHeader(colors.ink),
           ),
         ),
       );
@@ -575,7 +572,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
               height: 40,
               decoration: BoxDecoration(
                 color: colors.surfaceMuted,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(4),
               ),
               child: Center(
                 child: Text(
@@ -863,12 +860,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                           Expanded(
                             child: Text(
                               isArabic ? 'اختيار الحلقات' : 'SELECT EPISODES',
-                              style: GoogleFonts.archivo(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                fontStyle: FontStyle.italic,
-                                color: colors.ink,
-                              ),
+                              style: AppType.rowHeader(colors.ink),
                             ),
                           ),
                           TextButton(
