@@ -223,120 +223,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
           ),
 
           // Draggable/Scrollable Details Card
-          // The action buttons sit at the details card's top edge, half
-          // above it. They used to live inside that card's own Stack at
-          // `top: -36` with clipBehavior: Clip.none — which paints them
-          // correctly but leaves the top half untappable, because Flutter's
-          // hit testing rejects any pointer outside a render box's own
-          // bounds no matter how the child is clipped. Half of a 72pt Play
-          // button was dead, so taps landed roughly one time in two.
-          //
-          // Positioning them in the outer Stack instead puts the whole
-          // control inside its parent, so every pixel of it is hittable.
-          Positioned(
-            bottom: _cardHeight(context) - 36,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        isFav ? Icons.favorite : Icons.favorite_border,
-                        color: isFav ? colors.brandPrimary : Colors.black,
-                      ),
-                      focusColor: colors.brandAccent.withValues(alpha: 0.35),
-                      onPressed: () {
-                        // Provide toJson method in XtreamVodStream
-                        userPrefs.toggleFavorite(
-                          id: widget.movie.streamId.toString(),
-                          title: widget.movie.name,
-                          posterUrl: widget.movie.streamIcon,
-                          type: MediaType.movie,
-                          rawData: {
-                            'stream_id': widget.movie.streamId,
-                            'name': widget.movie.name,
-                            'stream_icon': widget.movie.streamIcon,
-                            'category_id': widget.movie.categoryId,
-                            'container_extension':
-                                widget.movie.containerExtension,
-                            'plot': widget.movie.plot,
-                            'cast': widget.movie.cast,
-                            'director': widget.movie.director,
-                            'genre': widget.movie.genre,
-                            'releaseDate': widget.movie.releaseDate,
-                            'rating': widget.movie.rating,
-                            'added': widget.movie.added,
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Material+InkWell rather than a bare GestureDetector:
-                  // a GestureDetector deferring hit-testing to a
-                  // BoxShape.circle child only accepts taps inside the
-                  // inscribed circle, missing the corners of this
-                  // 72x72 box — that's what made the button feel like
-                  // it "sometimes" needed several taps. InkWell hit-
-                  // tests its full rectangular bounds regardless of
-                  // customBorder, so every tap in the square lands,
-                  // and it gives a visible ripple to confirm it did.
-                  Material(
-                    color: colors.brandPrimary,
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      focusColor: Colors.white.withValues(alpha: 0.35),
-                      // TV: this screen's back button sits top-left
-                      // while this row sits centered lower down, with
-                      // no horizontal overlap — Flutter's directional
-                      // focus can't bridge between them, so DOWN from
-                      // back finds no candidate and focus gets stuck
-                      // there, making select trigger "back" instead
-                      // of play. Autofocusing Play on open sidesteps
-                      // that entirely and matches how real TV apps
-                      // land focus on the primary action by default.
-                      autofocus: kIsTv,
-                      onTap: () => _openPlayer(context),
-                      child: const SizedBox(
-                        width: 72,
-                        height: 72,
-                        child: Icon(
-                          Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 48,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (canDownload) ...[
-                    const SizedBox(width: 16),
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: _buildDownloadButton(
-                        context,
-                        downloads,
-                        mediaId,
-                        sourceUrl,
-                        colors,
-                        isArabic,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -489,6 +375,124 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                             ),
                           ),
                   ),
+                ],
+              ),
+            ),
+          ),
+          // The action buttons, straddling the details card's top edge.
+          //
+          // They used to live inside that card's own Stack at `top: -36` with
+          // clipBehavior: Clip.none. That paints them correctly but leaves
+          // the top half untappable: Flutter's hit testing rejects any
+          // pointer outside a render box's own bounds no matter how its
+          // children are clipped, so half of a 72pt Play button was dead and
+          // taps landed roughly one time in two.
+          //
+          // Here they are inside their parent, so every pixel is hittable —
+          // and they come last among the Stack's children deliberately.
+          // Children paint in order, so anchoring them earlier put them
+          // behind the very surface they are meant to overlap; last also
+          // means they are hit-tested first.
+          Positioned(
+            bottom: _cardHeight(context) - 36,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_border,
+                        color: isFav ? colors.brandPrimary : Colors.black,
+                      ),
+                      focusColor: colors.brandAccent.withValues(alpha: 0.35),
+                      onPressed: () {
+                        // Provide toJson method in XtreamVodStream
+                        userPrefs.toggleFavorite(
+                          id: widget.movie.streamId.toString(),
+                          title: widget.movie.name,
+                          posterUrl: widget.movie.streamIcon,
+                          type: MediaType.movie,
+                          rawData: {
+                            'stream_id': widget.movie.streamId,
+                            'name': widget.movie.name,
+                            'stream_icon': widget.movie.streamIcon,
+                            'category_id': widget.movie.categoryId,
+                            'container_extension':
+                                widget.movie.containerExtension,
+                            'plot': widget.movie.plot,
+                            'cast': widget.movie.cast,
+                            'director': widget.movie.director,
+                            'genre': widget.movie.genre,
+                            'releaseDate': widget.movie.releaseDate,
+                            'rating': widget.movie.rating,
+                            'added': widget.movie.added,
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Material+InkWell rather than a bare GestureDetector:
+                  // a GestureDetector deferring hit-testing to a
+                  // BoxShape.circle child only accepts taps inside the
+                  // inscribed circle, missing the corners of this
+                  // 72x72 box — that's what made the button feel like
+                  // it "sometimes" needed several taps. InkWell hit-
+                  // tests its full rectangular bounds regardless of
+                  // customBorder, so every tap in the square lands,
+                  // and it gives a visible ripple to confirm it did.
+                  Material(
+                    color: colors.brandPrimary,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      focusColor: Colors.white.withValues(alpha: 0.35),
+                      // TV: this screen's back button sits top-left
+                      // while this row sits centered lower down, with
+                      // no horizontal overlap — Flutter's directional
+                      // focus can't bridge between them, so DOWN from
+                      // back finds no candidate and focus gets stuck
+                      // there, making select trigger "back" instead
+                      // of play. Autofocusing Play on open sidesteps
+                      // that entirely and matches how real TV apps
+                      // land focus on the primary action by default.
+                      autofocus: kIsTv,
+                      onTap: () => _openPlayer(context),
+                      child: const SizedBox(
+                        width: 72,
+                        height: 72,
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (canDownload) ...[
+                    const SizedBox(width: 16),
+                    Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: _buildDownloadButton(
+                        context,
+                        downloads,
+                        mediaId,
+                        sourceUrl,
+                        colors,
+                        isArabic,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
