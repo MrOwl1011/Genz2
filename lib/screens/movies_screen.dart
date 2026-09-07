@@ -7,6 +7,7 @@ import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_type.dart';
 import 'movie_details_screen.dart';
+import '../widgets/skeleton.dart';
 
 class MoviesScreen extends StatefulWidget {
   final XtreamCategory? category;
@@ -196,11 +197,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
     final colors = context.colors;
     final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
     if (_isLoading) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
-        ),
-      );
+      return const SkeletonGrid();
     }
 
     if (_error != null) {

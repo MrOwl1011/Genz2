@@ -136,3 +136,81 @@ class SkeletonRow extends StatelessWidget {
     );
   }
 }
+
+/// A stand-in for a poster grid, matching the browse layout's own geometry.
+class SkeletonGrid extends StatelessWidget {
+  const SkeletonGrid({
+    super.key,
+    this.crossAxisCount = 3,
+    this.childAspectRatio = 0.58,
+    this.count = 9,
+  });
+
+  final int crossAxisCount;
+  final double childAspectRatio;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Skeleton(
+      child: GridView.builder(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: childAspectRatio,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 18,
+        ),
+        itemCount: count,
+        itemBuilder: (_, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: colors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const SkeletonBox(width: 76, height: 10, radius: 3),
+            const SizedBox(height: 5),
+            const SkeletonBox(width: 48, height: 10, radius: 3),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A stand-in for a list of rows — channels, downloads, playlists.
+class SkeletonList extends StatelessWidget {
+  const SkeletonList({super.key, this.count = 7, this.rowHeight = 72});
+
+  final int count;
+  final double rowHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Skeleton(
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: count,
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (_, _) => Container(
+          height: rowHeight,
+          decoration: BoxDecoration(
+            color: colors.surfaceElevated,
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      ),
+    );
+  }
+}

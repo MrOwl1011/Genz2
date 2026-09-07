@@ -11,6 +11,7 @@ import '../theme/app_type.dart';
 import '../widgets/state_view.dart';
 import '../widgets/tv_focusable.dart';
 import 'player_screen.dart';
+import '../widgets/skeleton.dart';
 
 class ChannelsScreen extends StatefulWidget {
   final XtreamCategory category;
@@ -496,11 +497,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     final colors = context.colors;
     final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
     if (_isLoading) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
-        ),
-      );
+      return const SkeletonList();
     }
 
     if (_error != null) {

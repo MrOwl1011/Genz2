@@ -14,6 +14,7 @@ import 'category_card.dart';
 import '../screens/player_screen.dart';
 import 'tv_focusable.dart';
 import 'tv_search_field.dart';
+import 'skeleton.dart';
 
 /// Two caption lines under a grid poster. Fixed rather than measured: cell
 /// height comes from childAspectRatio, so a caption even a pixel taller than
@@ -295,11 +296,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
     final colors = context.colors;
     final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
     if (widget.isLoading) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
-        ),
-      );
+      return const SkeletonGrid();
     }
 
     if (widget.error != null) {

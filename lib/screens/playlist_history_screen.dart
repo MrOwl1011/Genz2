@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_type.dart';
 import 'movie_details_screen.dart';
 import 'series_details_screen.dart';
+import '../widgets/skeleton.dart';
 
 /// Read-only watch history for a single saved playlist. Reachable from the
 /// Saved Playlists screen — items only open the player/details when the
@@ -193,11 +194,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
   Widget _buildBody(bool isArabic) {
     final colors = context.colors;
     if (_isLoading) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
-        ),
-      );
+      return const SkeletonList(rowHeight: 60);
     }
 
     if (_history.isEmpty) {
