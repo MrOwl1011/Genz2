@@ -36,7 +36,7 @@ class TvCastInfo extends StatelessWidget {
       return Center(
         child: Text(
           isArabic ? 'لا توجد معلومات.' : 'No cast information available.',
-          style: TextStyle(color: colors.ink.withValues(alpha: 0.4)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.4)),
         ),
       );
     }

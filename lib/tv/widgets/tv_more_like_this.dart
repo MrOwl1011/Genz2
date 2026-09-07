@@ -6,6 +6,7 @@ import '../../providers/content_provider.dart';
 import '../../theme/app_colors.dart';
 import '../tv_metrics.dart';
 import 'tv_poster_card.dart';
+import '../../theme/app_type.dart';
 
 /// The "More Like This" tab: other items from the same category, minus the
 /// one already being viewed.
@@ -97,7 +98,7 @@ class _TvMoreLikeThisState extends State<TvMoreLikeThis> {
       return Center(
         child: Text(
           'Nothing else in this category yet.',
-          style: TextStyle(color: colors.ink.withValues(alpha: 0.4)),
+          style: AppType.body(colors.ink.withValues(alpha: 0.4)),
         ),
       );
     }

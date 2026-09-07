@@ -51,6 +51,16 @@ class AppType {
   }) {
     return TextStyle(
       fontFamily: family,
+      // Archivo has no Arabic glyphs, so without this every Arabic string
+      // fell through to whatever the platform supplies — a different face
+      // with different metrics, which is why Arabic screens never quite
+      // lined up with their English counterparts.
+      //
+      // A fallback rather than switching family by locale, because this app
+      // mixes scripts inside single strings ("S5 E8 - الامتداد S05 E08" in
+      // one label). Per-locale switching renders half of that in the wrong
+      // face; a fallback resolves it glyph by glyph.
+      fontFamilyFallback: const <String>[arabicFamily],
       fontSize: fontSize,
       fontWeight: fontWeight,
       fontVariations: <FontVariation>[
@@ -148,11 +158,12 @@ class AppType {
     color: color,
   );
 
-  /// Re-cuts any style above in IBM Plex Sans Arabic.
+  /// Forces a style entirely into IBM Plex Sans Arabic.
   ///
-  /// Call this for Arabic strings instead of letting the renderer fall back:
-  /// a fallback face has different proportions and vertical metrics, so a
-  /// mixed screen ends up with rows that do not share a baseline.
+  /// Rarely needed: [sans] already lists the Arabic family as a fallback, so
+  /// Arabic glyphs resolve to it automatically, script by script, even inside
+  /// a mixed string. Use this only where a whole block must be set in the
+  /// Arabic face regardless of what characters it happens to contain.
   static TextStyle arabic(TextStyle base) => base.copyWith(
     fontFamily: arabicFamily,
     // Plex Arabic ships as static weights, so the variable-axis instruction

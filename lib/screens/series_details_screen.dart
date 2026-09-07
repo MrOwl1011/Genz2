@@ -596,7 +596,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                     isArabic
                         ? 'شوهد ${position ~/ 60} د'
                         : 'Watched ${position ~/ 60}m',
-                    style: TextStyle(color: colors.brandPrimary, fontSize: 12),
+                    style: AppType.caption(colors.brandPrimary),
                   )
                 : null,
             trailing: Row(
