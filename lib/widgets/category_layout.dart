@@ -10,10 +10,17 @@ import '../screens/movie_details_screen.dart';
 import '../screens/series_details_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_type.dart';
+
 import 'category_card.dart';
 import '../screens/player_screen.dart';
 import 'tv_focusable.dart';
 import 'tv_search_field.dart';
+
+/// Two caption lines under a grid poster. Fixed rather than measured: cell
+/// height comes from childAspectRatio, so a caption even a pixel taller than
+/// predicted overflows the cell instead of shrinking it — and the predicted
+/// height is wrong until google_fonts has finished fetching Archivo.
+const double _gridCaptionHeight = 34;
 
 class CategoryLayout extends StatefulWidget {
   final String title;
@@ -601,11 +608,14 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            live.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+          SizedBox(
+            height: _gridCaptionHeight,
+            child: Text(
+              live.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+            ),
           ),
         ],
       ),
@@ -663,11 +673,14 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            movie.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+          SizedBox(
+            height: _gridCaptionHeight,
+            child: Text(
+              movie.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+            ),
           ),
         ],
       ),
@@ -727,11 +740,14 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            series.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+          SizedBox(
+            height: _gridCaptionHeight,
+            child: Text(
+              series.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+            ),
           ),
         ],
       ),

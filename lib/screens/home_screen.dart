@@ -464,10 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             const SizedBox(width: 5),
-                            Text(
-                              'LIVE',
-                              style: AppType.meta(Colors.white),
-                            ),
+                            Text('LIVE', style: AppType.meta(Colors.white)),
                           ],
                         ),
                       ),
@@ -477,11 +474,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              live.name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+            SizedBox(
+              height: _LiveCardMetrics.captionHeight,
+              child: Text(
+                live.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+              ),
             ),
           ],
         ),
@@ -530,7 +530,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 
   Widget _buildHistoryCard(BuildContext context, HistoryItem item) {
     return TvFocusable(
@@ -585,7 +584,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
   Widget _buildMovieCard(BuildContext context, XtreamVodStream movie) {
     return _PosterCard(
       title: movie.name,
@@ -597,8 +595,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-
 }
 
 /// The one poster card behind every 2:3 row on this screen.
@@ -618,15 +614,27 @@ class _PosterCard extends StatelessWidget {
   static const double width = 116;
   static const double posterHeight = 174;
 
-  /// Artwork plus caption plus the gap between them — what a row's SizedBox
-  /// has to be tall enough for.
-  static const double totalHeight = posterHeight + 8 + 34;
+  /// Two caption lines, in a fixed box. Not derived from the text style: the
+  /// rendered height of two lines depends on the font's own metrics, and
+  /// google_fonts serves a fallback face until Archivo finishes downloading,
+  /// so a computed value is right only after the first launch.
+  static const double captionHeight = 34;
+
+  /// What a row's SizedBox has to be tall enough for.
+  static const double totalHeight = posterHeight + 8 + captionHeight;
 
   final String title;
   final String imageUrl;
   final String rating;
   final IconData fallbackIcon;
   final VoidCallback onTap;
+
+  /// Panels report "0" (and sometimes "0.0" or an empty string) for anything
+  /// unrated, which rendered as a black `0` badge on most of the grid.
+  bool get _hasRating {
+    final value = double.tryParse(rating);
+    return rating.isNotEmpty && value != null && value > 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -665,7 +673,7 @@ class _PosterCard extends StatelessWidget {
                       ),
                     // Rating stays on the artwork: it is a badge, not a label,
                     // and it reads fine against any image at this size.
-                    if (rating.isNotEmpty)
+                    if (_hasRating)
                       Positioned(
                         top: 6,
                         left: 6,
@@ -689,11 +697,14 @@ class _PosterCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+            SizedBox(
+              height: captionHeight,
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+              ),
             ),
           ],
         ),
@@ -713,7 +724,8 @@ class _HistoryCard extends StatelessWidget {
 
   static const double width = 160;
   static const double stillHeight = 90;
-  static const double totalHeight = stillHeight + 8 + 34;
+  static const double captionHeight = 34;
+  static const double totalHeight = stillHeight + 8 + captionHeight;
 
   final HistoryItem item;
 
@@ -721,8 +733,10 @@ class _HistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final progress = item.durationMilliseconds > 0
-        ? (item.positionMilliseconds / item.durationMilliseconds)
-              .clamp(0.0, 1.0)
+        ? (item.positionMilliseconds / item.durationMilliseconds).clamp(
+            0.0,
+            1.0,
+          )
         : 0.0;
 
     return SizedBox(
@@ -774,11 +788,14 @@ class _HistoryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            item.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+          SizedBox(
+            height: captionHeight,
+            child: Text(
+              item.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
+            ),
           ),
         ],
       ),
@@ -791,5 +808,6 @@ class _HistoryCard extends StatelessWidget {
 class _LiveCardMetrics {
   const _LiveCardMetrics._();
   static const double artworkHeight = 74;
-  static const double totalHeight = artworkHeight + 8 + 34;
+  static const double captionHeight = 34;
+  static const double totalHeight = artworkHeight + 8 + captionHeight;
 }
