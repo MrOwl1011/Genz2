@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../tv_metrics.dart';
 import 'tv_focus.dart';
 
@@ -95,19 +96,17 @@ class TvPosterCard extends StatelessWidget {
                         // the card never changes size as focus moves —
                         // a border appearing from nothing would reflow the
                         // whole row.
-                        color: focused
-                            ? colors.brandAccent
-                            : Colors.transparent,
-                        width: 3,
+                        color: focused ? colors.ink : Colors.transparent,
+                        width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: focused
-                              ? colors.brandAccent.withValues(alpha: 0.55)
+                              ? colors.brandPrimary.withValues(alpha: 0.40)
                               : Colors.black.withValues(alpha: 0.45),
-                          blurRadius: focused ? 20 : 7,
-                          spreadRadius: focused ? 1 : 0,
-                          offset: const Offset(0, 3),
+                          blurRadius: focused ? 24 : 7,
+                          spreadRadius: 0,
+                          offset: Offset(0, focused ? 8 : 3),
                         ),
                       ],
                     ),
@@ -140,7 +139,7 @@ class TvPosterCard extends StatelessWidget {
                                 minHeight: 4,
                                 backgroundColor: Colors.black54,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  colors.brandAccent,
+                                  colors.ink,
                                 ),
                               ),
                             ),
@@ -156,12 +155,9 @@ class TvPosterCard extends StatelessWidget {
                   // single line truncated most real titles to a few words.
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.archivo(
-                    height: 1.15,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w600,
-                    color: focused ? colors.brandAccent : colors.ink,
-                  ),
+                  style: AppType.caption(
+                    colors.ink.withValues(alpha: focused ? 1.0 : 0.7),
+                  ).copyWith(height: 1.15, fontSize: 9.5),
                 ),
                 if (subtitle != null)
                   Text(

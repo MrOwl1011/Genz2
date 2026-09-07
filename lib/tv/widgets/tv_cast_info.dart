@@ -56,7 +56,7 @@ class TvCastInfo extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1,
-                color: colors.brandAccent,
+                color: colors.ink,
               ),
             ),
             const SizedBox(height: 4),

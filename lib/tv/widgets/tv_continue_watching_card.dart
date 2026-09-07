@@ -120,14 +120,14 @@ class TvContinueWatchingCard extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.play_circle_fill_rounded,
-                          color: colors.brandAccent,
+                          color: colors.ink,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'CONTINUE WATCHING',
                           style: GoogleFonts.archivo(
-                            color: colors.brandAccent,
+                            color: colors.ink,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                             letterSpacing: 1.5,
@@ -160,7 +160,7 @@ class TvContinueWatchingCard extends StatelessWidget {
                           minHeight: 5,
                           backgroundColor: Colors.white24,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            colors.brandAccent,
+                            colors.ink,
                           ),
                         ),
                       ),

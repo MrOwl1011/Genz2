@@ -95,7 +95,7 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
                       padding: const EdgeInsets.all(8),
                       child: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: focused ? colors.brandAccent : colors.ink,
+                        color: focused ? colors.ink : colors.ink,
                         size: 22,
                       ),
                     ),
@@ -195,13 +195,13 @@ class _FavoriteCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: focused ? colors.brandAccent : Colors.transparent,
+                color: focused ? colors.ink : Colors.transparent,
                 width: 3,
               ),
               boxShadow: focused
                   ? [
                       BoxShadow(
-                        color: colors.brandAccent.withValues(alpha: 0.5),
+                        color: colors.brandPrimary.withValues(alpha: 0.5),
                         blurRadius: 22,
                         spreadRadius: 1,
                       ),
@@ -245,7 +245,7 @@ class _FavoriteCard extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: focused
-                        ? colors.brandAccent
+                        ? colors.ink
                         : colors.ink.withValues(alpha: 0.8),
                   ),
                 ),

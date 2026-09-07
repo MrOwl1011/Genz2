@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_type.dart';
 import '../tv_metrics.dart';
 import 'tv_focus.dart';
 import 'tv_nav_bar.dart' show TvSection;
@@ -305,16 +305,11 @@ class _SidebarItemTile extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 12),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: active
-                ? LinearGradient(colors: colors.brandGradient)
-                : null,
-            color: active
-                ? null
-                : (focused ? colors.surfaceElevated : Colors.transparent),
+            borderRadius: BorderRadius.circular(10),
+            color: focused ? colors.surfaceElevated : Colors.transparent,
             border: Border.all(
               color: focused ? colors.ink : Colors.transparent,
-              width: 1.5,
+              width: 2,
             ),
           ),
           // Belt-and-suspenders against the label ever peeking past this
@@ -327,6 +322,18 @@ class _SidebarItemTile extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Marks the section currently showing, independently of where
+                // focus happens to be.
+                AnimatedContainer(
+                  duration: TvMetrics.focusAnim,
+                  width: 3,
+                  height: 20,
+                  margin: const EdgeInsets.only(right: 11),
+                  decoration: BoxDecoration(
+                    color: active ? colors.brandPrimary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
                 // Fixed-width slot so every item's icon lines up on the same
                 // left edge regardless of that particular glyph's own
                 // intrinsic bounding-box width (Icons.movie_rounded and
@@ -338,8 +345,8 @@ class _SidebarItemTile extends StatelessWidget {
                     icon,
                     size: 22,
                     color: active || focused
-                        ? Colors.white
-                        : colors.ink.withValues(alpha: 0.75),
+                        ? colors.ink
+                        : colors.ink.withValues(alpha: 0.5),
                   ),
                 ),
                 AnimatedAlign(
@@ -361,10 +368,10 @@ class _SidebarItemTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.clip,
                         softWrap: false,
-                        style: GoogleFonts.archivo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: active ? Colors.white : colors.ink,
+                        style: AppType.label(
+                          colors.ink.withValues(
+                            alpha: active || focused ? 1.0 : 0.5,
+                          ),
                         ),
                       ),
                     ),

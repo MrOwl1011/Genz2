@@ -43,7 +43,7 @@ class TvDetailTabs extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                       color: isSelected
-                          ? colors.brandAccent
+                          ? colors.ink
                           : (focused
                                 ? colors.ink
                                 : colors.ink.withValues(alpha: 0.5)),
@@ -55,7 +55,7 @@ class TvDetailTabs extends StatelessWidget {
                     height: 2,
                     width: isSelected ? 28 : (focused ? 16 : 0),
                     color: isSelected
-                        ? colors.brandAccent
+                        ? colors.ink
                         : colors.ink.withValues(alpha: 0.6),
                   ),
                 ],

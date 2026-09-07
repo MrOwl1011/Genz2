@@ -845,7 +845,7 @@ class _ChannelRowState extends State<_ChannelRow> {
                       ? colors.brandPrimary
                       : colors.surface.withValues(alpha: 0.5),
                   border: Border.all(
-                    color: favFocused ? colors.brandAccent : colors.border,
+                    color: favFocused ? colors.ink : colors.border,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -1098,7 +1098,7 @@ class _EpgCard extends StatelessWidget {
                 width: 7,
                 height: 7,
                 decoration: BoxDecoration(
-                  color: colors.brandAccent,
+                  color: colors.ink,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -1138,7 +1138,7 @@ class _EpgCard extends StatelessWidget {
                 value: progress,
                 minHeight: 4,
                 backgroundColor: colors.surfaceMuted,
-                valueColor: AlwaysStoppedAnimation<Color>(colors.brandAccent),
+                valueColor: AlwaysStoppedAnimation<Color>(colors.ink),
               ),
             ),
             const SizedBox(height: 6),

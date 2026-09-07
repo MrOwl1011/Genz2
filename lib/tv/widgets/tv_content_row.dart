@@ -89,7 +89,7 @@ class _TvContentRowState extends State<TvContentRow> {
                 fontSize: 13,
                 fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,
-                color: _rowHasFocus ? colors.brandAccent : colors.ink,
+                color: _rowHasFocus ? colors.ink : colors.ink,
                 letterSpacing: 1.2,
               ),
               child: Text(
@@ -188,7 +188,7 @@ class _SeeAllTile extends StatelessWidget {
                         boxShadow: focused
                             ? [
                                 BoxShadow(
-                                  color: colors.brandAccent.withValues(
+                                  color: colors.brandPrimary.withValues(
                                     alpha: 0.4,
                                   ),
                                   blurRadius: 14,
@@ -200,7 +200,7 @@ class _SeeAllTile extends StatelessWidget {
                       alignment: Alignment.center,
                       child: Icon(
                         Icons.arrow_forward_rounded,
-                        color: focused ? Colors.white : colors.brandAccent,
+                        color: focused ? Colors.white : colors.ink,
                         size: circleSize * 0.42,
                       ),
                     ),
@@ -213,7 +213,7 @@ class _SeeAllTile extends StatelessWidget {
                       fontSize: 9.5,
                       fontWeight: FontWeight.w600,
                       color: focused
-                          ? colors.brandAccent
+                          ? colors.ink
                           : colors.ink.withValues(alpha: 0.6),
                     ),
                   ),

@@ -42,13 +42,13 @@ class TvDetailActionButton extends StatelessWidget {
                 ? LinearGradient(colors: colors.brandGradient)
                 : null,
             border: Border.all(
-              color: focused ? colors.brandAccent : Colors.transparent,
+              color: focused ? colors.ink : Colors.transparent,
               width: 3,
             ),
             boxShadow: focused
                 ? [
                     BoxShadow(
-                      color: colors.brandAccent.withValues(alpha: 0.5),
+                      color: colors.brandPrimary.withValues(alpha: 0.5),
                       blurRadius: 16,
                     ),
                   ]

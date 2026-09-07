@@ -54,13 +54,13 @@ class TvDestinationTile extends StatelessWidget {
                       ],
               ),
               border: Border.all(
-                color: focused ? colors.brandAccent : colors.border,
+                color: focused ? colors.ink : colors.border,
                 width: focused ? 2.5 : 1.5,
               ),
               boxShadow: focused
                   ? [
                       BoxShadow(
-                        color: colors.brandAccent.withValues(alpha: 0.45),
+                        color: colors.brandPrimary.withValues(alpha: 0.45),
                         blurRadius: 28,
                         spreadRadius: 1,
                       ),
@@ -76,7 +76,7 @@ class TvDestinationTile extends StatelessWidget {
                     child: Icon(
                       icon,
                       size: 68,
-                      color: focused ? Colors.white : colors.brandAccent,
+                      color: focused ? Colors.white : colors.ink,
                     ),
                   ),
                 ),
@@ -142,13 +142,13 @@ class TvActionPill extends StatelessWidget {
                   : null,
               color: focused ? null : colors.surface.withValues(alpha: 0.6),
               border: Border.all(
-                color: focused ? colors.brandAccent : colors.border,
+                color: focused ? colors.ink : colors.border,
                 width: focused ? 2.5 : 1.5,
               ),
               boxShadow: focused
                   ? [
                       BoxShadow(
-                        color: colors.brandAccent.withValues(alpha: 0.4),
+                        color: colors.brandPrimary.withValues(alpha: 0.4),
                         blurRadius: 20,
                         spreadRadius: 1,
                       ),
@@ -161,7 +161,7 @@ class TvActionPill extends StatelessWidget {
                 Icon(
                   icon,
                   size: 24,
-                  color: focused ? Colors.white : colors.brandAccent,
+                  color: focused ? Colors.white : colors.ink,
                 ),
                 const SizedBox(width: 10),
                 Flexible(

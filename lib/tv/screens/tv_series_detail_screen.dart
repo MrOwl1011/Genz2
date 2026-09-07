@@ -701,11 +701,11 @@ class _EpisodesList extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: focused
-                    ? colors.brandAccent.withValues(alpha: 0.18)
+                    ? colors.brandPrimary.withValues(alpha: 0.18)
                     : colors.surface.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: focused ? colors.brandAccent : Colors.transparent,
+                  color: focused ? colors.ink : Colors.transparent,
                   width: 2,
                 ),
               ),
@@ -749,7 +749,7 @@ class _EpisodesList extends StatelessWidget {
                                 : 'Watched ${position ~/ 60}m',
                             style: GoogleFonts.archivo(
                               fontSize: 10.5,
-                              color: colors.brandAccent,
+                              color: colors.ink,
                             ),
                           ),
                       ],
@@ -866,7 +866,7 @@ class _EpisodeDownloadPickerState extends State<_EpisodeDownloadPicker> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: focused
-                                  ? colors.brandAccent
+                                  ? colors.ink
                                   : Colors.transparent,
                             ),
                           ),
@@ -880,7 +880,7 @@ class _EpisodeDownloadPickerState extends State<_EpisodeDownloadPicker> {
                                 color: !eligibleHere
                                     ? colors.ink.withValues(alpha: 0.25)
                                     : (checked
-                                          ? colors.brandAccent
+                                          ? colors.ink
                                           : colors.ink.withValues(alpha: 0.6)),
                               ),
                               const SizedBox(width: 10),

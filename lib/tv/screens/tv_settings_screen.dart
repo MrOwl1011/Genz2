@@ -431,7 +431,7 @@ class _SettingsContent extends StatelessWidget {
             color: focused ? colors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: focused ? colors.brandAccent : Colors.transparent,
+              color: focused ? colors.ink : Colors.transparent,
               width: 1.5,
             ),
           ),
@@ -441,14 +441,14 @@ class _SettingsContent extends StatelessWidget {
                 child: Text(
                   label,
                   style: GoogleFonts.archivo(
-                    color: selected ? colors.brandAccent : colors.ink,
+                    color: selected ? colors.ink : colors.ink,
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                   ),
                 ),
               ),
               if (selected)
-                Icon(Icons.check_rounded, color: colors.brandAccent, size: 18),
+                Icon(Icons.check_rounded, color: colors.ink, size: 18),
             ],
           ),
         );
@@ -564,7 +564,7 @@ class _SettingsTile extends StatelessWidget {
       autofocus: autofocus,
       onTap: onTap,
       builder: (context, focused) {
-        final accentColor = danger ? colors.error : colors.brandAccent;
+        final accentColor = danger ? colors.error : colors.ink;
         return AnimatedContainer(
           duration: TvMetrics.focusAnim,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -590,7 +590,7 @@ class _SettingsTile extends StatelessWidget {
                 color: danger
                     ? colors.error
                     : (active
-                          ? colors.brandAccent
+                          ? colors.ink
                           : colors.ink.withValues(alpha: 0.75)),
               ),
               const SizedBox(width: 10),
