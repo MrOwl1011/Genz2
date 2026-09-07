@@ -217,6 +217,13 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     if (firstEp != null) _playEpisode(firstEp);
   }
 
+  /// Height of the details card, which the action buttons are anchored to.
+  ///
+  /// Shared by the card itself and by the Positioned that places the buttons
+  /// at its top edge, so the two can never disagree about where that edge is.
+  double _cardHeight(BuildContext context) =>
+      MediaQuery.of(context).size.height * (kIsTv ? 0.78 : 0.55);
+
   @override
   Widget build(BuildContext context) {
     final title = _seriesInfo?.info.name ?? widget.series.name;
@@ -293,6 +300,91 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
           ),
 
           // Draggable/Scrollable Details Card
+          // The action buttons sit at the details card's top edge, half
+          // above it. They used to live inside that card's own Stack at
+          // `top: -36` with clipBehavior: Clip.none — which paints them
+          // correctly but leaves the top half untappable, because Flutter's
+          // hit testing rejects any pointer outside a render box's own
+          // bounds no matter how the child is clipped. Half of a 72pt Play
+          // button was dead, so taps landed roughly one time in two.
+          //
+          // Positioning them in the outer Stack instead puts the whole
+          // control inside its parent, so every pixel of it is hittable.
+          Positioned(
+            bottom: _cardHeight(context) - 36,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_border,
+                        color: isFav ? colors.brandPrimary : Colors.black,
+                      ),
+                      focusColor: colors.brandAccent.withValues(alpha: 0.35),
+                      onPressed: () {
+                        userPrefs.toggleFavorite(
+                          id: widget.series.seriesId.toString(),
+                          title: widget.series.name,
+                          posterUrl: widget.series.cover,
+                          type: MediaType.series,
+                          rawData: {
+                            'series_id': widget.series.seriesId,
+                            'name': widget.series.name,
+                            'cover': widget.series.cover,
+                            'category_id': widget.series.categoryId,
+                            'plot': widget.series.plot,
+                            'cast': widget.series.cast,
+                            'director': widget.series.director,
+                            'genre': widget.series.genre,
+                            'releaseDate': widget.series.releaseDate,
+                            'rating': widget.series.rating,
+                            'last_modified': widget.series.lastModified,
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // See the same fix in movie_details_screen.dart:
+                  // Material+InkWell hit-tests the full square, unlike
+                  // a GestureDetector deferring to a circular child
+                  // (which only accepts taps inside the inscribed
+                  // circle and drops corner taps).
+                  Material(
+                    color: colors.brandPrimary,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      focusColor: Colors.white.withValues(alpha: 0.35),
+                      // TV: see the same fix + rationale in
+                      // movie_details_screen.dart — autofocusing
+                      // Play avoids the back button being an
+                      // unreachable directional-focus dead end.
+                      autofocus: kIsTv,
+                      onTap: () => _playResumeOrFirst(),
+                      child: const SizedBox(
+                        width: 72,
+                        height: 72,
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -300,8 +392,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
               // that height's comment. Most of the screen on TV, since
               // there's no touch-scroll affordance to hint more content is
               // below the fold the way a phone's drag handle implies.
-              height:
-                  MediaQuery.of(context).size.height * (kIsTv ? 0.78 : 0.55),
+              height: _cardHeight(context),
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
@@ -317,85 +408,6 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                   // Play/Like Buttons (Overlapping top edge) — download is
                   // handled per-episode below instead of once for the whole
                   // series.
-                  Positioned(
-                    top: -36,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                isFav ? Icons.favorite : Icons.favorite_border,
-                                color: isFav
-                                    ? colors.brandPrimary
-                                    : Colors.black,
-                              ),
-                              focusColor: colors.brandAccent.withValues(
-                                alpha: 0.35,
-                              ),
-                              onPressed: () {
-                                userPrefs.toggleFavorite(
-                                  id: widget.series.seriesId.toString(),
-                                  title: widget.series.name,
-                                  posterUrl: widget.series.cover,
-                                  type: MediaType.series,
-                                  rawData: {
-                                    'series_id': widget.series.seriesId,
-                                    'name': widget.series.name,
-                                    'cover': widget.series.cover,
-                                    'category_id': widget.series.categoryId,
-                                    'plot': widget.series.plot,
-                                    'cast': widget.series.cast,
-                                    'director': widget.series.director,
-                                    'genre': widget.series.genre,
-                                    'releaseDate': widget.series.releaseDate,
-                                    'rating': widget.series.rating,
-                                    'last_modified': widget.series.lastModified,
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // See the same fix in movie_details_screen.dart:
-                          // Material+InkWell hit-tests the full square, unlike
-                          // a GestureDetector deferring to a circular child
-                          // (which only accepts taps inside the inscribed
-                          // circle and drops corner taps).
-                          Material(
-                            color: colors.brandPrimary,
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              focusColor: Colors.white.withValues(alpha: 0.35),
-                              // TV: see the same fix + rationale in
-                              // movie_details_screen.dart — autofocusing
-                              // Play avoids the back button being an
-                              // unreachable directional-focus dead end.
-                              autofocus: kIsTv,
-                              onTap: () => _playResumeOrFirst(),
-                              child: const SizedBox(
-                                width: 72,
-                                height: 72,
-                                child: Icon(
-                                  Icons.play_arrow_rounded,
-                                  color: Colors.white,
-                                  size: 48,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
 
                   // Content List
                   Padding(
