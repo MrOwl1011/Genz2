@@ -72,23 +72,25 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (_searchQuery.isEmpty) _buildHero(content, userPrefs),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20.0),
-                  child: ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: colors.brandGradient,
-                    ).createShader(bounds),
-                    child: Text('GenZ+', style: AppType.hero(Colors.white)),
-                  ),
-                ),
-              ),
 
-              // Search Bar
+              // No wordmark. The app's name belongs on the launcher icon and
+              // the login screen, not above the content of every session —
+              // no streaming home screen carries one. With the hero opening
+              // the page it was also pushing the first row further down for
+              // nothing.
+              //
+              // The search field owns the top inset instead: it is now the
+              // first thing below the hero, and on a search it is the first
+              // thing on the screen, so it has to clear the status bar
+              // itself (the Scaffold sets top: false for the hero's sake).
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 10.0,
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  _searchQuery.isEmpty
+                      ? 16
+                      : MediaQuery.of(context).padding.top + 12,
+                  20,
+                  10,
                 ),
                 child: Container(
                   height: 50,
