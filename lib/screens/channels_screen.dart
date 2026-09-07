@@ -8,6 +8,7 @@ import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/state_view.dart';
 import '../widgets/tv_focusable.dart';
 import 'player_screen.dart';
 
@@ -537,14 +538,12 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
     }
 
     if (_filtered.isEmpty) {
-      return Center(
-        child: Text(
-          isArabic ? 'لا توجد قنوات.' : 'No channels found.',
-          style: GoogleFonts.archivo(
-            color: colors.ink.withValues(alpha: 0.38),
-            fontSize: 16,
-          ),
-        ),
+      return StateView(
+        icon: Icons.tv_off_rounded,
+        title: isArabic ? 'لا توجد قنوات' : 'No channels',
+        message: isArabic
+            ? 'لم يُرجع مزودك أي قناة هنا. جرّب فئة أخرى.'
+            : 'Your provider returned no channels here. Try another category.',
       );
     }
 

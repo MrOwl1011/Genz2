@@ -156,7 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
     UserPrefsProvider userPrefs,
   ) {
     final isArabic = userPrefs.locale == 'ar';
-    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -213,15 +212,13 @@ class _HomeScreenState extends State<HomeScreen> {
               // shifts when it does.
               ? const SkeletonRow()
               : (content.newSeries.isEmpty
-                    ? Center(
-                        child: Text(
-                          isArabic
-                              ? 'لا توجد مسلسلات متاحة'
-                              : 'No Series Available',
-                          style: TextStyle(
-                            color: colors.ink.withValues(alpha: 0.54),
-                          ),
-                        ),
+                    ? StateView(
+                        icon: Icons.video_library_outlined,
+                        title: isArabic ? 'لا شيء هنا' : 'Nothing here',
+                        message: isArabic
+                            ? 'لم يُرجع مزودك أي عناوين في هذا القسم.'
+                            : 'Your provider returned no titles for this '
+                                  'section.',
                       )
                     : ListView.builder(
                         scrollDirection: Axis.horizontal,
@@ -261,15 +258,13 @@ class _HomeScreenState extends State<HomeScreen> {
               // shifts when it does.
               ? const SkeletonRow()
               : (content.newMovies.isEmpty
-                    ? Center(
-                        child: Text(
-                          isArabic
-                              ? 'لا توجد أفلام متاحة'
-                              : 'No Movies Available',
-                          style: TextStyle(
-                            color: colors.ink.withValues(alpha: 0.54),
-                          ),
-                        ),
+                    ? StateView(
+                        icon: Icons.movie_outlined,
+                        title: isArabic ? 'لا شيء هنا' : 'Nothing here',
+                        message: isArabic
+                            ? 'لم يُرجع مزودك أي عناوين في هذا القسم.'
+                            : 'Your provider returned no titles for this '
+                                  'section.',
                       )
                     : ListView.builder(
                         scrollDirection: Axis.horizontal,

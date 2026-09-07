@@ -7,6 +7,7 @@ import '../models/download_item.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/state_view.dart';
 import '../widgets/dialog_buttons.dart';
 import '../widgets/resume_dialog.dart';
 import 'player_screen.dart';
@@ -423,9 +424,13 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       ...downloads.failedDownloads,
     ];
     if (items.isEmpty) {
-      return _buildEmpty(
-        isArabic ? 'لا توجد تنزيلات بعد.' : 'No downloads yet.',
-        colors,
+      return StateView(
+        icon: Icons.download_done_rounded,
+        title: isArabic ? 'لا توجد تنزيلات' : 'No downloads',
+        message: isArabic
+            ? 'اضغط على أيقونة التنزيل في أي فيلم أو حلقة لحفظه هنا.'
+            : 'Tap the download icon on any title to keep it here for '
+                  'offline viewing.',
       );
     }
 
