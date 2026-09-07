@@ -31,6 +31,10 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
   // pause button shows a spinner instead of looking frozen/unresponsive.
   final Set<String> _pausingIds = {};
 
+  /// Which season's episodes are listed. Null until the series loads, then
+  /// the lowest-numbered season.
+  int? _selectedSeason;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +49,12 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
         setState(() {
           _seriesInfo = info;
           _isLoading = false;
+          // Open on the first season rather than the last: a viewer arriving
+          // at a series they have not started expects episode 1, and one
+          // resuming uses Continue Watching rather than this list.
+          final seasons = info?.episodes.keys.toList() ?? <int>[];
+          seasons.sort();
+          _selectedSeason = seasons.isEmpty ? null : seasons.first;
         });
       }
     } catch (e) {
@@ -525,6 +535,84 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     );
   }
 
+  /// Opens the season list as a bottom sheet.
+  ///
+  /// A sheet rather than a DropdownButton: Material's dropdown menu is styled
+  /// by the Material theme rather than this app's tokens, and its overlay
+  /// becomes unusable past roughly a dozen entries. A sheet scrolls, matches
+  /// the app's own sheet treatment, and is what every streaming app on the
+  /// platform uses for the same job.
+  Future<void> _showSeasonPicker(List<int> seasons, bool isArabic) async {
+    final colors = context.colors;
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: colors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    isArabic ? 'المواسم' : 'SEASONS',
+                    style: AppType.meta(colors.ink.withValues(alpha: 0.5)),
+                  ),
+                ),
+              ),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: seasons.length,
+                  itemBuilder: (_, i) {
+                    final season = seasons[i];
+                    final selected = season == _selectedSeason;
+                    final count = _seriesInfo?.episodes[season]?.length ?? 0;
+                    return ListTile(
+                      onTap: () => Navigator.of(sheetContext).pop(season),
+                      // The current season is marked by a leading brand bar,
+                      // matching how the app marks "current" everywhere else.
+                      leading: Container(
+                        width: 3,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? colors.brandPrimary
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      title: Text(
+                        isArabic ? 'الموسم $season' : 'Season $season',
+                        style: AppType.cardTitle(
+                          colors.ink.withValues(alpha: selected ? 1 : 0.75),
+                        ),
+                      ),
+                      trailing: Text(
+                        isArabic ? '$count حلقة' : '$count episodes',
+                        style: AppType.meta(colors.ink.withValues(alpha: 0.45)),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked != null && mounted && picked != _selectedSeason) {
+      setState(() => _selectedSeason = picked);
+    }
+  }
+
   List<Widget> _buildEpisodesList() {
     final colors = context.colors;
     final List<Widget> items = [];
@@ -535,17 +623,27 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
     final content = context.read<ContentProvider>();
     final downloads = context.watch<DownloadsProvider>();
 
-    for (final season in sortedSeasons) {
-      final episodes = _seriesInfo!.episodes[season]!;
+    // Every season used to be concatenated into one list with a header
+    // between each. A long-running series put hundreds of episodes on a
+    // single scroll, and reaching season 5 meant scrolling past four
+    // seasons of it. One season at a time, chosen from a selector.
+    final season =
+        _selectedSeason ?? (sortedSeasons.isEmpty ? null : sortedSeasons.first);
+    if (season != null) {
+      final episodes = _seriesInfo!.episodes[season] ?? const [];
       episodes.sort((a, b) => a.episodeNum.compareTo(b.episodeNum));
 
       items.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          child: Text(
-            isArabic ? 'الموسم $season' : 'SEASON $season',
-            style: AppType.rowHeader(colors.ink),
-          ),
+        _SeasonSelector(
+          season: season,
+          seasonCount: sortedSeasons.length,
+          episodeCount: episodes.length,
+          isArabic: isArabic,
+          // A single season needs no control — showing a picker that can
+          // only pick what is already selected is noise.
+          onTap: sortedSeasons.length < 2
+              ? null
+              : () => _showSeasonPicker(sortedSeasons, isArabic),
         ),
       );
 
@@ -1020,5 +1118,69 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
         }
       }
     }
+  }
+}
+
+/// The control that opens the season picker, and the header for the list
+/// beneath it.
+///
+/// Reads as one line of type plus a chevron rather than a bordered form
+/// field: it sits above content, not inside a form, and a boxed input here
+/// would compete with the episode rows it introduces.
+class _SeasonSelector extends StatelessWidget {
+  const _SeasonSelector({
+    required this.season,
+    required this.seasonCount,
+    required this.episodeCount,
+    required this.isArabic,
+    required this.onTap,
+  });
+
+  final int season;
+  final int seasonCount;
+  final int episodeCount;
+  final bool isArabic;
+
+  /// Null when there is only one season, which renders the row as a plain
+  /// heading with no affordance.
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.only(top: 18, bottom: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  isArabic ? 'الموسم $season' : 'Season $season',
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.rowHeader(colors.ink),
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.expand_more_rounded,
+                  size: 22,
+                  color: colors.ink.withValues(alpha: 0.6),
+                ),
+              ],
+              const Spacer(),
+              Text(
+                isArabic ? '$episodeCount حلقة' : '$episodeCount episodes',
+                style: AppType.meta(colors.ink.withValues(alpha: 0.45)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
