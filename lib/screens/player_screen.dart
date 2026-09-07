@@ -1834,7 +1834,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           onTap();
           _resetHideTimer();
         },
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Icon(icon, color: Colors.white, size: size),
@@ -1971,11 +1971,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                color: _playerAccent,
-                size: 56,
-              ),
+              const Icon(Icons.error_outline, color: _playerAccent, size: 56),
               const SizedBox(height: 20),
               Text(
                 isArabic ? 'خطأ في التشغيل' : 'Playback Error',
@@ -2109,7 +2105,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                         vertical: 14,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                     ),
                     child: Text(

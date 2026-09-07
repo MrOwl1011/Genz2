@@ -40,8 +40,12 @@ class Playlist {
       username: username,
       password: map['password'] ?? '',
       serverUrl: url,
-      lastLogin: map['lastLogin'] != null ? DateTime.tryParse(map['lastLogin']!) : null,
-      createdAt: map['createdAt'] != null ? DateTime.tryParse(map['createdAt']!) : null,
+      lastLogin: map['lastLogin'] != null
+          ? DateTime.tryParse(map['lastLogin']!)
+          : null,
+      createdAt: map['createdAt'] != null
+          ? DateTime.tryParse(map['createdAt']!)
+          : null,
     );
   }
 

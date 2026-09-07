@@ -57,7 +57,8 @@ class NativeVlcKitBackend implements PlayerBackend {
     _methodChannel = methodChannel;
     _eventSubscription = eventChannel.receiveBroadcastStream().listen(
       _onEvent,
-      onError: (Object e) => debugPrint('[NativeVlcKitBackend] event channel error: $e'),
+      onError: (Object e) =>
+          debugPrint('[NativeVlcKitBackend] event channel error: $e'),
     );
     _viewReady = true;
 
@@ -129,7 +130,11 @@ class NativeVlcKitBackend implements PlayerBackend {
     }
   }
 
-  Future<void> _sendOpen(String url, Map<String, String> headers, bool autoPlay) async {
+  Future<void> _sendOpen(
+    String url,
+    Map<String, String> headers,
+    bool autoPlay,
+  ) async {
     debugPrint('[NativeVlcKitBackend] sending open: $url (autoPlay=$autoPlay)');
     try {
       await _methodChannel?.invokeMethod('open', {
@@ -174,7 +179,9 @@ class NativeVlcKitBackend implements PlayerBackend {
     _watchdog?.cancel();
     _watchdog = Timer(const Duration(seconds: 12), () {
       if (_disposed || _everReceivedAnyEvent) return;
-      debugPrint('[NativeVlcKitBackend] watchdog: no event within 12s for $url');
+      debugPrint(
+        '[NativeVlcKitBackend] watchdog: no event within 12s for $url',
+      );
       _errorCtrl.add(
         'The native VLCKit player did not respond while opening this stream.',
       );
@@ -182,16 +189,12 @@ class NativeVlcKitBackend implements PlayerBackend {
   }
 
   @override
-  Future<void> play() async => _runOrQueue(
-        'play()',
-        () => _methodChannel?.invokeMethod('play'),
-      );
+  Future<void> play() async =>
+      _runOrQueue('play()', () => _methodChannel?.invokeMethod('play'));
 
   @override
-  Future<void> pause() async => _runOrQueue(
-        'pause()',
-        () => _methodChannel?.invokeMethod('pause'),
-      );
+  Future<void> pause() async =>
+      _runOrQueue('pause()', () => _methodChannel?.invokeMethod('pause'));
 
   @override
   Future<void> playOrPause() async {
@@ -204,15 +207,17 @@ class NativeVlcKitBackend implements PlayerBackend {
 
   @override
   Future<void> seek(Duration position) async => _runOrQueue(
-        'seek($position)',
-        () => _methodChannel?.invokeMethod('seek', {'positionMs': position.inMilliseconds}),
-      );
+    'seek($position)',
+    () => _methodChannel?.invokeMethod('seek', {
+      'positionMs': position.inMilliseconds,
+    }),
+  );
 
   @override
   Future<void> setRate(double rate) async => _runOrQueue(
-        'setRate($rate)',
-        () => _methodChannel?.invokeMethod('setRate', {'rate': rate}),
-      );
+    'setRate($rate)',
+    () => _methodChannel?.invokeMethod('setRate', {'rate': rate}),
+  );
 
   @override
   Future<void> stop() async {

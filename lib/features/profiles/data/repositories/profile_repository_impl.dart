@@ -13,14 +13,18 @@ class ProfileRepositoryImpl implements ProfileRepository {
   ProfileRepositoryImpl({
     ProfileLocalDataSource? local,
     ProfileRemoteDataSource? remote,
-  })  : _local = local ?? ProfileLocalDataSource(),
-        _remote = remote ?? ProfileRemoteDataSource();
+  }) : _local = local ?? ProfileLocalDataSource(),
+       _remote = remote ?? ProfileRemoteDataSource();
 
   @override
-  List<ProfileEntity> getCachedProfiles(String accountId) => _local.getAll(accountId);
+  List<ProfileEntity> getCachedProfiles(String accountId) =>
+      _local.getAll(accountId);
 
   @override
-  Future<List<ProfileEntity>> refreshProfiles(String accountId, String token) async {
+  Future<List<ProfileEntity>> refreshProfiles(
+    String accountId,
+    String token,
+  ) async {
     final remote = await _remote.list(token);
     await _local.saveAll(accountId, remote);
     return remote;
@@ -91,9 +95,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<void> deleteProfile(String accountId, String? token, String profileId) async {
+  Future<void> deleteProfile(
+    String accountId,
+    String? token,
+    String profileId,
+  ) async {
     final current = _local.getAll(accountId);
-    await _local.saveAll(accountId, current.where((p) => p.profileId != profileId).toList());
+    await _local.saveAll(
+      accountId,
+      current.where((p) => p.profileId != profileId).toList(),
+    );
 
     if (token == null) return;
 
@@ -105,7 +116,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
-  Future<void> _replaceLocal(String accountId, String profileId, ProfileModel replacement) async {
+  Future<void> _replaceLocal(
+    String accountId,
+    String profileId,
+    ProfileModel replacement,
+  ) async {
     final current = _local.getAll(accountId);
     await _local.saveAll(accountId, [
       for (final p in current)

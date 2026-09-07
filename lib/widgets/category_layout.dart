@@ -316,9 +316,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             Text(
               widget.error!,
               textAlign: TextAlign.center,
-              style: AppType.sans(
-                color: colors.ink.withValues(alpha: 0.54),
-              ),
+              style: AppType.sans(color: colors.ink.withValues(alpha: 0.54)),
             ),
             const SizedBox(height: 20),
             ElevatedButton(

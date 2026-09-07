@@ -517,9 +517,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: AppType.sans(
-                color: colors.ink.withValues(alpha: 0.54),
-              ),
+              style: AppType.sans(color: colors.ink.withValues(alpha: 0.54)),
             ),
             const SizedBox(height: 20),
             ElevatedButton(

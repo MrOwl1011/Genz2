@@ -193,8 +193,9 @@ class AuthProvider extends ChangeNotifier {
   Future<String?> _loadOrDeriveAccountKey() async {
     if (_username.trim().isEmpty || _password.trim().isEmpty) return null;
 
-    final fingerprint = '${_username.trim().toLowerCase()}\u0000${_password.trim()}'.hashCode
-        .toRadixString(16);
+    final fingerprint =
+        '${_username.trim().toLowerCase()}\u0000${_password.trim()}'.hashCode
+            .toRadixString(16);
     try {
       final prefs = await SharedPreferences.getInstance();
       final cachedFor = prefs.getString(_tokenKey('account_key_for'));
@@ -363,7 +364,9 @@ class AuthProvider extends ChangeNotifier {
               username: _username,
             );
           } catch (e) {
-            debugPrint('[AuthProvider] legacy account migration failed (non-fatal): $e');
+            debugPrint(
+              '[AuthProvider] legacy account migration failed (non-fatal): $e',
+            );
           }
         }
       } on BackendApiException catch (e) {
@@ -429,8 +432,6 @@ class AuthProvider extends ChangeNotifier {
       profileProvider.tryRestoreLastProfile();
     }
   }
-
-
 
   /// Authenticates against the real Xtream server.
   Future<XtreamUser> _authenticate({

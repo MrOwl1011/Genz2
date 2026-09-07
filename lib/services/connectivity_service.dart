@@ -10,7 +10,11 @@ class ConnectivityService {
   // Tried in order; the first that resolves counts as "online". Multiple
   // hosts guard against one of them being regionally blocked or transiently
   // down and being mistaken for the device being offline.
-  static const List<String> _probeHosts = ['google.com', 'cloudflare.com', 'apple.com'];
+  static const List<String> _probeHosts = [
+    'google.com',
+    'cloudflare.com',
+    'apple.com',
+  ];
 
   static Future<bool> hasConnection({
     Duration timeout = const Duration(seconds: 4),

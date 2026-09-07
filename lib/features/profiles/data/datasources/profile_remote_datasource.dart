@@ -4,7 +4,8 @@ import '../models/profile_model.dart';
 class ProfileRemoteDataSource {
   final BackendApiService _api;
 
-  ProfileRemoteDataSource([BackendApiService? api]) : _api = api ?? BackendApiService();
+  ProfileRemoteDataSource([BackendApiService? api])
+    : _api = api ?? BackendApiService();
 
   Future<List<ProfileModel>> list(String token) async {
     final rows = await _api.listProfiles(token);

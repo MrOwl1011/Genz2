@@ -842,7 +842,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(8),
                             gradient: LinearGradient(
                               colors: colors.brandGradient,
                             ),
@@ -962,7 +962,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(8),
                       boxShadow: focusNode.hasFocus
                           ? [
                               BoxShadow(
@@ -1088,7 +1088,7 @@ class _LoginScreenState extends State<LoginScreen> {
           vertical: kIsTv ? 7 : 18,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colors.border, width: 1.5),
         ),
         // Thicker and brand-accent (not the dimmer brandPrimary) on TV —
@@ -1096,18 +1096,18 @@ class _LoginScreenState extends State<LoginScreen> {
         // the "this is focused" signal on the phone build already, but on
         // a 10-foot screen the border itself needs to read clearly too.
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
             color: kIsTv ? colors.brandAccent : colors.brandPrimary,
             width: kIsTv ? 2.5 : 1.5,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colors.error, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colors.error, width: 1.5),
         ),
         errorStyle: AppType.sans(color: colors.error, fontSize: 11),

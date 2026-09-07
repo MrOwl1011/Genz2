@@ -6,9 +6,14 @@ import '../../domain/entities/sync_mutation.dart';
 /// order via toMap(), which Hive preserves.
 class SyncQueueLocalDataSource {
   List<MapEntry<dynamic, SyncMutation>> getAll() {
-    return HiveBoxes.syncQueueBox.toMap().entries
+    return HiveBoxes.syncQueueBox
+        .toMap()
+        .entries
         .where((e) => e.value is String)
-        .map((e) => MapEntry(e.key, SyncMutation.fromJsonString(e.value as String)))
+        .map(
+          (e) =>
+              MapEntry(e.key, SyncMutation.fromJsonString(e.value as String)),
+        )
         .toList();
   }
 

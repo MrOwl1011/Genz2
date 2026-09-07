@@ -208,9 +208,7 @@ class _TvSearchFieldState extends State<TvSearchField> {
         style: AppType.sans(color: colors.ink),
         decoration: InputDecoration(
           hintText: widget.hint,
-          hintStyle: AppType.sans(
-            color: colors.ink.withValues(alpha: 0.38),
-          ),
+          hintStyle: AppType.sans(color: colors.ink.withValues(alpha: 0.38)),
           prefixIcon: Icon(
             Icons.search,
             color: colors.ink.withValues(alpha: 0.7),

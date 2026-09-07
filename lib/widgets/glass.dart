@@ -98,11 +98,7 @@ class Glass extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: radius,
-          child: Container(
-            padding: padding,
-            color: _fill,
-            child: child,
-          ),
+          child: Container(padding: padding, color: _fill, child: child),
         ),
       );
     }

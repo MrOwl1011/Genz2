@@ -106,9 +106,7 @@ class ProfileAvatarTile extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               initial,
-              style: AppType.hero(Colors.white).copyWith(
-                fontSize: size * 0.38,
-              ),
+              style: AppType.hero(Colors.white).copyWith(fontSize: size * 0.38),
             ),
           ),
           if (showLabel && name.isNotEmpty) ...[

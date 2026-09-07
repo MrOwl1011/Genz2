@@ -86,7 +86,6 @@ class MediaKitBackend implements PlayerBackend {
     await _makeStreamSeekable();
   }
 
-
   /// Tells libmpv to seek in streams it has decided are not seekable.
   ///
   /// Xtream VOD is plain HTTP and panels frequently answer without
@@ -202,7 +201,9 @@ class MediaKitBackend implements PlayerBackend {
       _player.stream.completed.where(_isGenuineCompletion);
 
   bool _isGenuineCompletion(bool completed) {
-    if (!completed || !_playbackStartedSinceOpen || _pendingSeekTarget != null) {
+    if (!completed ||
+        !_playbackStartedSinceOpen ||
+        _pendingSeekTarget != null) {
       return false;
     }
     final duration = _player.state.duration;

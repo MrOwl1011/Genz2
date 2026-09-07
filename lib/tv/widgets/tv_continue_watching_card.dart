@@ -52,7 +52,7 @@ class TvContinueWatchingCard extends StatelessWidget {
         height: 120,
         decoration: BoxDecoration(
           color: colors.surface.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(4),
           border: Border.all(color: colors.border, width: 1.5),
         ),
         alignment: Alignment.center,
@@ -74,9 +74,9 @@ class TvContinueWatchingCard extends StatelessWidget {
       height: 120,
       child: TvFocusable(
         onTap: () => _openHistory(context),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(4),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(4),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -159,9 +159,7 @@ class TvContinueWatchingCard extends StatelessWidget {
                           value: progress > 0 ? progress : null,
                           minHeight: 5,
                           backgroundColor: Colors.white24,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colors.ink,
-                          ),
+                          valueColor: AlwaysStoppedAnimation<Color>(colors.ink),
                         ),
                       ),
                     ),

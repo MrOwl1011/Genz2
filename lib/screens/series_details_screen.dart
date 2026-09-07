@@ -445,12 +445,9 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                           ),
                                           const SizedBox(height: 10),
                                           Text(
-                                            [
-                                              releaseDate,
-                                              genre,
-                                            ].where((v) => v.isNotEmpty).join(
-                                              '  ·  ',
-                                            ),
+                                            [releaseDate, genre]
+                                                .where((v) => v.isNotEmpty)
+                                                .join('  ·  '),
                                             maxLines: 2,
                                             style: AppType.meta(
                                               colors.ink.withValues(
@@ -755,10 +752,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           isArabic ? 'تنزيل الحلقات' : 'Download Episodes',
-          style: AppType.sans(
-            color: colors.ink,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
         ),
         content: Text(
           isArabic
@@ -930,9 +924,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                           : (isArabic
                                                 ? 'الحلقة ${ep.episodeNum}'
                                                 : 'Episode ${ep.episodeNum}'),
-                                      style: AppType.sans(
-                                        color: colors.ink,
-                                      ),
+                                      style: AppType.sans(color: colors.ink),
                                     ),
                                     subtitle: already
                                         ? Text(

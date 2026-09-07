@@ -386,7 +386,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colors.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: colors.border, width: 1.5),
         ),
         child: Column(
@@ -576,12 +576,12 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
     final colors = context.colors;
     return TvFocusable(
       onTap: _onAddNewTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
         decoration: BoxDecoration(
           color: colors.surfaceElevated.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: colors.ink.withValues(alpha: 0.24),
             width: 1.5,

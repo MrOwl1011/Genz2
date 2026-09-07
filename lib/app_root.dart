@@ -220,7 +220,7 @@ class _AppRootState extends State<AppRoot> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colors.brandPrimary,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
@@ -251,7 +251,7 @@ class _AppRootState extends State<AppRoot> {
                         color: colors.ink.withValues(alpha: 0.24),
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),

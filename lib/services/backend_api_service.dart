@@ -251,7 +251,8 @@ class BackendApiService {
       'platform': platform,
       if (pairingCode != null && pairingCode.isNotEmpty)
         'pairing_code': pairingCode,
-      if (accountKey != null && accountKey.isNotEmpty) 'account_key': accountKey,
+      if (accountKey != null && accountKey.isNotEmpty)
+        'account_key': accountKey,
     });
 
     return BackendAccountResult(

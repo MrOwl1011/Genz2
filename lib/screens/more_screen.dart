@@ -298,7 +298,7 @@ class MoreScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               TvFocusable(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10),
                 onTap: () async {
                   final url = Uri.parse('https://wa.me/96550507254');
                   if (await canLaunchUrl(url)) {
@@ -310,7 +310,7 @@ class MoreScreen extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     color: colors.ink.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: colors.ink.withValues(alpha: 0.1),
                       width: 1.5,
@@ -464,7 +464,7 @@ class MoreScreen extends StatelessWidget {
 
               // Logout Button
               TvFocusable(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(6),
                 onTap: () async {
                   // Logout only ends the session — the playlist stays saved
                   // so it still appears in "Users" for one-tap re-login.
@@ -484,7 +484,7 @@ class MoreScreen extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     color: colors.surface,
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: colors.brandPrimary.withValues(alpha: 0.4),
                       width: 1.5,
@@ -518,14 +518,14 @@ class MoreScreen extends StatelessWidget {
 
               // Delete Account Button
               TvFocusable(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(6),
                 onTap: () => _showDeleteAccountDialog(context, auth, isArabic),
                 child: Container(
                   width: double.infinity,
                   height: 56,
                   decoration: BoxDecoration(
                     color: colors.error.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: colors.error.withValues(alpha: 0.4),
                       width: 1.5,

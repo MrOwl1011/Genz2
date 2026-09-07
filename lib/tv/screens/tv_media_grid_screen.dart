@@ -180,7 +180,10 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
     if (rawItem is XtreamVodStream) return rawItem.streamId;
     if (rawItem is XtreamSeries) return rawItem.seriesId;
     if (rawItem is Map<String, dynamic>) {
-      return rawItem['stream_id'] ?? rawItem['series_id'] ?? rawItem['id'] ?? rawItem;
+      return rawItem['stream_id'] ??
+          rawItem['series_id'] ??
+          rawItem['id'] ??
+          rawItem;
     }
     return rawItem;
   }
@@ -316,14 +319,12 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
           children: [
             Text(
               _error!,
-              style: AppType.sans(
-                color: colors.ink.withValues(alpha: 0.54),
-              ),
+              style: AppType.sans(color: colors.ink.withValues(alpha: 0.54)),
             ),
             const SizedBox(height: 16),
             TvFocusable(
               onTap: _load,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(6),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -331,7 +332,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: colors.brandGradient),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   'Retry',

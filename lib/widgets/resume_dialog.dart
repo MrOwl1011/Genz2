@@ -161,9 +161,7 @@ class _ResumeDialog extends StatelessWidget {
                       ),
                       label: Text(
                         isArabic ? 'البدء من جديد' : 'Start Over',
-                        style: AppType.label(
-                          colors.ink.withValues(alpha: 0.6),
-                        ),
+                        style: AppType.label(colors.ink.withValues(alpha: 0.6)),
                       ),
                       style: TextButton.styleFrom(
                         shape: RoundedRectangleBorder(

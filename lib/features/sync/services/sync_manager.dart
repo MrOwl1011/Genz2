@@ -55,7 +55,10 @@ class SyncManager with WidgetsBindingObserver {
 
   /// Called by AuthProvider whenever the backend connection state changes —
   /// after a successful login (both non-null) and on logout (both null).
-  void updateSession({required String? accountId, required String? deviceToken}) {
+  void updateSession({
+    required String? accountId,
+    required String? deviceToken,
+  }) {
     _accountId = accountId;
     _deviceToken = deviceToken;
     if (accountId != null && deviceToken != null) flush();
@@ -71,20 +74,22 @@ class SyncManager with WidgetsBindingObserver {
     required Map<String, dynamic> rawData,
     required DateTime updatedAt,
   }) async {
-    await _queue.enqueue(SyncMutation(
-      accountId: accountId,
-      profileId: profileId,
-      entityType: SyncEntityType.favorite,
-      operation: SyncOperation.add,
-      payload: {
-        'stream_id': streamId,
-        'stream_type': streamType,
-        'title': title,
-        'poster_url': posterUrl,
-        'raw_data': rawData,
-      },
-      clientUpdatedAt: updatedAt,
-    ));
+    await _queue.enqueue(
+      SyncMutation(
+        accountId: accountId,
+        profileId: profileId,
+        entityType: SyncEntityType.favorite,
+        operation: SyncOperation.add,
+        payload: {
+          'stream_id': streamId,
+          'stream_type': streamType,
+          'title': title,
+          'poster_url': posterUrl,
+          'raw_data': rawData,
+        },
+        clientUpdatedAt: updatedAt,
+      ),
+    );
     unawaited(flush());
   }
 
@@ -95,14 +100,16 @@ class SyncManager with WidgetsBindingObserver {
     required String streamType,
     required DateTime updatedAt,
   }) async {
-    await _queue.enqueue(SyncMutation(
-      accountId: accountId,
-      profileId: profileId,
-      entityType: SyncEntityType.favorite,
-      operation: SyncOperation.remove,
-      payload: {'stream_id': streamId, 'stream_type': streamType},
-      clientUpdatedAt: updatedAt,
-    ));
+    await _queue.enqueue(
+      SyncMutation(
+        accountId: accountId,
+        profileId: profileId,
+        entityType: SyncEntityType.favorite,
+        operation: SyncOperation.remove,
+        payload: {'stream_id': streamId, 'stream_type': streamType},
+        clientUpdatedAt: updatedAt,
+      ),
+    );
     unawaited(flush());
   }
 
@@ -120,24 +127,26 @@ class SyncManager with WidgetsBindingObserver {
     required Map<String, dynamic> rawData,
     required DateTime updatedAt,
   }) async {
-    await _queue.enqueue(SyncMutation(
-      accountId: accountId,
-      profileId: profileId,
-      entityType: SyncEntityType.history,
-      operation: SyncOperation.save,
-      payload: {
-        'stream_id': streamId,
-        'stream_type': streamType,
-        'episode_id': episodeId,
-        'series_id': seriesId,
-        'title': title,
-        'poster_url': posterUrl,
-        'position_seconds': positionSeconds,
-        'duration_seconds': durationSeconds,
-        'raw_data': rawData,
-      },
-      clientUpdatedAt: updatedAt,
-    ));
+    await _queue.enqueue(
+      SyncMutation(
+        accountId: accountId,
+        profileId: profileId,
+        entityType: SyncEntityType.history,
+        operation: SyncOperation.save,
+        payload: {
+          'stream_id': streamId,
+          'stream_type': streamType,
+          'episode_id': episodeId,
+          'series_id': seriesId,
+          'title': title,
+          'poster_url': posterUrl,
+          'position_seconds': positionSeconds,
+          'duration_seconds': durationSeconds,
+          'raw_data': rawData,
+        },
+        clientUpdatedAt: updatedAt,
+      ),
+    );
     unawaited(flush());
   }
 
@@ -150,7 +159,8 @@ class SyncManager with WidgetsBindingObserver {
     try {
       for (final entry in _queue.getAll()) {
         final mutation = entry.value;
-        if (mutation.accountId != accountId) continue; // stale entry from a since-logged-out account
+        if (mutation.accountId != accountId)
+          continue; // stale entry from a since-logged-out account
 
         try {
           await _applyMutation(token, mutation);

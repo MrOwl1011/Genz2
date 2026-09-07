@@ -234,7 +234,7 @@ class _TvSeriesDetailScreenState extends State<TvSeriesDetailScreen> {
       barrierColor: Colors.black87,
       builder: (ctx) => Dialog(
         backgroundColor: colors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 280),
           child: Padding(
@@ -816,7 +816,7 @@ class _EpisodeDownloadPickerState extends State<_EpisodeDownloadPicker> {
 
     return Dialog(
       backgroundColor: colors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 460, maxHeight: 420),
         child: Padding(
@@ -865,9 +865,7 @@ class _EpisodeDownloadPickerState extends State<_EpisodeDownloadPicker> {
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: focused
-                                  ? colors.ink
-                                  : Colors.transparent,
+                              color: focused ? colors.ink : Colors.transparent,
                             ),
                           ),
                           child: Row(

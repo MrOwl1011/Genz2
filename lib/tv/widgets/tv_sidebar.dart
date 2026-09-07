@@ -145,7 +145,8 @@ class _TvSidebarState extends State<TvSidebar> {
       widget.onExitRight!();
       return KeyEventResult.handled;
     }
-    if (key != LogicalKeyboardKey.arrowUp && key != LogicalKeyboardKey.arrowDown) {
+    if (key != LogicalKeyboardKey.arrowUp &&
+        key != LogicalKeyboardKey.arrowDown) {
       return KeyEventResult.ignored;
     }
     // Reaching this handler at all means the currently focused node is a
@@ -159,7 +160,8 @@ class _TvSidebarState extends State<TvSidebar> {
     final items = TvSidebarItem.values;
     final currentIndex = items.indexWhere((item) => _itemNodes[item]!.hasFocus);
     if (currentIndex != -1) {
-      final nextIndex = currentIndex + (key == LogicalKeyboardKey.arrowUp ? -1 : 1);
+      final nextIndex =
+          currentIndex + (key == LogicalKeyboardKey.arrowUp ? -1 : 1);
       if (nextIndex >= 0 && nextIndex < items.length) {
         _itemNodes[items[nextIndex]]!.requestFocus();
       }

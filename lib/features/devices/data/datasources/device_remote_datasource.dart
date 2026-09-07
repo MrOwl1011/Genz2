@@ -4,7 +4,8 @@ import '../../domain/entities/device_entity.dart';
 class DeviceRemoteDataSource {
   final BackendApiService _api;
 
-  DeviceRemoteDataSource([BackendApiService? api]) : _api = api ?? BackendApiService();
+  DeviceRemoteDataSource([BackendApiService? api])
+    : _api = api ?? BackendApiService();
 
   Future<List<DeviceEntity>> list(String token) async {
     final rows = await _api.listDevices(token);

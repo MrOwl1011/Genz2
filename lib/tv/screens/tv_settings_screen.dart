@@ -340,10 +340,7 @@ class _SettingsContent extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           userPrefs.locale == 'ar' ? 'اختر اللغة' : 'Select Language',
-          style: AppType.sans(
-            color: colors.ink,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
         ),
         children: [
           _dialogOption(ctx, colors, 'English', userPrefs.locale == 'en', () {
@@ -372,10 +369,7 @@ class _SettingsContent extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           isArabic ? 'اختر المظهر' : 'Select Theme',
-          style: AppType.sans(
-            color: colors.ink,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
         ),
         children: [
           _dialogOption(

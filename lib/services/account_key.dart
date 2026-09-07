@@ -92,15 +92,13 @@ Uint8List _pbkdf2({
 
   for (var block = 1; output.length < lengthBytes; block++) {
     // U1 = PRF(secret, salt || INT_32_BE(block))
-    var u = hmac
-        .convert(<int>[
-          ...salt,
-          (block >> 24) & 0xFF,
-          (block >> 16) & 0xFF,
-          (block >> 8) & 0xFF,
-          block & 0xFF,
-        ])
-        .bytes;
+    var u = hmac.convert(<int>[
+      ...salt,
+      (block >> 24) & 0xFF,
+      (block >> 16) & 0xFF,
+      (block >> 8) & 0xFF,
+      block & 0xFF,
+    ]).bytes;
     final accumulated = List<int>.from(u);
 
     // T = U1 xor U2 xor ... xor Uc

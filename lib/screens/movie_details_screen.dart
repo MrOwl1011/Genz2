@@ -413,13 +413,9 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                           // convention. Stacked rows of year
                                           // and duration read as form fields.
                                           Text(
-                                            [
-                                              releaseDate,
-                                              duration,
-                                              genre,
-                                            ].where((v) => v.isNotEmpty).join(
-                                              '  ·  ',
-                                            ),
+                                            [releaseDate, duration, genre]
+                                                .where((v) => v.isNotEmpty)
+                                                .join('  ·  '),
                                             maxLines: 2,
                                             style: AppType.meta(
                                               colors.ink.withValues(

@@ -102,10 +102,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         ),
         title: Text(
           isArabic ? 'حذف التنزيل؟' : 'Delete Download?',
-          style: AppType.sans(
-            color: colors.ink,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
         ),
         content: Text(
           isArabic

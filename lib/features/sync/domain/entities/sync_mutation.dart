@@ -34,20 +34,24 @@ class SyncMutation {
       '${entityType.name}:${payload['stream_id']}:${payload['stream_type']}';
 
   Map<String, dynamic> toHiveMap() => {
-        'accountId': accountId,
-        'profileId': profileId,
-        'entityType': entityType.name,
-        'operation': operation.name,
-        'payload': payload,
-        'clientUpdatedAt': clientUpdatedAt.toUtc().toIso8601String(),
-      };
+    'accountId': accountId,
+    'profileId': profileId,
+    'entityType': entityType.name,
+    'operation': operation.name,
+    'payload': payload,
+    'clientUpdatedAt': clientUpdatedAt.toUtc().toIso8601String(),
+  };
 
   factory SyncMutation.fromHiveMap(Map<String, dynamic> map) {
     return SyncMutation(
       accountId: map['accountId'] as String,
       profileId: map['profileId'] as String,
-      entityType: SyncEntityType.values.firstWhere((e) => e.name == map['entityType']),
-      operation: SyncOperation.values.firstWhere((e) => e.name == map['operation']),
+      entityType: SyncEntityType.values.firstWhere(
+        (e) => e.name == map['entityType'],
+      ),
+      operation: SyncOperation.values.firstWhere(
+        (e) => e.name == map['operation'],
+      ),
       payload: Map<String, dynamic>.from(map['payload'] as Map),
       clientUpdatedAt: DateTime.parse(map['clientUpdatedAt'] as String),
     );
@@ -59,6 +63,7 @@ class SyncMutation {
   /// storage of that shape hit real silent write failures in practice).
   String toJsonString() => jsonEncode(toHiveMap());
 
-  factory SyncMutation.fromJsonString(String raw) =>
-      SyncMutation.fromHiveMap(Map<String, dynamic>.from(jsonDecode(raw) as Map));
+  factory SyncMutation.fromJsonString(String raw) => SyncMutation.fromHiveMap(
+    Map<String, dynamic>.from(jsonDecode(raw) as Map),
+  );
 }

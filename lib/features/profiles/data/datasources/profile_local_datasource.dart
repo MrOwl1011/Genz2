@@ -13,7 +13,9 @@ class ProfileLocalDataSource {
     if (raw == null) return [];
     final list = (raw['profiles'] as List?) ?? const [];
     return list
-        .map((e) => ProfileModel.fromHiveMap(Map<String, dynamic>.from(e as Map)))
+        .map(
+          (e) => ProfileModel.fromHiveMap(Map<String, dynamic>.from(e as Map)),
+        )
         .toList();
   }
 

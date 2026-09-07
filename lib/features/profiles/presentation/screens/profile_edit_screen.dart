@@ -91,13 +91,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surfaceElevated,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           isArabic ? 'حذف الملف الشخصي؟' : 'Delete Profile?',
-          style: AppType.sans(
-            color: colors.ink,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppType.sans(color: colors.ink, fontWeight: FontWeight.bold),
         ),
         content: Text(
           isArabic
@@ -224,10 +221,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         controller: _nameController,
                         maxLength: 60,
                         textCapitalization: TextCapitalization.words,
-                        style: AppType.sans(
-                          color: colors.ink,
-                          fontSize: 16,
-                        ),
+                        style: AppType.sans(color: colors.ink, fontSize: 16),
                         decoration: InputDecoration(
                           labelText: isArabic ? 'الاسم' : 'Name',
                           labelStyle: AppType.sans(
@@ -239,15 +233,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             color: colors.ink.withValues(alpha: 0.4),
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: colors.border),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: colors.border),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(
                               color: colors.brandPrimary,
                               width: 2,
@@ -294,7 +288,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colors.brandPrimary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           child: _isSaving
@@ -336,7 +330,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                 color: colors.error.withValues(alpha: 0.5),
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: Text(

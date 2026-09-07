@@ -295,9 +295,7 @@ class _TvSearchScreenState extends State<TvSearchScreen> {
             Text(
               content.allContentError!,
               textAlign: TextAlign.center,
-              style: AppType.sans(
-                color: colors.ink.withValues(alpha: 0.6),
-              ),
+              style: AppType.sans(color: colors.ink.withValues(alpha: 0.6)),
             ),
             const SizedBox(height: 16),
             TvFocusable(

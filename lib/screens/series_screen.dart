@@ -157,7 +157,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                   height: 50,
                   decoration: BoxDecoration(
                     color: colors.surface.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: colors.border, width: 1.5),
                   ),
                   child: TextField(
@@ -217,9 +217,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: AppType.sans(
-                color: colors.ink.withValues(alpha: 0.54),
-              ),
+              style: AppType.sans(color: colors.ink.withValues(alpha: 0.54)),
             ),
             const SizedBox(height: 20),
             ElevatedButton(

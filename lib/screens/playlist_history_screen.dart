@@ -75,7 +75,8 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
         name: item.rawData['series_name'] ?? item.title,
         cover: item.rawData['series_cover'] ?? item.posterUrl,
         categoryId: item.rawData['category_id']?.toString() ?? '',
-        lastModified: int.tryParse(item.rawData['last_modified']?.toString() ?? '0') ?? 0,
+        lastModified:
+            int.tryParse(item.rawData['last_modified']?.toString() ?? '0') ?? 0,
       );
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => SeriesDetailsScreen(series: series)),
@@ -108,7 +109,11 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.ink, size: 20),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: colors.ink,
+                        size: 20,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     Expanded(
@@ -132,29 +137,44 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                 padding: const EdgeInsets.fromLTRB(56, 0, 24, 0),
                 child: Text(
                   isArabic ? 'سجل المشاهدة' : 'Watch History',
-                  style: AppType.sans(color: colors.ink.withValues(alpha: 0.38), fontSize: 13),
+                  style: AppType.sans(
+                    color: colors.ink.withValues(alpha: 0.38),
+                    fontSize: 13,
+                  ),
                 ),
               ),
               if (!_isActivePlaylist)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.ink.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: colors.ink.withValues(alpha: 0.1)),
+                      border: Border.all(
+                        color: colors.ink.withValues(alpha: 0.1),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline_rounded, color: colors.ink.withValues(alpha: 0.38), size: 16),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: colors.ink.withValues(alpha: 0.38),
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             isArabic
                                 ? 'سجل عرض فقط. سجل الدخول لهذه القائمة للمتابعة من هنا.'
                                 : 'View-only. Log in to this playlist to resume from here.',
-                            style: AppType.sans(color: colors.ink.withValues(alpha: 0.54), fontSize: 12),
+                            style: AppType.sans(
+                              color: colors.ink.withValues(alpha: 0.54),
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
@@ -183,8 +203,13 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
     if (_history.isEmpty) {
       return Center(
         child: Text(
-          isArabic ? 'لا يوجد سجل مشاهدة لهذه القائمة.' : 'No watch history for this playlist.',
-          style: AppType.sans(color: colors.ink.withValues(alpha: 0.38), fontSize: 15),
+          isArabic
+              ? 'لا يوجد سجل مشاهدة لهذه القائمة.'
+              : 'No watch history for this playlist.',
+          style: AppType.sans(
+            color: colors.ink.withValues(alpha: 0.38),
+            fontSize: 15,
+          ),
         ),
       );
     }
@@ -200,7 +225,10 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
   Widget _buildHistoryTile(HistoryItem item) {
     final colors = context.colors;
     final progress = item.durationMilliseconds > 0
-        ? (item.positionMilliseconds / item.durationMilliseconds).clamp(0.0, 1.0)
+        ? (item.positionMilliseconds / item.durationMilliseconds).clamp(
+            0.0,
+            1.0,
+          )
         : 0.0;
 
     return Opacity(
@@ -231,19 +259,29 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                         errorWidget: (_, _, _) => Container(
                           width: 64,
                           color: colors.surfaceMuted,
-                          child: Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
+                          child: Icon(
+                            Icons.movie,
+                            color: colors.ink.withValues(alpha: 0.24),
+                          ),
                         ),
                       )
                     : Container(
                         width: 64,
                         color: colors.surfaceMuted,
-                        child: Icon(Icons.movie, color: colors.ink.withValues(alpha: 0.24)),
+                        child: Icon(
+                          Icons.movie,
+                          color: colors.ink.withValues(alpha: 0.24),
+                        ),
                       ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 12, right: 12),
+                  padding: const EdgeInsets.only(
+                    top: 12,
+                    bottom: 12,
+                    right: 12,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -261,7 +299,10 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '${item.lastWatched.day}/${item.lastWatched.month}/${item.lastWatched.year}',
-                        style: AppType.sans(color: colors.ink.withValues(alpha: 0.38), fontSize: 11),
+                        style: AppType.sans(
+                          color: colors.ink.withValues(alpha: 0.38),
+                          fontSize: 11,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       if (item.durationMilliseconds > 0)
@@ -270,7 +311,9 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                           child: LinearProgressIndicator(
                             value: progress,
                             backgroundColor: colors.ink.withValues(alpha: 0.12),
-                            valueColor: AlwaysStoppedAnimation<Color>(colors.brandPrimary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colors.brandPrimary,
+                            ),
                             minHeight: 3,
                           ),
                         ),
@@ -281,7 +324,11 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
               if (_isActivePlaylist)
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
-                  child: Icon(Icons.play_circle_fill_rounded, color: colors.ink.withValues(alpha: 0.38), size: 22),
+                  child: Icon(
+                    Icons.play_circle_fill_rounded,
+                    color: colors.ink.withValues(alpha: 0.38),
+                    size: 22,
+                  ),
                 ),
             ],
           ),
