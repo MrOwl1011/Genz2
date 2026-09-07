@@ -3,10 +3,10 @@
 // or start over. Used when saved position is greater than 30 seconds.
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 
 /// Shows a resume dialog and returns `true` to resume, `false` to start over,
 /// or `null` if dismissed via the X button or tapping outside — callers must
@@ -95,22 +95,14 @@ class _ResumeDialog extends StatelessWidget {
                   // Title
                   Text(
                     isArabic ? 'استئناف التشغيل؟' : 'Resume Playback?',
-                    style: GoogleFonts.archivo(
-                      color: colors.ink,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppType.heading(colors.ink),
                   ),
                   if (episodeLabel != null) ...[
                     const SizedBox(height: 6),
                     Text(
                       episodeLabel!,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.archivo(
-                        color: colors.brandPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
+                      style: AppType.meta(colors.ink.withValues(alpha: 0.5)),
                     ),
                   ],
                   const SizedBox(height: 8),
@@ -120,10 +112,7 @@ class _ResumeDialog extends StatelessWidget {
                     isArabic
                         ? 'توقفت عند ${_formatTime(positionSeconds)}'
                         : 'You stopped at ${_formatTime(positionSeconds)}',
-                    style: GoogleFonts.archivo(
-                      color: colors.ink.withValues(alpha: 0.54),
-                      fontSize: 14,
-                    ),
+                    style: AppType.body(colors.ink.withValues(alpha: 0.55)),
                   ),
                   const SizedBox(height: 24),
 
@@ -138,23 +127,21 @@ class _ResumeDialog extends StatelessWidget {
                       // on nothing and making the user hunt for a button.
                       autofocus: true,
                       onPressed: () => Navigator.of(context).pop(true),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.play_arrow_rounded,
-                        color: Colors.white,
+                        color: colors.background,
                         size: 22,
                       ),
                       label: Text(
-                        isArabic ? 'استئناف' : 'Resume',
-                        style: GoogleFonts.archivo(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
+                        isArabic
+                            ? 'استئناف من ${_formatTime(positionSeconds)}'
+                            : 'Resume from ${_formatTime(positionSeconds)}',
+                        style: AppType.label(colors.background),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: colors.brandPrimary,
+                        backgroundColor: colors.ink,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                     ),
@@ -165,7 +152,7 @@ class _ResumeDialog extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     height: 48,
-                    child: OutlinedButton.icon(
+                    child: TextButton.icon(
                       onPressed: () => Navigator.of(context).pop(false),
                       icon: Icon(
                         Icons.replay_rounded,
@@ -174,18 +161,13 @@ class _ResumeDialog extends StatelessWidget {
                       ),
                       label: Text(
                         isArabic ? 'البدء من جديد' : 'Start Over',
-                        style: GoogleFonts.archivo(
-                          color: colors.ink.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                        style: AppType.label(
+                          colors.ink.withValues(alpha: 0.6),
                         ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: colors.ink.withValues(alpha: 0.24),
-                        ),
+                      style: TextButton.styleFrom(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                     ),

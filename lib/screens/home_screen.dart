@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/content_provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../models/xtream_models.dart';
 import '../theme/app_colors.dart';
@@ -14,6 +13,7 @@ import 'movie_details_screen.dart';
 import 'series_details_screen.dart';
 import 'player_screen.dart';
 import '../widgets/skeleton.dart';
+import '../widgets/state_view.dart';
 import '../widgets/tv_focusable.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -53,7 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final content = context.watch<ContentProvider>();
-    final auth = context.watch<AuthProvider>();
     final userPrefs = context.watch<UserPrefsProvider>();
     final colors = context.colors;
 
@@ -170,11 +169,12 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(
           height: _HistoryCard.totalHeight,
           child: userPrefs.history.isEmpty
-              ? Center(
-                  child: Text(
-                    isArabic ? 'لا يوجد سجل متاح' : 'No History Available',
-                    style: TextStyle(color: colors.ink.withValues(alpha: 0.54)),
-                  ),
+              ? StateView(
+                  icon: Icons.play_circle_outline_rounded,
+                  title: isArabic ? 'لا شيء بعد' : 'Nothing yet',
+                  message: isArabic
+                      ? 'ما تبدأ مشاهدته سيظهر هنا.'
+                      : 'Anything you start watching shows up here.',
                 )
               : ListView.builder(
                   scrollDirection: Axis.horizontal,
@@ -305,12 +305,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (results.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.all(40.0),
-        child: Center(
-          child: Text(
-            isArabic ? 'لا توجد نتائج.' : 'No results found.',
-            style: TextStyle(color: colors.ink.withValues(alpha: 0.54)),
-          ),
+        padding: const EdgeInsets.symmetric(vertical: 48),
+        child: StateView(
+          icon: Icons.search_off_rounded,
+          title: isArabic ? 'لا توجد نتائج' : 'No results',
+          message: isArabic
+              ? 'لم يعثر مزودك على أي شيء بهذا الاسم. جرّب كلمة أقصر.'
+              : 'Your provider returned nothing for that. Try a shorter word.',
         ),
       );
     }
