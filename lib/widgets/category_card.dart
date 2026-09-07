@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 import 'tv_focusable.dart';
 
 enum CategoryType { live, movie, series }
@@ -87,12 +88,13 @@ class _CategoryCardState extends State<CategoryCard> {
     final colors = context.colors;
     return TvFocusable(
       onTap: widget.onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: colors.surfaceMuted, // Neutral card background
-          borderRadius: BorderRadius.circular(16),
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.border),
         ),
         clipBehavior: Clip.antiAlias,
         child: Row(
@@ -133,11 +135,7 @@ class _CategoryCardState extends State<CategoryCard> {
                   children: [
                     Text(
                       widget.category.categoryName,
-                      style: GoogleFonts.archivo(
-                        color: colors.ink,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppType.cardTitle(colors.ink),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

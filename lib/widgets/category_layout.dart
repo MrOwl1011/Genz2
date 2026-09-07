@@ -9,6 +9,7 @@ import '../providers/user_prefs_provider.dart';
 import '../screens/movie_details_screen.dart';
 import '../screens/series_details_screen.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 import 'category_card.dart';
 import '../screens/player_screen.dart';
 import 'tv_focusable.dart';
@@ -459,9 +460,11 @@ class _CategoryLayoutState extends State<CategoryLayout> {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 0.65,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 16,
+        // 2:3 artwork plus two caption lines. The previous 0.65 left no room
+        // for the second line, so longer titles clipped mid-word.
+        childAspectRatio: 0.58,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 18,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -524,7 +527,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
   ) {
     final colors = context.colors;
     return TvFocusable(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(4),
       onTap: () {
         final playlist = items.map((item) {
           final l = item is XtreamLiveStream
@@ -560,7 +563,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
         children: [
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(4),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -602,11 +605,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             live.name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.archivo(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+            style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
           ),
         ],
       ),
@@ -616,7 +615,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
   Widget _buildMovieGridItem(XtreamVodStream movie) {
     final colors = context.colors;
     return TvFocusable(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(4),
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => MovieDetailsScreen(movie: movie)),
@@ -627,7 +626,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
         children: [
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(4),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -668,11 +667,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             movie.name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.archivo(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+            style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
           ),
         ],
       ),
@@ -682,7 +677,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
   Widget _buildSeriesGridItem(XtreamSeries series) {
     final colors = context.colors;
     return TvFocusable(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(4),
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -695,7 +690,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
         children: [
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(4),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -736,11 +731,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             series.name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.archivo(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+            style: AppType.caption(colors.ink.withValues(alpha: 0.86)),
           ),
         ],
       ),
