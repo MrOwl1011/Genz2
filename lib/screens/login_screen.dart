@@ -382,8 +382,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       // empty shell.
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: kIsTv ? 8 : 12,
+                          horizontal: 12,
+                          vertical: kIsTv ? 6 : 9,
                         ),
                         decoration: BoxDecoration(
                           color: colors.ink.withValues(alpha: 0.05),
@@ -393,26 +393,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.info_outline_rounded,
-                              size: kIsTv ? 14 : 18,
-                              color: colors.ink.withValues(alpha: 0.6),
+                              size: kIsTv ? 12 : 15,
+                              color: colors.ink.withValues(alpha: 0.45),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 isArabic
-                                    ? 'يعمل GENz+ كمشغّل فقط ولا يوفّر أي قنوات أو أفلام. '
-                                          'أدخل بيانات خدمتك الخاصة للمتابعة.'
-                                    : 'GENz+ is a player only. It provides no channels, '
-                                          'movies or playlists — sign in with your own '
-                                          'service to continue.',
+                                    ? 'يعمل GENz+ كمشغّل فقط ولا يوفّر أي قنوات أو أفلام.'
+                                    : 'GENz+ is a player only. It provides no '
+                                          'channels, movies or playlists.',
                                 style: AppType.sans(
-                                  color: colors.ink.withValues(alpha: 0.7),
-                                  fontSize: kIsTv ? 10.5 : 12.5,
-                                  height: 1.35,
+                                  color: colors.ink.withValues(alpha: 0.6),
+                                  fontSize: kIsTv ? 9.5 : 11,
+                                  height: 1.3,
                                 ),
                               ),
                             ),
