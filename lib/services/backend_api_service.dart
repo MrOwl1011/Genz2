@@ -39,6 +39,28 @@ class BackendAccountResult {
   });
 }
 
+/// Deliberately not a [BackendAccountResult]: merge.php issues no new
+/// token, so there is no device_token or expiry to report — the caller
+/// keeps authenticating with the token it already holds.
+class BackendMergeResult {
+  final String accountId;
+  final List<Map<String, dynamic>> profiles;
+
+  /// How many profiles came across from the previous account.
+  final int mergedProfiles;
+
+  /// Only ever nonzero when the target was already at the profile cap and a
+  /// non-colliding profile had nowhere to go; it stays on the old account.
+  final int profilesLeftBehind;
+
+  BackendMergeResult({
+    required this.accountId,
+    required this.profiles,
+    required this.mergedProfiles,
+    required this.profilesLeftBehind,
+  });
+}
+
 class BackendPairingCode {
   final String code;
   final DateTime expiresAt;
@@ -201,18 +223,27 @@ class BackendApiService {
   // no way to connect that id to any IPTV service, which is the whole
   // reason it exists as a separate concept from XtreamApiService.
 
-  /// Registers this device and returns a fresh account. With no
-  /// [pairingCode], this is always a brand-new, empty account — the normal
-  /// case for a fresh install. With one (from [createPairingCode] on
-  /// another device, or entered by the user), joins that account instead,
-  /// picking up its existing profiles. An invalid/expired code is not an
-  /// error: the backend silently falls back to a new account rather than
+  /// Registers this device and returns the account it belongs to.
+  ///
+  /// With an [accountKey] (derived from the user's IPTV credentials — see
+  /// AccountKey), this resolves to the same account on every device those
+  /// credentials are used on, which is what makes profiles and history sync
+  /// with no pairing step. First use creates it; later uses just attach
+  /// this device to it.
+  ///
+  /// With neither key nor code, this is a brand-new empty anonymous
+  /// account — a fresh install that hasn't signed into a panel yet.
+  ///
+  /// [pairingCode] is the superseded path, still accepted so app versions
+  /// released before keys existed keep working. An invalid/expired code is
+  /// not an error: the backend falls back to a new account rather than
   /// failing the whole registration over a typo.
   Future<BackendAccountResult> register({
     required String deviceId,
     required String deviceName,
     required String platform,
     String? pairingCode,
+    String? accountKey,
   }) async {
     final data = await _post('/api/account/register.php', {
       'device_id': deviceId,
@@ -220,6 +251,7 @@ class BackendApiService {
       'platform': platform,
       if (pairingCode != null && pairingCode.isNotEmpty)
         'pairing_code': pairingCode,
+      if (accountKey != null && accountKey.isNotEmpty) 'account_key': accountKey,
     });
 
     return BackendAccountResult(
@@ -227,6 +259,32 @@ class BackendApiService {
       deviceToken: data['device_token'] as String,
       expiresAt: parseBackendUtc(data['expires_at'] as String),
       profiles: _asMapList(data['profiles']),
+    );
+  }
+
+  /// Folds the account this device *used* to be on into the one it is on
+  /// now, bringing its profiles, favorites and history across.
+  ///
+  /// Two callers, one operation: the one-time migration off the old
+  /// anonymous accounts, and the case where a user's IPTV password changed
+  /// so their derived key (and therefore their account) changed with it.
+  /// Requires holding tokens for both accounts, which is the proof of
+  /// ownership that replaces a pairing code — see merge.php.
+  ///
+  /// Safe to retry: merging an already-merged account is a no-op.
+  Future<BackendMergeResult> mergeAccount({
+    required String token,
+    required String previousToken,
+  }) async {
+    final data = await _post('/api/account/merge.php', {
+      'previous_token': previousToken,
+    }, token: token);
+
+    return BackendMergeResult(
+      accountId: data['account_id'] as String,
+      profiles: _asMapList(data['profiles']),
+      mergedProfiles: (data['merged_profiles'] as num?)?.toInt() ?? 0,
+      profilesLeftBehind: (data['profiles_left_behind'] as num?)?.toInt() ?? 0,
     );
   }
 

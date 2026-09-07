@@ -5,9 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../providers/user_prefs_provider.dart';
 import '../../../../theme/app_colors.dart';
-import '../../../../widgets/sync_pairing_dialogs.dart';
 import '../../../../widgets/tv_focusable.dart';
-import '../../../devices/data/datasources/device_remote_datasource.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_avatar_tile.dart';
@@ -43,107 +41,6 @@ class ProfilePickerScreen extends StatefulWidget {
 class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
   bool _manageMode = false;
 
-  // Sync status chip — null while still loading/unknown, so the chip stays
-  // hidden rather than flashing a wrong "not synced" state for a moment on
-  // every open. See _loadDeviceCount.
-  int? _deviceCount;
-
-  // The deviceToken this screen has already fetched a count for (or
-  // attempted to) — a plain one-shot fetch in initState missed the token
-  // entirely on a fresh login: AuthProvider's backend registration is
-  // deliberately fire-and-forget (see _connectBackendAndProfiles's doc
-  // comment) and this screen typically appears before that network round
-  // trip finishes, so deviceToken was still null the one time this used to
-  // check it — and, having checked once, never checked again. Tracking
-  // what's already been fetched-for and re-running whenever build() sees a
-  // *new* token (including null → non-null, the common case right after
-  // login) fixes that without ever double-fetching for the same token.
-  String? _fetchedForToken;
-
-  void _maybeLoadDeviceCount(String? token) {
-    if (token == null || token == _fetchedForToken) return;
-    _fetchedForToken = token;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDeviceCount(token));
-  }
-
-  /// Forces a re-check even if the token hasn't changed — used right after
-  /// joining/pairing, where "show my code" doesn't get a new token at all
-  /// but the account's device count just changed regardless.
-  void _refreshDeviceCount() {
-    final token = context.read<AuthProvider>().deviceToken;
-    if (token == null) return;
-    _fetchedForToken = null;
-    _maybeLoadDeviceCount(token);
-  }
-
-  Future<void> _loadDeviceCount(String token) async {
-    try {
-      final devices = await DeviceRemoteDataSource().list(token);
-      if (!mounted) return;
-      setState(() => _deviceCount = devices.length);
-    } catch (_) {
-      // Non-fatal — the chip just stays hidden, same as "not connected".
-      // _fetchedForToken stays set so a transient failure doesn't retry on
-      // every rebuild; logging back in (a genuinely new token) still does.
-    }
-  }
-
-  // Join-only, deliberately — this screen (Who's Watching) is reached
-  // before/without necessarily being the device someone wants to treat as
-  // the "source of truth" to show a code from; generating/showing a code
-  // to pull *other* devices onto this one is still available from Settings
-  // (see more_screen.dart), which is the intentional place for that. This
-  // used to offer both as a chooser dialog; now there's only one action,
-  // so it goes straight to entering a code instead of a dialog with a
-  // single option in it.
-  void _showSyncOptions(BuildContext context, bool isArabic) {
-    final authProvider = context.read<AuthProvider>();
-    showJoinCodeDialog(context, authProvider: authProvider, isArabic: isArabic)
-        .then((_) => _refreshDeviceCount());
-  }
-
-  Widget _buildSyncChip(AppColors colors, bool isArabic) {
-    final count = _deviceCount;
-    if (count == null) return const SizedBox.shrink();
-    final isSynced = count > 1;
-
-    return TvFocusable(
-      onTap: () => _showSyncOptions(context, isArabic),
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: (isSynced ? Colors.green : colors.ink).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: (isSynced ? Colors.green : colors.ink).withValues(alpha: 0.25),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSynced ? Icons.check_circle_rounded : Icons.sync_rounded,
-              size: 15,
-              color: isSynced ? Colors.green : colors.ink.withValues(alpha: 0.6),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              isSynced
-                  ? (isArabic ? 'متزامن' : 'Synced')
-                  : (isArabic ? 'مزامنة' : 'Sync'),
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isSynced ? Colors.green : colors.ink.withValues(alpha: 0.7),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _tapProfile(ProfileEntity profile) {
     if (_manageMode) {
       Navigator.of(context).push(
@@ -170,11 +67,6 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
     final colors = context.colors;
     final provider = context.watch<ProfileProvider>();
     final isArabic = context.watch<UserPrefsProvider>().locale == 'ar';
-    // Reactive, not one-shot: deviceToken is very often still null on this
-    // screen's first frame (see _maybeLoadDeviceCount's doc comment), so
-    // this needs to keep checking on every rebuild until it sees a real
-    // token, not just once in initState.
-    _maybeLoadDeviceCount(context.watch<AuthProvider>().deviceToken);
 
     return Scaffold(
       body: Container(
@@ -196,7 +88,6 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildSyncChip(colors, isArabic),
                     IconButton(
                       icon: Icon(
                         widget.isEmbedded

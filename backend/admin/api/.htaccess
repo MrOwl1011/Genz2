@@ -1,0 +1,5 @@
+Options -Indexes
+# Unlike admin/includes/, these ARE meant to be reached over HTTP — the
+# drag-and-drop screen posts to them. They are not open, though: every file
+# here calls require_admin_login() and require_valid_csrf() first, so an
+# unauthenticated request gets bounced by PHP rather than by the web server.

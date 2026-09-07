@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../features/devices/presentation/screens/devices_screen.dart';
 import '../../features/profiles/presentation/providers/profile_provider.dart';
 import '../../features/profiles/presentation/screens/profile_picker_screen.dart';
 import '../../providers/auth_provider.dart';
@@ -13,7 +12,6 @@ import '../../screens/downloads_screen.dart';
 import '../../screens/login_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/dialog_buttons.dart';
-import '../../widgets/sync_pairing_dialogs.dart';
 import '../tv_metrics.dart';
 import '../tv_route.dart';
 import '../widgets/tv_focus.dart';
@@ -235,34 +233,6 @@ class _SettingsContent extends StatelessWidget {
                     : (isArabic ? 'غير متصل' : 'Offline'),
                 active: auth.isBackendConnected,
                 onTap: () {},
-              ),
-              _SettingsTile(
-                icon: Icons.qr_code_rounded,
-                label: isArabic ? 'رمز المزامنة' : 'Show My Code',
-                value: '',
-                onTap: () => showPairingCodeDialog(
-                  context,
-                  authProvider: auth,
-                  isArabic: isArabic,
-                ),
-              ),
-              _SettingsTile(
-                icon: Icons.link_rounded,
-                label: isArabic ? 'إدخال رمز' : 'Enter a Code',
-                value: '',
-                onTap: () => showJoinCodeDialog(
-                  context,
-                  authProvider: auth,
-                  isArabic: isArabic,
-                ),
-              ),
-              _SettingsTile(
-                icon: Icons.devices_rounded,
-                label: isArabic ? 'الأجهزة' : 'Devices',
-                value: '',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const DevicesScreen()),
-                ),
               ),
               _SettingsTile(
                 icon: Icons.support_agent_rounded,

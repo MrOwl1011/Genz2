@@ -36,6 +36,13 @@ $deviceId = isset($body['device_id']) ? (string) $body['device_id'] : '';
 $deviceName = isset($body['device_name']) ? (string) $body['device_name'] : '';
 $platform = isset($body['platform']) ? (string) $body['platform'] : '';
 $pairingCode = isset($body['pairing_code']) ? trim((string) $body['pairing_code']) : '';
+// Derived on the device from the user's own IPTV credentials — see
+// lib/services/account_key.dart. It reaches us already hashed, so this
+// server never sees the username, the password or the panel URL and
+// cannot connect an account to a streaming service. Optional: an install
+// that hasn't logged into a panel yet still gets an anonymous account, as
+// before.
+$accountKey = isset($body['account_key']) ? strtolower(trim((string) $body['account_key'])) : '';
 
 if ($deviceId === '' || $deviceName === '' || $platform === '') {
     json_error('INVALID_BODY', 'device_id, device_name and platform are all required.', 400);
@@ -45,6 +52,11 @@ if (!preg_match('/^[a-f0-9-]{8,64}$/i', $deviceId)) {
 }
 if (strlen($deviceName) > 120) {
     json_error('INVALID_BODY', 'device_name is too long.', 400);
+}
+if ($accountKey !== '' && !preg_match('/^[a-f0-9]{64}$/', $accountKey)) {
+    // Strict: the client derives exactly 64 hex chars. Anything else is a
+    // malformed or hand-crafted request, not something to coerce.
+    json_error('INVALID_BODY', 'account_key must be 64 hexadecimal characters.', 400);
 }
 if (strlen($platform) > 40) {
     json_error('INVALID_BODY', 'platform is too long.', 400);
@@ -66,9 +78,15 @@ $pdo = db();
 $pdo->beginTransaction();
 
 try {
-    $accountId = $pairingCode !== '' ? resolve_pairing_code($pairingCode) : null;
+    // Precedence: an account_key identifies the account outright, so it
+    // wins over a pairing code (which is only still accepted here for app
+    // versions released before keys existed).
+    $accountId = $accountKey !== '' ? $accountKey : null;
+    if ($accountId === null && $pairingCode !== '') {
+        $accountId = resolve_pairing_code($pairingCode);
+    }
 
-    if ($accountId !== null) {
+    if ($accountId !== null && $accountKey === '') {
         $existsStmt = $pdo->prepare('SELECT 1 FROM accounts WHERE account_id = :account_id');
         $existsStmt->execute(['account_id' => $accountId]);
         if ($existsStmt->fetchColumn() === false) {
@@ -85,6 +103,18 @@ try {
             'INSERT INTO accounts (account_id, status, last_login_at) VALUES (:account_id, \'active\', NOW())'
         );
         $insertAccount->execute(['account_id' => $accountId]);
+    } elseif ($accountKey !== '') {
+        // An account_key with no row yet is simply this user's first
+        // sign-in on any device: create the account under that exact id
+        // rather than minting a random one, which is what makes the same
+        // credentials resolve to the same account on every device. One
+        // statement for both cases — first sign-in inserts, every later
+        // one just touches last_login_at.
+        $upsertAccount = $pdo->prepare(
+            'INSERT INTO accounts (account_id, status, last_login_at) VALUES (:account_id, \'active\', NOW())
+             ON DUPLICATE KEY UPDATE last_login_at = NOW()'
+        );
+        $upsertAccount->execute(['account_id' => $accountId]);
     } else {
         $touchAccount = $pdo->prepare('UPDATE accounts SET last_login_at = NOW() WHERE account_id = :account_id');
         $touchAccount->execute(['account_id' => $accountId]);

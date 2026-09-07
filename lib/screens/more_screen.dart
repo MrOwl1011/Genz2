@@ -4,8 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/build_flavor.dart' show kIsTv;
 import '../providers/auth_provider.dart';
-import '../features/devices/presentation/screens/devices_screen.dart';
-import '../widgets/sync_pairing_dialogs.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
@@ -417,32 +415,6 @@ class MoreScreen extends StatelessWidget {
                   indent: 16,
                   endIndent: 16,
                 ),
-                _buildActionRow(
-                  context,
-                  colors,
-                  icon: Icons.qr_code_rounded,
-                  label: isArabic ? 'إظهار رمز المزامنة' : 'Show my sync code',
-                  value: '',
-                  onTap: () => _showPairingCodeDialog(context, isArabic),
-                ),
-                _buildActionRow(
-                  context,
-                  colors,
-                  icon: Icons.link_rounded,
-                  label: isArabic ? 'إدخال رمز' : 'Enter a code',
-                  value: '',
-                  onTap: () => _showJoinCodeDialog(context, isArabic),
-                ),
-                _buildActionRow(
-                  context,
-                  colors,
-                  icon: Icons.devices_rounded,
-                  label: isArabic ? 'الأجهزة المتزامنة' : 'Synced Devices',
-                  value: '',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const DevicesScreen()),
-                  ),
-                ),
               ]),
               const SizedBox(height: 24),
 
@@ -817,14 +789,6 @@ class MoreScreen extends StatelessWidget {
         Navigator.pop(context);
       },
     );
-  }
-
-  void _showPairingCodeDialog(BuildContext context, bool isArabic) {
-    showPairingCodeDialog(context, authProvider: context.read<AuthProvider>(), isArabic: isArabic);
-  }
-
-  void _showJoinCodeDialog(BuildContext context, bool isArabic) {
-    showJoinCodeDialog(context, authProvider: context.read<AuthProvider>(), isArabic: isArabic);
   }
 
   Widget _buildSectionHeader(String title, AppColors colors) {

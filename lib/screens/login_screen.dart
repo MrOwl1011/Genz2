@@ -832,7 +832,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       GestureDetector(
                         onTap: () async {
                           final url = Uri.parse(
-                            'https://zaid000.xyz/GenzT&P.html',
+                            'https://shitaa.online/GenzT&P.html',
                           );
                           if (await canLaunchUrl(url)) {
                             await launchUrl(
