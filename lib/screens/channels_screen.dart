@@ -227,7 +227,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                       Expanded(
                         child: Text(
                           '- ${widget.category.categoryName.toUpperCase()}',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.archivo(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                             fontStyle: FontStyle.italic,
@@ -277,13 +277,13 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                           child: TextField(
                             controller: _searchController,
                             onChanged: _onSearch,
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.archivo(
                               color: colors.ink,
                               fontSize: 14,
                             ),
                             decoration: InputDecoration(
                               hintText: isArabic ? 'بحث' : 'Search',
-                              hintStyle: GoogleFonts.outfit(
+                              hintStyle: GoogleFonts.archivo(
                                 color: colors.ink.withValues(alpha: 0.3),
                                 fontSize: 14,
                               ),
@@ -340,7 +340,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                                             left: 12,
                                             child: Text(
                                               _currentChannel!.name,
-                                              style: GoogleFonts.outfit(
+                                              style: GoogleFonts.archivo(
                                                 color: Colors.white70,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
@@ -516,7 +516,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink.withValues(alpha: 0.54),
               ),
             ),
@@ -528,7 +528,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
               ),
               child: Text(
                 isArabic ? 'إعادة المحاولة' : 'Retry',
-                style: GoogleFonts.outfit(color: Colors.white),
+                style: GoogleFonts.archivo(color: Colors.white),
               ),
             ),
           ],
@@ -540,7 +540,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
       return Center(
         child: Text(
           isArabic ? 'لا توجد قنوات.' : 'No channels found.',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.archivo(
             color: colors.ink.withValues(alpha: 0.38),
             fontSize: 16,
           ),
@@ -653,7 +653,7 @@ class _ChannelTile extends StatelessWidget {
                     channel.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       color: colors.ink,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -662,7 +662,7 @@ class _ChannelTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     isArabic ? 'لا توجد معلومات' : 'No Information',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       color: colors.ink.withValues(alpha: 0.38),
                       fontSize: 12,
                     ),

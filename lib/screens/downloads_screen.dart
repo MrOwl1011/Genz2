@@ -101,7 +101,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
         ),
         title: Text(
           isArabic ? 'حذف التنزيل؟' : 'Delete Download?',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.archivo(
             color: colors.ink,
             fontWeight: FontWeight.bold,
           ),
@@ -110,7 +110,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           isArabic
               ? 'هل أنت متأكد أنك تريد حذف "${item.title}"؟ سيتم حذف الملف من جهازك.'
               : 'Are you sure you want to delete "${item.title}"? This removes the file from your device.',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
+          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -167,7 +167,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     Expanded(
                       child: Text(
                         isArabic ? 'التنزيلات' : 'DOWNLOADS',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,
@@ -235,7 +235,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             transform: Matrix4.skewX(0.25),
             child: Text(
               label,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: isSelected
                     ? Colors.white
                     : colors.ink.withValues(alpha: 0.7),
@@ -253,7 +253,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     return Center(
       child: Text(
         message,
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.archivo(
           color: colors.ink.withValues(alpha: 0.38),
           fontSize: 16,
         ),
@@ -341,7 +341,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       item.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         color: colors.ink,
                         fontWeight: FontWeight.bold,
                       ),
@@ -365,7 +365,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     const SizedBox(height: 6),
                     Text(
                       statusLine,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         color: colors.ink.withValues(alpha: 0.54),
                         fontSize: 12,
                       ),
@@ -456,7 +456,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         item.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           color: colors.ink,
                           fontWeight: FontWeight.bold,
                         ),
@@ -466,7 +466,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         isFailed
                             ? (isArabic ? 'فشل التنزيل' : 'Download failed')
                             : _formatBytes(item.totalBytes),
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           color: isFailed
                               ? colors.error
                               : colors.ink.withValues(alpha: 0.54),

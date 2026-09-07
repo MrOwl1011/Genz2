@@ -85,7 +85,7 @@ class _TvContentRowState extends State<TvContentRow> {
             padding: const EdgeInsets.only(bottom: 10),
             child: AnimatedDefaultTextStyle(
               duration: TvMetrics.focusAnim,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 fontSize: 13,
                 fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,
@@ -209,7 +209,7 @@ class _SeeAllTile extends StatelessWidget {
                   Text(
                     isArabic ? 'عرض الكل' : 'See All',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w600,
                       color: focused

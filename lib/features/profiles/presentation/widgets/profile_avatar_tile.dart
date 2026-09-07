@@ -102,7 +102,7 @@ class ProfileAvatarTile extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               initial,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: Colors.white,
                 fontSize: size * 0.4,
                 fontWeight: FontWeight.bold,
@@ -118,7 +118,7 @@ class ProfileAvatarTile extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.archivo(
                   color: colors.ink,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

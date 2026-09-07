@@ -84,7 +84,7 @@ class TvDestinationTile extends StatelessWidget {
                   label.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     fontStyle: FontStyle.italic,
@@ -169,7 +169,7 @@ class TvActionPill extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                       color: focused

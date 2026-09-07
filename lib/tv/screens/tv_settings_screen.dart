@@ -152,7 +152,7 @@ class _SettingsContent extends StatelessWidget {
       children: [
         Text(
           isArabic ? 'الإعدادات' : 'SETTINGS',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.archivo(
             fontSize: 20,
             fontWeight: FontWeight.w900,
             fontStyle: FontStyle.italic,
@@ -293,7 +293,7 @@ class _SettingsContent extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               isArabic ? 'حذف الحساب؟' : 'Delete Account?',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink,
                 fontWeight: FontWeight.bold,
               ),
@@ -304,7 +304,7 @@ class _SettingsContent extends StatelessWidget {
           isArabic
               ? 'سيتم حذف هذا الحساب نهائياً مع كل السجل والمفضلة المرتبطة به. لا يمكن التراجع عن هذا الإجراء.'
               : 'This will permanently delete this account along with all its associated history and favorites. This action cannot be undone.',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
+          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -340,7 +340,7 @@ class _SettingsContent extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           userPrefs.locale == 'ar' ? 'اختر اللغة' : 'Select Language',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.archivo(
             color: colors.ink,
             fontWeight: FontWeight.bold,
           ),
@@ -372,7 +372,7 @@ class _SettingsContent extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           isArabic ? 'اختر المظهر' : 'Select Theme',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.archivo(
             color: colors.ink,
             fontWeight: FontWeight.bold,
           ),
@@ -440,7 +440,7 @@ class _SettingsContent extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: selected ? colors.brandAccent : colors.ink,
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
@@ -503,7 +503,7 @@ class _InfoStrip extends StatelessWidget {
                 children: [
                   Text(
                     label.toUpperCase(),
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
                       color: colors.ink.withValues(alpha: 0.45),
@@ -515,7 +515,7 @@ class _InfoStrip extends StatelessWidget {
                     value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: colors.ink,
@@ -603,7 +603,7 @@ class _SettingsTile extends StatelessWidget {
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: danger ? colors.error : colors.ink,
@@ -614,7 +614,7 @@ class _SettingsTile extends StatelessWidget {
                         value,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           fontSize: 11,
                           color: colors.ink.withValues(alpha: 0.55),
                         ),

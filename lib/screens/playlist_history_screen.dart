@@ -57,7 +57,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
           backgroundColor: colors.surfaceMuted,
           content: Text(
             'Log in to "${widget.playlist.playlistName}" to resume watching this.',
-            style: GoogleFonts.outfit(color: colors.ink),
+            style: GoogleFonts.archivo(color: colors.ink),
           ),
         ),
       );
@@ -114,7 +114,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                     Expanded(
                       child: Text(
                         widget.playlist.playlistName.toUpperCase(),
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,
@@ -132,7 +132,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                 padding: const EdgeInsets.fromLTRB(56, 0, 24, 0),
                 child: Text(
                   isArabic ? 'سجل المشاهدة' : 'Watch History',
-                  style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38), fontSize: 13),
+                  style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.38), fontSize: 13),
                 ),
               ),
               if (!_isActivePlaylist)
@@ -154,7 +154,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                             isArabic
                                 ? 'سجل عرض فقط. سجل الدخول لهذه القائمة للمتابعة من هنا.'
                                 : 'View-only. Log in to this playlist to resume from here.',
-                            style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.54), fontSize: 12),
+                            style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.54), fontSize: 12),
                           ),
                         ),
                       ],
@@ -184,7 +184,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
       return Center(
         child: Text(
           isArabic ? 'لا يوجد سجل مشاهدة لهذه القائمة.' : 'No watch history for this playlist.',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38), fontSize: 15),
+          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.38), fontSize: 15),
         ),
       );
     }
@@ -252,7 +252,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                         item.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           color: colors.ink,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -261,7 +261,7 @@ class _PlaylistHistoryScreenState extends State<PlaylistHistoryScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '${item.lastWatched.day}/${item.lastWatched.month}/${item.lastWatched.year}',
-                        style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38), fontSize: 11),
+                        style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.38), fontSize: 11),
                       ),
                       const SizedBox(height: 6),
                       if (item.durationMilliseconds > 0)

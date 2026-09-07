@@ -38,7 +38,7 @@ class TvDetailTabs extends StatelessWidget {
                 children: [
                   Text(
                     labels[i],
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,

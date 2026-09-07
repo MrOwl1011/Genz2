@@ -361,7 +361,7 @@ class _SidebarItemTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.clip,
                         softWrap: false,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: active ? Colors.white : colors.ink,

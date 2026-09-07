@@ -127,7 +127,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                       ),
                     Text(
                       widget.title.toUpperCase(),
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
                         fontStyle: FontStyle.italic,
@@ -176,10 +176,10 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                                 focusNode: _searchFocus,
                                 onChanged: (val) =>
                                     setState(() => _searchQuery = val),
-                                style: GoogleFonts.outfit(color: colors.ink),
+                                style: GoogleFonts.archivo(color: colors.ink),
                                 decoration: InputDecoration(
                                   hintText: searchHint,
-                                  hintStyle: GoogleFonts.outfit(
+                                  hintStyle: GoogleFonts.archivo(
                                     color: colors.ink.withValues(alpha: 0.38),
                                   ),
                                   prefixIcon: Icon(
@@ -259,7 +259,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
                             transform: Matrix4.skewX(0.25),
                             child: Text(
                               widget.tabs[index],
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.archivo(
                                 color: isSelected
                                     ? Colors.white
                                     : colors.ink.withValues(alpha: 0.7),
@@ -310,7 +310,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             Text(
               widget.error!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink.withValues(alpha: 0.54),
               ),
             ),
@@ -392,7 +392,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
         return Center(
           child: Text(
             isArabic ? 'لا توجد نتائج.' : 'No results found.',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               color: colors.ink.withValues(alpha: 0.38),
               fontSize: 16,
             ),
@@ -406,7 +406,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
           return Center(
             child: Text(
               isArabic ? 'لا توجد فئات.' : 'No categories found.',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink.withValues(alpha: 0.38),
                 fontSize: 16,
               ),
@@ -446,7 +446,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             isArabic
                 ? 'لا توجد عناصر في هذا القسم.'
                 : 'No items available in this section.',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               color: colors.ink.withValues(alpha: 0.38),
               fontSize: 16,
             ),
@@ -602,7 +602,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             live.name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 12,
@@ -668,7 +668,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             movie.name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 12,
@@ -736,7 +736,7 @@ class _CategoryLayoutState extends State<CategoryLayout> {
             series.name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 12,

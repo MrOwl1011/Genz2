@@ -169,7 +169,7 @@ class _AppRootState extends State<AppRoot> {
                 Text(
                   'No Internet Connection',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: colors.ink,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -180,7 +180,7 @@ class _AppRootState extends State<AppRoot> {
                   "You're offline. Connect to the internet to load live TV, "
                   "movies and series, or watch what you've already downloaded.",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: colors.ink.withValues(alpha: 0.6),
                     fontSize: 14,
                   ),
@@ -211,7 +211,7 @@ class _AppRootState extends State<AppRoot> {
                           ),
                     label: Text(
                       'Retry',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -240,7 +240,7 @@ class _AppRootState extends State<AppRoot> {
                     ),
                     label: Text(
                       'Go to Downloads',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         color: colors.ink.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w600,
                         fontSize: 15,

@@ -95,7 +95,7 @@ class _ResumeDialog extends StatelessWidget {
                   // Title
                   Text(
                     isArabic ? 'استئناف التشغيل؟' : 'Resume Playback?',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       color: colors.ink,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -106,7 +106,7 @@ class _ResumeDialog extends StatelessWidget {
                     Text(
                       episodeLabel!,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         color: colors.brandPrimary,
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
@@ -120,7 +120,7 @@ class _ResumeDialog extends StatelessWidget {
                     isArabic
                         ? 'توقفت عند ${_formatTime(positionSeconds)}'
                         : 'You stopped at ${_formatTime(positionSeconds)}',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       color: colors.ink.withValues(alpha: 0.54),
                       fontSize: 14,
                     ),
@@ -145,7 +145,7 @@ class _ResumeDialog extends StatelessWidget {
                       ),
                       label: Text(
                         isArabic ? 'استئناف' : 'Resume',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
@@ -174,7 +174,7 @@ class _ResumeDialog extends StatelessWidget {
                       ),
                       label: Text(
                         isArabic ? 'البدء من جديد' : 'Start Over',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           color: colors.ink.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w600,
                           fontSize: 15,

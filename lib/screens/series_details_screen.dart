@@ -429,7 +429,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                         children: [
                                           Text(
                                             title.toUpperCase(),
-                                            style: GoogleFonts.outfit(
+                                            style: GoogleFonts.archivo(
                                               fontSize: kIsTv ? 19 : 24,
                                               fontWeight: FontWeight.w900,
                                               fontStyle: FontStyle.italic,
@@ -440,7 +440,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                           if (releaseDate.isNotEmpty)
                                             Text(
                                               releaseDate,
-                                              style: GoogleFonts.outfit(
+                                              style: GoogleFonts.archivo(
                                                 color: colors.ink.withValues(
                                                   alpha: 0.7,
                                                 ),
@@ -455,7 +455,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                 if (genre.isNotEmpty)
                                   Text(
                                     genre,
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.archivo(
                                       color: colors.ink,
                                       fontWeight: FontWeight.bold,
                                       fontSize: kIsTv ? 14 : 16,
@@ -476,7 +476,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                     overflow: kIsTv
                                         ? TextOverflow.ellipsis
                                         : TextOverflow.clip,
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.archivo(
                                       color: colors
                                           .brandPrimary, // Brand-colored description per user request
                                       fontSize: kIsTv ? 13 : 15,
@@ -489,7 +489,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                 if (cast.isNotEmpty) ...[
                                   Text(
                                     cast,
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.archivo(
                                       color: colors.ink.withValues(alpha: 0.7),
                                       fontSize: 14,
                                     ),
@@ -499,7 +499,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                 if (director.isNotEmpty) ...[
                                   Text(
                                     director,
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.archivo(
                                       color: colors.ink.withValues(alpha: 0.7),
                                       fontSize: 14,
                                     ),
@@ -545,7 +545,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Text(
             isArabic ? 'الموسم $season' : 'SEASON $season',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               fontSize: 18,
               fontWeight: FontWeight.w900,
               fontStyle: FontStyle.italic,
@@ -580,7 +580,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
               child: Center(
                 child: Text(
                   ep.episodeNum.toString(),
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: colors.ink,
                     fontWeight: FontWeight.bold,
                   ),
@@ -593,7 +593,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                   : (isArabic
                         ? 'الحلقة ${ep.episodeNum}'
                         : 'Episode ${ep.episodeNum}'),
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink,
                 fontWeight: FontWeight.w600,
               ),
@@ -759,7 +759,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           isArabic ? 'تنزيل الحلقات' : 'Download Episodes',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.archivo(
             color: colors.ink,
             fontWeight: FontWeight.bold,
           ),
@@ -768,7 +768,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
           isArabic
               ? 'تنزيل هذه الحلقة فقط، أم اختيار عدة حلقات لتنزيلها معاً؟'
               : 'Download just this episode, or pick several episodes to download together?',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
+          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -863,7 +863,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                           Expanded(
                             child: Text(
                               isArabic ? 'اختيار الحلقات' : 'SELECT EPISODES',
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.archivo(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
                                 fontStyle: FontStyle.italic,
@@ -875,7 +875,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                             onPressed: () => Navigator.of(ctx).pop(),
                             child: Text(
                               isArabic ? 'إلغاء' : 'Cancel',
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.archivo(
                                 color: colors.ink.withValues(alpha: 0.6),
                               ),
                             ),
@@ -893,7 +893,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                               padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                               child: Text(
                                 isArabic ? 'الموسم $season' : 'SEASON $season',
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.archivo(
                                   fontWeight: FontWeight.w800,
                                   color: colors.brandPrimary,
                                   letterSpacing: 1,
@@ -939,7 +939,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                           : (isArabic
                                                 ? 'الحلقة ${ep.episodeNum}'
                                                 : 'Episode ${ep.episodeNum}'),
-                                      style: GoogleFonts.outfit(
+                                      style: GoogleFonts.archivo(
                                         color: colors.ink,
                                       ),
                                     ),
@@ -948,7 +948,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                             isArabic
                                                 ? 'تم تنزيلها بالفعل'
                                                 : 'Already downloaded',
-                                            style: GoogleFonts.outfit(
+                                            style: GoogleFonts.archivo(
                                               color: colors.ink.withValues(
                                                 alpha: 0.4,
                                               ),
@@ -960,7 +960,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                                   isArabic
                                                       ? 'غير قابلة للتنزيل'
                                                       : 'Not downloadable',
-                                                  style: GoogleFonts.outfit(
+                                                  style: GoogleFonts.archivo(
                                                     color: colors.ink
                                                         .withValues(alpha: 0.4),
                                                     fontSize: 12,
@@ -1005,7 +1005,7 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
                                   : (isArabic
                                         ? 'تنزيل ${selected.length} حلقة'
                                         : 'Download ${selected.length} Episode${selected.length == 1 ? '' : 's'}'),
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.archivo(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),

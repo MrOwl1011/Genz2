@@ -97,7 +97,7 @@ class MoreScreen extends StatelessWidget {
                     ),
                   Text(
                     isArabic ? 'المزيد' : 'MORE',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       fontSize: 38,
                       fontWeight: FontWeight.w900,
                       fontStyle: FontStyle.italic,
@@ -140,7 +140,7 @@ class MoreScreen extends StatelessWidget {
                         children: [
                           Text(
                             user?.username.toUpperCase() ?? 'NX GUEST',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.archivo(
                               color: colors.ink,
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -166,7 +166,7 @@ class MoreScreen extends StatelessWidget {
                             ),
                             child: Text(
                               user?.status.toUpperCase() ?? 'ACTIVE',
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.archivo(
                                 color: Theme.of(context).primaryColor,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 10,
@@ -236,7 +236,7 @@ class MoreScreen extends StatelessWidget {
                                   (isArabic
                                       ? 'اختر ملفاً شخصياً'
                                       : 'Select a profile'),
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.archivo(
                                 color: colors.ink,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
@@ -247,7 +247,7 @@ class MoreScreen extends StatelessWidget {
                               isArabic
                                   ? 'إدارة أو تبديل الملفات الشخصية'
                                   : 'Switch, add, edit or delete profiles',
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.archivo(
                                 color: colors.ink.withValues(alpha: 0.5),
                                 fontSize: 12,
                               ),
@@ -330,7 +330,7 @@ class MoreScreen extends StatelessWidget {
                           isArabic
                               ? 'تواصل معنا عبر الواتساب'
                               : 'CONTACT US ON WHATSAPP',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.archivo(
                             color: colors.ink.withValues(alpha: 0.7),
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -380,7 +380,7 @@ class MoreScreen extends StatelessWidget {
                                       : (isArabic
                                             ? 'غير متصل'
                                             : 'Not connected'),
-                                  style: GoogleFonts.outfit(
+                                  style: GoogleFonts.archivo(
                                     color: colors.ink,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -394,7 +394,7 @@ class MoreScreen extends StatelessWidget {
                                   // specific device won't sync.
                                   Text(
                                     err ?? 'No error recorded yet.',
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.archivo(
                                       color: colors.ink.withValues(alpha: 0.6),
                                       fontSize: 11.5,
                                       height: 1.35,
@@ -502,7 +502,7 @@ class MoreScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           isArabic ? 'تسجيل الخروج' : 'LOG OUT ACCOUNT',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.archivo(
                             color: Theme.of(context).primaryColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -543,7 +543,7 @@ class MoreScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           isArabic ? 'حذف الحساب' : 'DELETE ACCOUNT',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.archivo(
                             color: colors.error,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -582,7 +582,7 @@ class MoreScreen extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               isArabic ? 'حذف الحساب؟' : 'Delete Account?',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink,
                 fontWeight: FontWeight.bold,
               ),
@@ -593,7 +593,7 @@ class MoreScreen extends StatelessWidget {
           isArabic
               ? 'سيتم حذف هذا الحساب نهائياً مع كل السجل والمفضلة المرتبطة به. لا يمكن التراجع عن هذا الإجراء.'
               : 'This will permanently delete this account along with all its associated history and favorites. This action cannot be undone.',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
+          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -647,7 +647,7 @@ class MoreScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Text(
                 userPrefs.locale == 'ar' ? 'اختر اللغة' : 'Select Language',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.archivo(
                   color: colors.ink,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -685,7 +685,7 @@ class MoreScreen extends StatelessWidget {
     return ListTile(
       title: Text(
         label,
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.archivo(
           color: isSelected ? Theme.of(context).primaryColor : colors.ink,
           fontWeight: FontWeight.w600,
           fontSize: 16,
@@ -731,7 +731,7 @@ class MoreScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Text(
                 isArabic ? 'اختر المظهر' : 'Select Theme',
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.archivo(
                   color: colors.ink,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -775,7 +775,7 @@ class MoreScreen extends StatelessWidget {
     return ListTile(
       title: Text(
         label,
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.archivo(
           color: isSelected ? Theme.of(context).primaryColor : colors.ink,
           fontWeight: FontWeight.w600,
           fontSize: 16,
@@ -796,7 +796,7 @@ class MoreScreen extends StatelessWidget {
       padding: const EdgeInsets.only(left: 8.0),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.outfit(
+        style: GoogleFonts.archivo(
           color: colors.ink.withValues(alpha: 0.54),
           fontSize: 11,
           fontWeight: FontWeight.bold,
@@ -838,7 +838,7 @@ class MoreScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               color: colors.ink.withValues(alpha: 0.6),
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -851,7 +851,7 @@ class MoreScreen extends StatelessWidget {
               textAlign: TextAlign.right,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink,
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
@@ -882,7 +882,7 @@ class MoreScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Text(
               label,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink.withValues(alpha: 0.6),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -891,7 +891,7 @@ class MoreScreen extends StatelessWidget {
             const Spacer(),
             Text(
               value,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink,
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
@@ -929,7 +929,7 @@ class MoreScreen extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink.withValues(alpha: 0.6),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,

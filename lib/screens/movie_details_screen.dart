@@ -389,7 +389,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                         children: [
                                           Text(
                                             title.toUpperCase(),
-                                            style: GoogleFonts.outfit(
+                                            style: GoogleFonts.archivo(
                                               fontSize: kIsTv ? 19 : 24,
                                               fontWeight: FontWeight.w900,
                                               fontStyle: FontStyle.italic,
@@ -400,7 +400,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                           if (releaseDate.isNotEmpty)
                                             Text(
                                               releaseDate,
-                                              style: GoogleFonts.outfit(
+                                              style: GoogleFonts.archivo(
                                                 color: colors.ink.withValues(
                                                   alpha: 0.7,
                                                 ),
@@ -409,7 +409,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                           if (duration.isNotEmpty)
                                             Text(
                                               duration,
-                                              style: GoogleFonts.outfit(
+                                              style: GoogleFonts.archivo(
                                                 color: colors.ink.withValues(
                                                   alpha: 0.7,
                                                 ),
@@ -424,7 +424,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 if (genre.isNotEmpty)
                                   Text(
                                     genre,
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.archivo(
                                       color: colors.ink,
                                       fontWeight: FontWeight.bold,
                                       fontSize: kIsTv ? 14 : 16,
@@ -445,7 +445,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                     overflow: kIsTv
                                         ? TextOverflow.ellipsis
                                         : TextOverflow.clip,
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.archivo(
                                       color: colors
                                           .brandPrimary, // Brand-colored description per user request
                                       fontSize: kIsTv ? 13 : 15,
@@ -458,7 +458,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 if (cast.isNotEmpty) ...[
                                   Text(
                                     cast,
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.archivo(
                                       color: colors.ink.withValues(alpha: 0.7),
                                       fontSize: 14,
                                     ),
@@ -468,7 +468,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                                 if (director.isNotEmpty) ...[
                                   Text(
                                     director,
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.archivo(
                                       color: colors.ink.withValues(alpha: 0.7),
                                       fontSize: 14,
                                     ),

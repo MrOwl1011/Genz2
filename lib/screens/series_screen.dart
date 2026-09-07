@@ -134,7 +134,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                       child: Text(
                         (widget.title ?? widget.category?.categoryName ?? '')
                             .toUpperCase(),
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,
@@ -163,12 +163,12 @@ class _SeriesScreenState extends State<SeriesScreen> {
                   child: TextField(
                     controller: _searchController,
                     onChanged: _onSearch,
-                    style: GoogleFonts.outfit(color: colors.ink),
+                    style: GoogleFonts.archivo(color: colors.ink),
                     decoration: InputDecoration(
                       hintText: isArabic
                           ? 'ابحث عن مسلسلات...'
                           : 'Search series...',
-                      hintStyle: GoogleFonts.outfit(
+                      hintStyle: GoogleFonts.archivo(
                         color: colors.ink.withValues(alpha: 0.3),
                       ),
                       prefixIcon: Icon(
@@ -217,7 +217,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink.withValues(alpha: 0.54),
               ),
             ),
@@ -229,7 +229,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
               ),
               child: Text(
                 isArabic ? 'إعادة المحاولة' : 'Retry',
-                style: GoogleFonts.outfit(color: Colors.white),
+                style: GoogleFonts.archivo(color: Colors.white),
               ),
             ),
           ],
@@ -241,7 +241,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
       return Center(
         child: Text(
           isArabic ? 'لا توجد مسلسلات.' : 'No series found.',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.archivo(
             color: colors.ink.withValues(alpha: 0.38),
             fontSize: 16,
           ),
@@ -332,7 +332,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                 series.name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.archivo(
                   color: colors.ink,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,

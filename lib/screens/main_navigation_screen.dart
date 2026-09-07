@@ -154,7 +154,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: isSelected ? activeColor : inactiveColor,

@@ -108,7 +108,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
             backgroundColor: colors.error,
             content: Text(
               auth.errorMessage ?? 'Failed to connect to playlist',
-              style: GoogleFonts.outfit(color: Colors.white),
+              style: GoogleFonts.archivo(color: Colors.white),
             ),
           ),
         );
@@ -146,13 +146,13 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
         backgroundColor: colors.surface,
         title: Text(
           isArabic ? 'حذف القائمة؟' : 'Delete Playlist?',
-          style: GoogleFonts.outfit(color: colors.ink),
+          style: GoogleFonts.archivo(color: colors.ink),
         ),
         content: Text(
           isArabic
               ? 'هل أنت متأكد من حذف "$name"؟\nسيتم حذف كل السجل والمفضلة المرتبطة بها.'
               : 'Are you sure you want to delete "$name"?\nThis will remove all associated history and favorites.',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.7)),
+          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.7)),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
@@ -262,7 +262,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                       child: Text(
                         isArabic ? 'القوائم المحفوظة' : 'SAVED PLAYLISTS',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,
@@ -312,7 +312,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
           Text(
             isArabic ? 'لا توجد قوائم محفوظة بعد' : 'No saved playlists yet',
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               color: colors.ink.withValues(alpha: 0.54),
               fontSize: 15,
             ),
@@ -413,7 +413,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                     playlist.playlistName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       color: colors.ink,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -525,7 +525,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.archivo(
             color: colors.ink.withValues(alpha: 0.38),
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -536,7 +536,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               color: colors.ink.withValues(alpha: 0.7),
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -607,7 +607,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
             Text(
               isArabic ? 'إضافة قائمة جديدة' : 'Add New Playlist',
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink,
                 fontSize: 15,
                 fontWeight: FontWeight.bold,

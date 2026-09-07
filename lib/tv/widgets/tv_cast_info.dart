@@ -52,7 +52,7 @@ class TvCastInfo extends StatelessWidget {
           children: [
             Text(
               label.toUpperCase(),
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1,
@@ -62,7 +62,7 @@ class TvCastInfo extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               value,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 fontSize: 13,
                 height: 1.4,
                 color: colors.ink.withValues(alpha: 0.85),

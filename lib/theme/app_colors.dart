@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Centralized semantic color tokens for the app's purple/blue/cyan brand.
+/// Centralized semantic color tokens.
+///
+/// One brand hue, two stops. The five-stop purple-blue-cyan ramp this
+/// replaced was the app's clearest generic-template tell; no premium
+/// streaming service uses a multi-hue gradient as brand furniture.
 ///
 /// `ink` intentionally replaces the old scattered `Colors.white*` usage as a
 /// single base color — callers keep their original opacity via
@@ -34,76 +38,70 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.error,
   });
 
+  /// Phone palette. Near-black with a violet bias, three surfaces above it.
+  ///
+  /// Pure black is deliberately *not* used here — it belongs to the player, so
+  /// that entering playback reads as a drop to true black rather than more of
+  /// the same surface.
   static const AppColors dark = AppColors(
-    background: Color(0xFF0B0713),
+    background: Color(0xFF08060C),
     backgroundGradient: [
-      Color(0xFF2A0E4A),
-      Color(0xFF0B0713),
-      Color(0xFF000000),
+      Color(0xFF120D1A),
+      Color(0xFF0A0810),
+      Color(0xFF08060C),
     ],
-    surface: Color(0xFF170C22),
-    surfaceElevated: Color(0xFF1A1A1A),
-    surfaceMuted: Color(0xFF1E1E1E),
-    border: Color(0xFF2E1640),
-    ink: Colors.white,
-    brandPrimary: Color(0xFF7B2A8C),
+    surface: Color(0xFF110D19),
+    surfaceElevated: Color(0xFF171122),
+    surfaceMuted: Color(0xFF0C0912),
+    border: Color(0xFF241C33),
+    ink: Color(0xFFF3EFF8),
+    brandPrimary: Color(0xFF9B3BAF),
+    // Reserved for the live-broadcast signal only — the on-air dot, the EPG
+    // elapsed bar. Never a surface, never a second decorative accent.
     brandAccent: Color(0xFF12EEE0),
-    brandGradient: [
-      Color(0xFF2A0E4A),
-      Color(0xFF7B2A8C),
-      Color(0xFF2547D6),
-      Color(0xFF12A6DA),
-      Color(0xFF12EEE0),
-    ],
+    brandGradient: [Color(0xFF6E2280), Color(0xFF9B3BAF)],
     error: Color(0xFFE5484D),
   );
 
-  /// The TV app's own dark palette — deliberately separate from [dark]
-  /// rather than a shared constant, so retouching the TV app's colors can
-  /// never accidentally change the phone app's look (which keeps using
-  /// [dark]/[light] exactly as before). Neutral near-black with purple used
-  /// only as an accent (selection, focus, progress), not as the dominant
-  /// surface colour — see main_tv.dart for where this gets wired in.
+  /// The ten-foot palette — Android TV, iPad, macOS, Windows.
+  ///
+  /// Kept as its own constant rather than shared with [dark] so retouching the
+  /// TV app can never move the phone app. Slightly cooler and one step darker:
+  /// living-room screens are larger, dimmer-lit and gain contrast at distance.
   static const AppColors tv = AppColors(
-    background: Color(0xFF0B0B0F),
+    background: Color(0xFF060509),
     backgroundGradient: [
-      Color(0xFF15111F),
-      Color(0xFF0D0D12),
-      Color(0xFF0B0B0F),
+      Color(0xFF100C18),
+      Color(0xFF08070D),
+      Color(0xFF060509),
     ],
-    surface: Color(0xFF18181F),
-    surfaceElevated: Color(0xFF1E1E27),
-    surfaceMuted: Color(0xFF101014),
-    border: Color(0xFF27272A),
-    ink: Colors.white,
-    brandPrimary: Color(0xFF7C3AED),
-    brandAccent: Color(0xFF8B5CF6),
-    brandGradient: [Color(0xFF5B21B6), Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+    surface: Color(0xFF0F0B16),
+    surfaceElevated: Color(0xFF16101F),
+    surfaceMuted: Color(0xFF0A080F),
+    border: Color(0xFF221A30),
+    ink: Color(0xFFF3EFF8),
+    brandPrimary: Color(0xFF9B3BAF),
+    brandAccent: Color(0xFF12EEE0),
+    brandGradient: [Color(0xFF6E2280), Color(0xFF9B3BAF)],
     error: Color(0xFFE5484D),
   );
 
   static const AppColors light = AppColors(
-    background: Color(0xFFF7F5FA),
+    background: Color(0xFFFAF8FC),
     backgroundGradient: [
-      Color(0xFFF3EEFA),
-      Color(0xFFF7F5FA),
+      Color(0xFFF4F0F8),
+      Color(0xFFFAF8FC),
       Color(0xFFFFFFFF),
     ],
     surface: Color(0xFFFFFFFF),
-    surfaceElevated: Color(0xFFF1ECFB),
-    surfaceMuted: Color(0xFFECE7F2),
-    border: Color(0xFFE1D9EC),
-    ink: Color(0xFF1A1523),
-    brandPrimary: Color(0xFF7B2A8C),
-    brandAccent: Color(0xFF12EEE0),
-    brandGradient: [
-      Color(0xFF2A0E4A),
-      Color(0xFF7B2A8C),
-      Color(0xFF2547D6),
-      Color(0xFF12A6DA),
-      Color(0xFF12EEE0),
-    ],
-    error: Color(0xFFE5484D),
+    surfaceElevated: Color(0xFFF4F0F8),
+    surfaceMuted: Color(0xFFEDE7F3),
+    border: Color(0xFFE3DCEC),
+    ink: Color(0xFF16111F),
+    brandPrimary: Color(0xFF7E2C92),
+    brandAccent: Color(0xFF0BA69B),
+    brandGradient: [Color(0xFF5E1D6E), Color(0xFF7E2C92)],
+    error: Color(0xFFD03B40),
   );
 
   @override

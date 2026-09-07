@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ).createShader(bounds),
                     child: Text(
                       'GenZ+',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
@@ -106,10 +106,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     controller: _searchController,
                     focusNode: _searchFocus,
                     onChanged: (val) => setState(() => _searchQuery = val),
-                    style: GoogleFonts.outfit(color: colors.ink),
+                    style: GoogleFonts.archivo(color: colors.ink),
                     decoration: InputDecoration(
                       hintText: 'Global Search (Movies, Series, Live)',
-                      hintStyle: GoogleFonts.outfit(
+                      hintStyle: GoogleFonts.archivo(
                         color: colors.ink.withValues(alpha: 0.38),
                       ),
                       prefixIcon: Icon(
@@ -450,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   live.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -482,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text(
             title,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: colors.ink,
@@ -493,7 +493,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: onActionTap,
               child: Text(
                 actionText,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.archivo(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: colors.brandPrimary,
@@ -586,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       item.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -667,7 +667,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   series.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -729,7 +729,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   movie.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -763,7 +763,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(width: 4),
                       Text(
                         movie.rating,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -807,7 +807,7 @@ class _HomeScreenState extends State<HomeScreen> {
             alignment: Alignment.center,
             child: Text(
               title,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,

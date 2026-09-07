@@ -38,7 +38,7 @@ class DialogPrimaryButton extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14),
+        style: GoogleFonts.archivo(fontWeight: FontWeight.bold, fontSize: 14),
       ),
     );
   }
@@ -69,7 +69,7 @@ class DialogSecondaryButton extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 14),
+        style: GoogleFonts.archivo(fontWeight: FontWeight.w600, fontSize: 14),
       ),
     );
   }

@@ -58,7 +58,7 @@ class TvContinueWatchingCard extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           'Nothing to continue yet — start watching something!',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.45)),
+          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.45)),
         ),
       );
     }
@@ -126,7 +126,7 @@ class TvContinueWatchingCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           'CONTINUE WATCHING',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.archivo(
                             color: colors.brandAccent,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -142,7 +142,7 @@ class TvContinueWatchingCard extends StatelessWidget {
                         current.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,

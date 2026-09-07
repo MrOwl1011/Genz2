@@ -230,7 +230,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               children: [
                 Text(
                   isArabic ? 'الخروج من التطبيق؟' : 'Exit the app?',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
                     color: colors.ink,
@@ -258,7 +258,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                         ),
                         child: Text(
                           isArabic ? 'رجوع' : 'Back',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.archivo(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: colors.ink,
@@ -289,7 +289,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                         ),
                         child: Text(
                           isArabic ? 'خروج' : 'Exit',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.archivo(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -458,7 +458,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             Text(
               error,
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink.withValues(alpha: 0.6),
               ),
             ),
@@ -479,7 +479,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                 ),
                 child: Text(
                   isArabic ? 'إعادة المحاولة' : 'Retry',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
@@ -767,7 +767,7 @@ class _RowSkeleton extends StatelessWidget {
             title.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               fontSize: 15,
               fontWeight: FontWeight.w900,
               fontStyle: FontStyle.italic,

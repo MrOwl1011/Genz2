@@ -260,7 +260,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
                             title.toUpperCase(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.archivo(
                               fontSize: 26,
                               fontWeight: FontWeight.w900,
                               fontStyle: FontStyle.italic,
@@ -316,7 +316,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
           children: [
             Text(
               _error!,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 color: colors.ink.withValues(alpha: 0.54),
               ),
             ),
@@ -335,7 +335,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
                 ),
                 child: Text(
                   'Retry',
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -360,7 +360,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
       return Center(
         child: Text(
           query.isEmpty ? 'Nothing here yet.' : 'No results found.',
-          style: GoogleFonts.outfit(color: colors.ink.withValues(alpha: 0.38)),
+          style: GoogleFonts.archivo(color: colors.ink.withValues(alpha: 0.38)),
         ),
       );
     }
@@ -444,7 +444,7 @@ class _TvMediaGridScreenState extends State<TvMediaGridScreen> {
                               _titleOf(item),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.archivo(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 12.5,

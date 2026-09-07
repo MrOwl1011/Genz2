@@ -598,7 +598,7 @@ class _CategoryRow extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: selected
@@ -641,7 +641,7 @@ class _ChannelList extends StatelessWidget {
       return Center(
         child: Text(
           isArabic ? 'لا توجد قنوات' : 'No channels',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.archivo(
             fontSize: 12,
             color: colors.ink.withValues(alpha: 0.4),
           ),
@@ -748,7 +748,7 @@ class _ChannelRowState extends State<_ChannelRow> {
                     children: [
                       Text(
                         '${widget.index}',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           fontSize: 11,
                           color: colors.ink.withValues(alpha: 0.4),
                         ),
@@ -790,7 +790,7 @@ class _ChannelRowState extends State<_ChannelRow> {
                           channel.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.archivo(
                             fontSize: 11,
                             fontWeight: active
                                 ? FontWeight.w700
@@ -917,7 +917,7 @@ class _PreviewPanel extends StatelessWidget {
                         isArabic
                             ? 'اختر قناة للمعاينة'
                             : 'Select a channel to preview',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.archivo(
                           color: Colors.white38,
                           fontSize: 13,
                         ),
@@ -935,7 +935,7 @@ class _PreviewPanel extends StatelessWidget {
                               current.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.archivo(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 13,
@@ -1008,7 +1008,7 @@ class _PreviewPanel extends StatelessWidget {
                             isArabic
                                 ? 'تعذر تحميل المعاينة'
                                 : "Couldn't load preview",
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.archivo(
                               color: Colors.white54,
                               fontSize: 12,
                             ),
@@ -1034,7 +1034,7 @@ class _PreviewPanel extends StatelessWidget {
                               ),
                               child: Text(
                                 isArabic ? 'إعادة المحاولة' : 'Retry',
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.archivo(
                                   color: Colors.white,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -1108,7 +1108,7 @@ class _EpgCard extends StatelessWidget {
                   listing.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: colors.ink,
@@ -1123,7 +1123,7 @@ class _EpgCard extends StatelessWidget {
               listing.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 fontSize: 11.5,
                 height: 1.35,
                 color: colors.ink.withValues(alpha: 0.7),
@@ -1144,7 +1144,7 @@ class _EpgCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               '${formatTime(start)} - ${formatTime(end)}',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.archivo(
                 fontSize: 10.5,
                 color: colors.ink.withValues(alpha: 0.5),
               ),

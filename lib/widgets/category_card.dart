@@ -133,7 +133,7 @@ class _CategoryCardState extends State<CategoryCard> {
                   children: [
                     Text(
                       widget.category.categoryName,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.archivo(
                         color: colors.ink,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

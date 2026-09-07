@@ -156,7 +156,7 @@ class TvPosterCard extends StatelessWidget {
                   // single line truncated most real titles to a few words.
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     height: 1.15,
                     fontSize: 9.5,
                     fontWeight: FontWeight.w600,
@@ -168,7 +168,7 @@ class TvPosterCard extends StatelessWidget {
                     subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       fontSize: 8.5,
                       color: colors.ink.withValues(alpha: 0.5),
                     ),

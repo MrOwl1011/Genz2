@@ -205,10 +205,10 @@ class _TvSearchFieldState extends State<TvSearchField> {
           setState(() => _editing = false);
           widget.onSubmit?.call(value);
         },
-        style: GoogleFonts.outfit(color: colors.ink),
+        style: GoogleFonts.archivo(color: colors.ink),
         decoration: InputDecoration(
           hintText: widget.hint,
-          hintStyle: GoogleFonts.outfit(
+          hintStyle: GoogleFonts.archivo(
             color: colors.ink.withValues(alpha: 0.38),
           ),
           prefixIcon: Icon(

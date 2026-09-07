@@ -103,7 +103,7 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
                   const SizedBox(width: 12),
                   Text(
                     isArabic ? 'المفضلة' : 'FAVORITES',
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.archivo(
                       fontSize: 30,
                       fontWeight: FontWeight.w900,
                       fontStyle: FontStyle.italic,
@@ -126,7 +126,7 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
                             isArabic
                                 ? 'لا توجد عناصر في المفضلة بعد.'
                                 : 'Nothing in your favorites yet.',
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.archivo(
                               color: colors.ink.withValues(alpha: 0.45),
                               fontSize: 18,
                             ),
@@ -241,7 +241,7 @@ class _FavoriteCard extends StatelessWidget {
                   item.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: focused

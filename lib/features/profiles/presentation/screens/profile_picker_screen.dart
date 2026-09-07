@@ -108,7 +108,7 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
               const Spacer(),
               Text(
                 isArabic ? 'من يشاهد؟' : "Who's Watching?",
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.archivo(
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
                   fontStyle: FontStyle.italic,
@@ -168,7 +168,7 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
                       : (isArabic
                             ? 'إدارة الملفات الشخصية'
                             : 'Manage Profiles'),
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.archivo(
                     color: colors.ink.withValues(alpha: 0.6),
                     fontSize: 14,
                     letterSpacing: 1,
@@ -207,7 +207,7 @@ class _ProfilePickerScreenState extends State<ProfilePickerScreen> {
           const SizedBox(height: 8),
           Text(
             isArabic ? 'إضافة ملف شخصي' : 'Add Profile',
-            style: GoogleFonts.outfit(
+            style: GoogleFonts.archivo(
               color: colors.ink.withValues(alpha: 0.6),
               fontSize: 14,
             ),
