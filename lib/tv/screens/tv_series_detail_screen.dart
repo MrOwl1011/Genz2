@@ -14,6 +14,7 @@ import '../tv_metrics.dart';
 import '../tv_route.dart';
 import '../widgets/tv_detail_action_button.dart';
 import '../widgets/tv_focus.dart';
+import '../../core/resume_season.dart';
 
 /// TV-native series detail screen: a small poster beside its title,
 /// metadata, description and actions (same treatment as
@@ -48,7 +49,16 @@ class _TvSeriesDetailScreenState extends State<TvSeriesDetailScreen> {
         setState(() {
           _seriesInfo = info;
           if (info != null && info.episodes.isNotEmpty) {
-            _season = (info.episodes.keys.toList()..sort()).first;
+            // Same rule as the phone screen: resume in the season being
+            // watched, not season 1. See resumeSeasonFor.
+            final seasons = info.episodes.keys.toList()..sort();
+            _season =
+                resumeSeasonFor(
+                  history: context.read<UserPrefsProvider>().history,
+                  seriesId: widget.series.seriesId,
+                  availableSeasons: seasons,
+                ) ??
+                seasons.first;
           }
         });
       }

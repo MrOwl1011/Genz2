@@ -7,6 +7,7 @@ import '../models/xtream_models.dart';
 import '../providers/content_provider.dart';
 import '../providers/downloads_provider.dart';
 import '../providers/user_prefs_provider.dart';
+import '../core/resume_season.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_type.dart';
 import '../widgets/dialog_buttons.dart';
@@ -49,12 +50,20 @@ class _SeriesDetailsScreenState extends State<SeriesDetailsScreen> {
         setState(() {
           _seriesInfo = info;
           _isLoading = false;
-          // Open on the first season rather than the last: a viewer arriving
-          // at a series they have not started expects episode 1, and one
-          // resuming uses Continue Watching rather than this list.
+          // Open on the season the viewer is partway through, so arriving
+          // from Continue Watching lands on the episodes around the one they
+          // were watching. Falls back to the first season for a series they
+          // have not started.
           final seasons = info?.episodes.keys.toList() ?? <int>[];
           seasons.sort();
-          _selectedSeason = seasons.isEmpty ? null : seasons.first;
+          _selectedSeason = seasons.isEmpty
+              ? null
+              : resumeSeasonFor(
+                      history: context.read<UserPrefsProvider>().history,
+                      seriesId: widget.series.seriesId,
+                      availableSeasons: seasons,
+                    ) ??
+                    seasons.first;
         });
       }
     } catch (e) {
