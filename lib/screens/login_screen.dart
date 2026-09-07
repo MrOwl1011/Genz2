@@ -9,6 +9,7 @@ import '../core/build_flavor.dart' show kIsTv;
 import '../providers/auth_provider.dart';
 import '../providers/user_prefs_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_type.dart';
 import '../widgets/dialog_buttons.dart';
 import 'playlists_screen.dart';
 
@@ -387,7 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: colors.ink.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: colors.ink.withValues(alpha: 0.1),
                           ),
@@ -541,36 +542,36 @@ class _LoginScreenState extends State<LoginScreen> {
                                         // placeholder button rather than a
                                         // real one.
                                         height: kIsTv ? 40 : 58,
+                                        // Radius 6, not a 30pt capsule.
+                                        // Netflix and Prime both keep the
+                                        // primary action square-shouldered; a
+                                        // pill reads consumer-app rather than
+                                        // broadcast. Solid fill, no gradient:
+                                        // the two-stop ramp is brand
+                                        // furniture, not a button treatment.
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(
-                                            kIsTv ? 20 : 30,
+                                            6,
                                           ),
-                                          gradient: LinearGradient(
-                                            colors: colors.brandGradient,
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
-                                          ),
+                                          color: colors.brandPrimary,
                                           border: focused
                                               ? Border.all(
-                                                  color: colors.brandAccent,
-                                                  width: 3,
+                                                  color: colors.ink,
+                                                  width: 2,
                                                 )
                                               : null,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  (focused
-                                                          ? colors.brandAccent
-                                                          : colors.brandPrimary)
-                                                      .withValues(
-                                                        alpha: focused
-                                                            ? 0.6
-                                                            : 0.4,
-                                                      ),
-                                              blurRadius: focused ? 20 : 15,
-                                              offset: const Offset(0, 5),
-                                            ),
-                                          ],
+                                          boxShadow: focused
+                                              ? [
+                                                  BoxShadow(
+                                                    color: colors.brandPrimary
+                                                        .withValues(
+                                                          alpha: 0.40,
+                                                        ),
+                                                    blurRadius: 24,
+                                                    offset: const Offset(0, 8),
+                                                  ),
+                                                ]
+                                              : null,
                                         ),
                                         child: child,
                                       );
@@ -583,18 +584,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                         shadowColor: Colors.transparent,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
-                                            kIsTv ? 20 : 30,
+                                            6,
                                           ),
                                         ),
                                       ),
                                       child: Text(
                                         isArabic ? 'اتصل الآن' : 'CONNECT NOW',
-                                        style: GoogleFonts.archivo(
-                                          fontSize: kIsTv ? 13 : 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                          letterSpacing: kIsTv ? 1.5 : 2,
-                                        ),
+                                        style: AppType.label(
+                                          Colors.white,
+                                        ).copyWith(fontSize: kIsTv ? 13 : 15),
                                       ),
                                     ),
                                   ),
