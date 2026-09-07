@@ -96,7 +96,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: colors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: colors.error, width: 1.5),
         ),
         title: Text(
@@ -327,7 +327,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: colors.surfaceMuted,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
@@ -442,7 +442,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: colors.surfaceMuted,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [

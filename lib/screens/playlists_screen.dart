@@ -561,7 +561,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           focusColor: colors.brandAccent.withValues(alpha: 0.35),
           child: Padding(
             padding: const EdgeInsets.all(8),

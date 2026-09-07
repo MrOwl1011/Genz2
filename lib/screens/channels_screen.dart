@@ -268,7 +268,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
                           height: 44,
                           decoration: BoxDecoration(
                             color: colors.surface.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: colors.border,
                               width: 1.5,
@@ -585,62 +585,58 @@ class _ChannelTile extends StatelessWidget {
     final isArabic = userPrefs.locale == 'ar';
     return TvFocusable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: 8),
         height: 72,
         decoration: BoxDecoration(
-          color: isPlaying
-              ? colors.brandPrimary.withValues(alpha: 0.15)
-              : colors.surface.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isPlaying ? colors.brandPrimary : colors.border,
-            width: isPlaying ? 1.5 : 1,
-          ),
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.border),
         ),
         child: Row(
           children: [
-            // Logo
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                bottomLeft: Radius.circular(12),
+            // The channel on air gets a leading bar rather than a tinted
+            // fill: a bar is scannable down a long list, a wash is not.
+            Container(
+              width: 3,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isPlaying ? colors.brandPrimary : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
               ),
-              child: channel.streamIcon.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: channel.streamIcon,
-                      width: 80,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (_, _) => Container(
-                        width: 80,
-                        color: colors.surfaceMuted,
-                        child: Icon(
+            ),
+            const SizedBox(width: 11),
+            // Logo as an inset tile, not an edge-to-edge strip — channel
+            // logos are artwork on a plate, and cropping them to the row's
+            // full height cuts most of them.
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 56,
+                height: 56,
+                color: colors.surfaceMuted,
+                child: channel.streamIcon.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: channel.streamIcon,
+                        fit: BoxFit.contain,
+                        placeholder: (_, _) => Icon(
                           Icons.tv_rounded,
                           color: colors.ink.withValues(alpha: 0.24),
-                          size: 24,
+                          size: 22,
                         ),
-                      ),
-                      errorWidget: (_, _, _) => Container(
-                        width: 80,
-                        color: colors.surfaceMuted,
-                        child: Icon(
+                        errorWidget: (_, _, _) => Icon(
                           Icons.tv_rounded,
                           color: colors.ink.withValues(alpha: 0.24),
-                          size: 24,
+                          size: 22,
                         ),
-                      ),
-                    )
-                  : Container(
-                      width: 80,
-                      color: colors.surfaceMuted,
-                      child: Icon(
+                      )
+                    : Icon(
                         Icons.tv_rounded,
                         color: colors.ink.withValues(alpha: 0.24),
-                        size: 24,
+                        size: 22,
                       ),
-                    ),
+              ),
             ),
             const SizedBox(width: 14),
             // Info
