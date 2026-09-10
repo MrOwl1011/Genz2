@@ -134,6 +134,7 @@ $activeNav = $activeNav ?? '';
   <a class="navlink <?= $activeNav === 'dashboard' ? 'active' : '' ?>" href="index.php">Dashboard</a>
   <a class="navlink <?= $activeNav === 'accounts' ? 'active' : '' ?>" href="accounts.php">Accounts</a>
   <a class="navlink <?= $activeNav === 'transfer' ? 'active' : '' ?>" href="profile_transfer.php">Copy Profiles</a>
+  <a class="navlink <?= $activeNav === 'servers' ? 'active' : '' ?>" href="servers.php">Servers</a>
   <span class="spacer"></span>
   <a class="navlink" href="logout.php">Log out</a>
 </nav>
