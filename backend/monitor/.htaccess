@@ -1,0 +1,3 @@
+# run.php is meant to be opened by an external cron site. It checks its own
+# secret key; this only stops the folder from being listed.
+Options -Indexes

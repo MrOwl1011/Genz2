@@ -16,6 +16,50 @@ require_once __DIR__ . '/../lib/smtp_mailer.php';
  */
 require_admin_login();
 
+// The tables this page needs, and the migration that creates each. Checked up
+// front so a database whose migrations have not been run gets a page naming
+// the file to run, not a bare HTTP 500 from the first query that touches a
+// missing table — which is how an un-run migration_004 first showed up.
+$requiredTables = [
+    'monitored_servers' => 'migration_003_monitored_servers.sql',
+    'server_monitors' => 'migration_004_server_monitoring.sql',
+    'app_settings' => 'migration_004_server_monitoring.sql',
+];
+$presentTables = db()->query(
+    "SELECT TABLE_NAME FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME IN ('monitored_servers', 'server_monitors', 'app_settings')"
+)->fetchAll(PDO::FETCH_COLUMN);
+$missingMigrations = [];
+foreach ($requiredTables as $table => $file) {
+    if (!in_array($table, $presentTables, true) && !in_array($file, $missingMigrations, true)) {
+        $missingMigrations[] = $file;
+    }
+}
+if ($missingMigrations !== []) {
+    http_response_code(503);
+    $pageTitle = 'Servers';
+    $activeNav = 'servers';
+    require __DIR__ . '/includes/layout_start.php';
+    ?>
+    <h1>Servers</h1>
+    <div class="card">
+      <h2 style="margin-top:0;">Database update needed</h2>
+      <p>This page needs <?= count($missingMigrations) === 1 ? 'a table that has' : 'tables that have' ?> not been created yet.
+         In cPanel, open <strong>phpMyAdmin</strong>, select your database, and run
+         <?= count($missingMigrations) === 1 ? 'this file' : 'these files, in this order' ?> from the SQL tab:</p>
+      <ol>
+        <?php foreach ($missingMigrations as $file): ?>
+          <li><code>backend/sql/<?= html_escape($file) ?></code></li>
+        <?php endforeach; ?>
+      </ol>
+      <p class="muted" style="margin-bottom:0;">Each is safe to run more than once. Reload this page afterwards.</p>
+    </div>
+    <?php
+    require __DIR__ . '/includes/layout_end.php';
+    exit;
+}
+
 const WATCH_MIN_SECONDS = 30;
 const WATCH_MAX_SECONDS = 86400;
 
@@ -116,6 +160,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: servers.php?done=smtp');
             exit;
         }
+    } elseif ($action === 'token_new') {
+        // Replacing the key is also how a leaked link is revoked: the old one
+        // stops working the moment this saves.
+        settings_set(['monitor_token' => bin2hex(random_bytes(24))]);
+        header('Location: servers.php?done=token#checker');
+        exit;
     } elseif ($action === 'smtp_test') {
         try {
             smtp_send(
@@ -142,15 +192,26 @@ $servers = db()->query(
       ORDER BY s.label, s.id'
 )->fetchAll();
 
-$smtp = settings_get(array_merge(SMTP_SETTING_NAMES, ['monitor_mail_error']));
+$smtp = settings_get(array_merge(SMTP_SETTING_NAMES, ['monitor_mail_error', 'monitor_token']));
 $watchedCount = count(array_filter($servers, static fn(array $r): bool => (int) $r['enabled'] === 1));
 
 // How long ago the watcher last ran. NULL means it never has.
 $sinceRun = db()->query(
     "SELECT TIMESTAMPDIFF(SECOND, value, NOW()) FROM app_settings WHERE name = 'monitor_last_run'"
 )->fetchColumn();
-$watcherStale = $watchedCount > 0 && ($sinceRun === false || $sinceRun === null || (int) $sinceRun > 180);
+// Eleven minutes: generous enough for a 5-minute external cron that misses a
+// beat, so the warning means the checker has genuinely stopped rather than
+// that it runs less often than every minute.
+$watcherStale = $watchedCount > 0 && ($sinceRun === false || $sinceRun === null || (int) $sinceRun > 660);
 $cronPath = realpath(__DIR__ . '/../cron/monitor_servers.php') ?: (dirname(__DIR__) . '/cron/monitor_servers.php');
+
+// Built from this request so it is right wherever the panel is hosted.
+// X-Forwarded-Proto covers HTTPS terminated in front of PHP, as Cloudflare does.
+$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
+$basePath = rtrim(str_replace('\\', '/', dirname(dirname((string) $_SERVER['SCRIPT_NAME']))), '/');
+$triggerUrl = ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')
+    . $basePath . '/monitor/run.php?key=' . rawurlencode($smtp['monitor_token']);
 
 $notices = [
     'added' => 'Server added.',
@@ -158,6 +219,7 @@ $notices = [
     'watch' => 'Watching settings saved.',
     'smtp' => 'Email settings saved. Send a test email to confirm them.',
     'sent' => 'Test email sent. Check the inbox, and the spam folder too.',
+    'token' => 'Checker link created. Any older link has stopped working.',
 ];
 $notice = $notices[(string) ($_GET['done'] ?? '')] ?? null;
 
@@ -177,7 +239,7 @@ require __DIR__ . '/includes/layout_start.php';
   <div class="flash error">
     <?= $watchedCount ?> server<?= $watchedCount === 1 ? ' is' : 's are' ?> set to be watched, but the background
     checker has not run<?= $sinceRun === false || $sinceRun === null ? ' yet' : ' for ' . (int) round((int) $sinceRun / 60) . ' minutes' ?>.
-    Add the cron job at the bottom of this page.
+    Set up the background checker at the bottom of this page.
   </div>
 <?php endif; ?>
 <?php if ($smtp['monitor_mail_error'] !== ''): ?>
@@ -245,6 +307,10 @@ require __DIR__ . '/includes/layout_start.php';
         </tbody>
       </table>
     </div>
+    <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
+      A watched server is checked when the background checker runs. If it runs every 5 minutes,
+      use 300 seconds or more: a shorter interval cannot be honoured and behaves as 300.
+    </p>
   <?php endif; ?>
 </div>
 
@@ -321,21 +387,44 @@ require __DIR__ . '/includes/layout_start.php';
   </form>
 </div>
 
-<div class="card">
+<div class="card" id="checker">
   <h2 style="margin-top:0;">Background checker</h2>
   <p class="muted" style="margin-top:0;">
-    Watching needs one cron job. In cPanel go to <strong>Cron Jobs</strong>, choose
-    <strong>Once Per Minute</strong>, and paste this command:
-  </p>
-  <pre class="cmd">/usr/local/bin/php <?= html_escape($cronPath) ?></pre>
-  <p class="muted" style="margin-bottom:0;">
-    If cPanel's PHP lives somewhere else, cPanel's Cron Jobs page shows the right path in its examples.
+    Watching needs something to start the checker on a schedule. Set up <strong>one</strong> of these.
     <?php if ($sinceRun !== false && $sinceRun !== null): ?>
-      Last run: <?= (int) $sinceRun < 90 ? 'just now' : html_escape((string) round((int) $sinceRun / 60)) . ' min ago' ?>.
+      Last run: <strong><?= (int) $sinceRun < 90 ? 'just now' : html_escape((string) round((int) $sinceRun / 60)) . ' min ago' ?></strong>.
     <?php else: ?>
       It has not run yet.
     <?php endif; ?>
   </p>
+
+  <h3 class="sub">External cron site, every 5 minutes</h3>
+  <p class="muted">
+    For hosting plans that cannot run cron every minute. On a site such as cron-job.org, create a job
+    that opens this link every 5 minutes:
+  </p>
+  <?php if ($smtp['monitor_token'] === ''): ?>
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="<?= html_escape(csrf_token()) ?>">
+      <input type="hidden" name="action" value="token_new">
+      <button type="submit" class="btn primary">Create checker link</button>
+    </form>
+  <?php else: ?>
+    <pre class="cmd"><?= html_escape($triggerUrl) ?></pre>
+    <p class="muted">
+      Keep it private. Anyone with it can make the checker run early, though it shows them nothing about
+      your servers. If it leaks, replace it.
+    </p>
+    <form method="POST" onsubmit="return confirm('The current link will stop working immediately. Replace it?');">
+      <input type="hidden" name="csrf_token" value="<?= html_escape(csrf_token()) ?>">
+      <input type="hidden" name="action" value="token_new">
+      <button type="submit" class="btn small">Replace link</button>
+    </form>
+  <?php endif; ?>
+
+  <h3 class="sub">cPanel cron, every minute</h3>
+  <p class="muted">If your plan allows it, choose <strong>Once Per Minute</strong> in cPanel's Cron Jobs and paste:</p>
+  <pre class="cmd" style="margin-bottom:0;">/usr/local/bin/php <?= html_escape($cronPath) ?></pre>
 </div>
 
 <style>
@@ -349,6 +438,7 @@ require __DIR__ . '/includes/layout_start.php';
   form.watch label { display:inline-flex; align-items:center; gap:5px; margin:0; font-weight:600; }
   .watch-state { font-size:12px; margin-top:5px; }
   .grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:0 16px; }
+  h3.sub { font-size:14px; margin:20px 0 6px; }
   pre.cmd { background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:8px; padding:12px 14px; overflow-x:auto; font-size:13px; user-select:all; }
 </style>
 
