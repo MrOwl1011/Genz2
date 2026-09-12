@@ -1,0 +1,43 @@
+# Builds the Windows app and wraps it in an installer, so releasing needs no
+# Windows machine. Run it from the Actions tab (Run workflow), picking the
+# branch you want built.
+#
+# The artifact is GENzPlus-Setup-<version>.exe: one file to download and run,
+# rather than a zip whose contents have to be kept together by hand.
+name: Windows installer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build installer
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # Deliberately no flutter-version: pinning one that does not exist
+          # fails this step before anything is built, and the project tracks
+          # stable anyway.
+          cache: true
+
+      - run: flutter pub get
+
+      - run: flutter build windows --release
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\genz.iss'
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: genz-windows-setup
+          path: installer/Output/*.exe
+          if-no-files-found: error
