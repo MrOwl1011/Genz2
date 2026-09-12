@@ -8,7 +8,7 @@ import 'tv_focus.dart';
 import 'tv_nav_bar.dart' show TvSection;
 
 /// The five permanent destinations of the TV app, top to bottom.
-enum TvSidebarItem { search, movies, series, live, settings }
+enum TvSidebarItem { search, movies, series, live, favorites, settings }
 
 /// The persistent left-side navigation rail — replaces the old top
 /// `TvNavBar`.
@@ -179,6 +179,8 @@ class _TvSidebarState extends State<TvSidebar> {
         return widget.isArabic ? 'مسلسلات' : 'Series';
       case TvSidebarItem.live:
         return widget.isArabic ? 'مباشر' : 'Live TV';
+      case TvSidebarItem.favorites:
+        return widget.isArabic ? 'المفضلة' : 'Favorites';
       case TvSidebarItem.settings:
         return widget.isArabic ? 'الإعدادات' : 'Settings';
     }
@@ -194,6 +196,8 @@ class _TvSidebarState extends State<TvSidebar> {
         return Icons.video_library_rounded;
       case TvSidebarItem.live:
         return Icons.live_tv_rounded;
+      case TvSidebarItem.favorites:
+        return Icons.favorite_rounded;
       case TvSidebarItem.settings:
         return Icons.settings_rounded;
     }
@@ -212,6 +216,7 @@ class _TvSidebarState extends State<TvSidebar> {
       case TvSidebarItem.live:
         return widget.active == TvSection.live;
       case TvSidebarItem.search:
+      case TvSidebarItem.favorites:
       case TvSidebarItem.settings:
         return false;
     }

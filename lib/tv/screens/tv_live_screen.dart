@@ -18,6 +18,7 @@ import '../tv_route.dart';
 import '../widgets/tv_focus.dart';
 import '../widgets/tv_nav_bar.dart' show TvSection;
 import '../widgets/tv_sidebar.dart';
+import 'tv_favorites_screen.dart';
 import 'tv_search_screen.dart';
 import 'tv_settings_screen.dart';
 
@@ -353,6 +354,15 @@ class _TvLiveScreenState extends State<TvLiveScreen> {
             },
           ),
         ).then((_) {
+          if (mounted) _retryPreview();
+        });
+      case TvSidebarItem.favorites:
+        // Same reasoning as search above and settings below: this screen
+        // stays mounted with its preview player running, so stop it before
+        // pushing or the previewed channel keeps playing underneath.
+        _previewDebounce?.cancel();
+        _disposeBackend();
+        pushTv(context, const TvFavoritesScreen()).then((_) {
           if (mounted) _retryPreview();
         });
       case TvSidebarItem.settings:

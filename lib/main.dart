@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:media_kit/media_kit.dart' show MediaKit;
+import 'package:window_manager/window_manager.dart' show windowManager;
 
 import 'package:provider/provider.dart';
 import 'app_root.dart';
@@ -39,6 +40,10 @@ void main() async {
   // something that isn't shipped.
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     MediaKit.ensureInitialized();
+    // Needed before anything asks the window to go fullscreen — see the
+    // player's fullscreen button. Desktop only: on mobile the app already
+    // owns the whole screen and this plugin is not built at all.
+    await windowManager.ensureInitialized();
   }
 
   if (kIsTv) {

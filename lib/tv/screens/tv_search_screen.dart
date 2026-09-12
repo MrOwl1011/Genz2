@@ -18,6 +18,7 @@ import '../widgets/tv_poster_card.dart';
 import '../widgets/tv_sidebar.dart';
 import 'tv_movie_detail_screen.dart';
 import 'tv_series_detail_screen.dart';
+import 'tv_favorites_screen.dart';
 
 enum _ResultKind { movie, series, live }
 
@@ -188,6 +189,8 @@ class _TvSearchScreenState extends State<TvSearchScreen> {
         // whichever screen opened search, matching how re-selecting the
         // section already active anywhere else in the app is a no-op/back.
         Navigator.of(context).pop();
+      case TvSidebarItem.favorites:
+        pushTv(context, const TvFavoritesScreen());
       case TvSidebarItem.search:
         break;
     }

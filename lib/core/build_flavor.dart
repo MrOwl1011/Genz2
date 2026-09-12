@@ -71,7 +71,7 @@ void initIsTv() {
   // for the same reasons it suits a TV, and the phone layout would just be
   // a stretched column. Unlike iOS there's no small-screen variant of a
   // desktop window worth branching on.
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+  if (kIsDesktop) {
     kIsTv = true;
     return;
   }
@@ -81,3 +81,9 @@ void initIsTv() {
   final shortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
   kIsTv = shortestSide >= 600;
 }
+
+/// Windows, macOS and Linux — the platforms that run in a resizable window
+/// and so have a fullscreen state of their own to toggle. Mobile has no
+/// equivalent: there the app already owns the whole screen.
+bool get kIsDesktop =>
+    Platform.isWindows || Platform.isLinux || Platform.isMacOS;

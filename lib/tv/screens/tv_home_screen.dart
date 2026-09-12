@@ -18,6 +18,7 @@ import '../widgets/tv_focus.dart';
 import '../widgets/tv_nav_bar.dart' show TvSection;
 import '../widgets/tv_poster_card.dart';
 import '../widgets/tv_sidebar.dart';
+import 'tv_favorites_screen.dart';
 import 'tv_live_screen.dart';
 import 'tv_media_grid_screen.dart';
 import 'tv_movie_detail_screen.dart';
@@ -178,6 +179,8 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             },
           ),
         );
+      case TvSidebarItem.favorites:
+        pushTv(context, const TvFavoritesScreen());
       case TvSidebarItem.settings:
         pushTv(
           context,

@@ -18,6 +18,7 @@ import '../widgets/tv_focus.dart';
 import '../widgets/tv_nav_bar.dart' show TvSection;
 import '../widgets/tv_sidebar.dart';
 import 'tv_search_screen.dart';
+import 'tv_favorites_screen.dart';
 
 /// TV Settings — everything More/Settings has on phone, condensed onto one
 /// non-scrolling screen behind the same persistent left sidebar every other
@@ -46,6 +47,8 @@ class TvSettingsScreen extends StatelessWidget {
         onSelectSection(TvSection.live);
       case TvSidebarItem.settings:
         break;
+      case TvSidebarItem.favorites:
+        pushTv(context, const TvFavoritesScreen());
       case TvSidebarItem.search:
         pushTv(
           context,

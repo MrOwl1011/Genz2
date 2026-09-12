@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/xtream_models.dart';
+import '../../providers/content_provider.dart';
 import '../../providers/user_prefs_provider.dart';
+import '../../screens/player_screen.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_type.dart';
 import '../tv_metrics.dart';
@@ -12,14 +14,25 @@ import '../widgets/tv_focus.dart';
 import 'tv_movie_detail_screen.dart';
 import 'tv_series_detail_screen.dart';
 
-/// The Favorites destination from the TV home hub: a D-pad navigable poster
-/// grid over everything the user has hearted, movies and series together.
+/// Everything the viewer has hearted, in a row per kind: Movies, Series and
+/// Live channels.
+///
+/// Rows rather than one mixed grid, because the three open onto different
+/// things — a movie and a series have detail pages, a live channel goes
+/// straight to the player — and a single grid gave no clue which a poster
+/// was. Horizontal rows also suit a D-pad: left and right move within a
+/// kind, up and down between kinds.
 class TvFavoritesScreen extends StatefulWidget {
   const TvFavoritesScreen({super.key});
 
   @override
   State<TvFavoritesScreen> createState() => _TvFavoritesScreenState();
 }
+
+/// A row's height and each card's width. The card sizes its poster with an
+/// Expanded, so the row has to give it a bounded height.
+const double _cardWidth = 150;
+const double _cardHeight = 250;
 
 class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
   // Same mechanism as TvMediaGridScreen's _lastGridFocus — see its doc
@@ -54,6 +67,27 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
             int.tryParse(item.rawData['last_modified']?.toString() ?? '0') ?? 0,
       );
       await pushTv(context, TvSeriesDetailScreen(series: series));
+    } else if (item.type == MediaType.live) {
+      // A channel has no detail page — the same direct-to-player route the
+      // Live screen uses.
+      final content = context.read<ContentProvider>();
+      final channel = XtreamLiveStream.fromJson(item.rawData);
+      await pushTv(
+        context,
+        PlayerScreen(
+          streamUrl: channel.streamUrl(
+            content.baseUrl,
+            content.username,
+            content.password,
+          ),
+          title: channel.name,
+          coverUrl: channel.streamIcon,
+          isLive: true,
+          mediaId: channel.streamId.toString(),
+          mediaType: MediaType.live,
+          rawMediaData: channel.toJson(),
+        ),
+      );
     }
     if (mounted) {
       final node = _lastGridFocus;
@@ -66,11 +100,21 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
     final colors = context.colors;
     final userPrefs = context.watch<UserPrefsProvider>();
     final isArabic = userPrefs.locale == 'ar';
-    // Live TV favorites open in the player rather than a details screen, so
-    // this grid covers the two that have one.
-    final items = userPrefs.favorites
-        .where((f) => f.type == MediaType.movie || f.type == MediaType.series)
-        .toList();
+    final favorites = userPrefs.favorites;
+    final sections = <({String title, List<FavoriteItem> items})>[
+      (
+        title: isArabic ? 'أفلام' : 'MOVIES',
+        items: favorites.where((f) => f.type == MediaType.movie).toList(),
+      ),
+      (
+        title: isArabic ? 'مسلسلات' : 'SERIES',
+        items: favorites.where((f) => f.type == MediaType.series).toList(),
+      ),
+      (
+        title: isArabic ? 'قنوات مباشرة' : 'LIVE CHANNELS',
+        items: favorites.where((f) => f.type == MediaType.live).toList(),
+      ),
+    ].where((s) => s.items.isNotEmpty).toList();
 
     return Scaffold(
       body: Container(
@@ -103,13 +147,7 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
                   const SizedBox(width: 12),
                   Text(
                     isArabic ? 'المفضلة' : 'FAVORITES',
-                    style: AppType.sans(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
-                      color: colors.ink,
-                      letterSpacing: 1.5,
-                    ),
+                    style: AppType.heroTv(colors.ink).copyWith(fontSize: 30),
                   ),
                 ],
               ),
@@ -120,7 +158,7 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
                   canRequestFocus: false,
                   skipTraversal: true,
                   onFocusChange: _handleGridFocusChange,
-                  child: items.isEmpty
+                  child: sections.isEmpty
                       ? Center(
                           child: Text(
                             isArabic
@@ -131,27 +169,52 @@ class _TvFavoritesScreenState extends State<TvFavoritesScreen> {
                             ),
                           ),
                         )
-                      : GridView.builder(
+                      : ListView.builder(
                           padding: const EdgeInsets.only(top: 8, bottom: 8),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 6,
-                                childAspectRatio: 0.62,
-                                crossAxisSpacing: TvMetrics.gap,
-                                mainAxisSpacing: TvMetrics.gap,
-                              ),
-                          itemCount: items.length,
-                          itemBuilder: (context, index) {
-                            final item = items[index];
-                            return _FavoriteCard(
-                              // Stable, item-derived key — see
-                              // tv_media_grid_screen.dart's identical fix
-                              // for the reasoning (favorites can reorder as
-                              // items are un-hearted while one is focused).
-                              key: ValueKey(item.id),
-                              item: item,
-                              autofocus: index == 0,
-                              onTap: () => _open(context, item),
+                          itemCount: sections.length,
+                          itemBuilder: (context, sectionIndex) {
+                            final section = sections[sectionIndex];
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Text(
+                                    section.title,
+                                    style: AppType.meta(
+                                      colors.ink.withValues(alpha: 0.55),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: _cardHeight,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: section.items.length,
+                                    separatorBuilder: (_, _) =>
+                                        const SizedBox(width: TvMetrics.gap),
+                                    itemBuilder: (context, index) {
+                                      final item = section.items[index];
+                                      return SizedBox(
+                                        width: _cardWidth,
+                                        child: _FavoriteCard(
+                                          // Stable, item-derived key — see
+                                          // tv_media_grid_screen.dart's
+                                          // identical fix (favorites reorder
+                                          // as items are un-hearted while
+                                          // one is focused).
+                                          key: ValueKey(item.id),
+                                          item: item,
+                                          autofocus:
+                                              sectionIndex == 0 && index == 0,
+                                          onTap: () => _open(context, item),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                SizedBox(height: TvMetrics.gap + 6),
+                              ],
                             );
                           },
                         ),

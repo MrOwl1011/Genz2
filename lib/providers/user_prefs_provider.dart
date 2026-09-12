@@ -720,15 +720,23 @@ class UserPrefsProvider extends ChangeNotifier {
     // Remove if already exists to move it to the top
     _history.removeWhere((item) => item.id == id);
 
-    // For series episodes, remove any previous episode from the same series
-    // so only the latest watched episode is kept per series
+    // Only the latest watched episode of a series belongs in the history, so
+    // starting episode 3 drops the row episode 2 left behind.
+    //
+    // Compared as strings, not as whatever each side happens to hold: the
+    // player passes series_id through as an int, while an entry restored
+    // from the sync backend carries it as a string from JSON. `2 == "2"` is
+    // false in Dart, so an int-vs-string pair silently failed to match and
+    // both episodes stayed in the list — which is exactly what this was
+    // meant to prevent. The backend applies the same rule server-side (see
+    // api/history/save.php).
     if (type == MediaType.series) {
-      final seriesId = rawData['series_id'];
-      if (seriesId != null) {
+      final seriesId = rawData['series_id']?.toString();
+      if (seriesId != null && seriesId.isNotEmpty) {
         _history.removeWhere(
           (item) =>
               item.type == MediaType.series &&
-              item.rawData['series_id'] == seriesId,
+              item.rawData['series_id']?.toString() == seriesId,
         );
       }
     }

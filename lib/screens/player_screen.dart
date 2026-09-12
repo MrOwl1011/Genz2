@@ -10,7 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
-import '../core/build_flavor.dart' show kIsTv, kIsTvRemote;
+import 'package:window_manager/window_manager.dart';
+import '../core/build_flavor.dart' show kIsDesktop, kIsTv, kIsTvRemote;
 import '../providers/user_prefs_provider.dart';
 import '../services/player_backend.dart';
 import '../services/player_backend_factory.dart';
@@ -938,6 +939,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     _rightSeekTimer?.cancel();
     _seekGraceTimer?.cancel();
     _saveCurrentPosition(); // Save exact position on exit
+    await _restoreWindowOnExit();
     _cancelSubscriptions();
     try {
       await _backend?.stop();
@@ -1437,6 +1439,48 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   // ─── Top Bar ───────────────────────────────────────────────────────────────
 
+  /// Whether the window is currently fullscreen. Desktop only; always false
+  /// elsewhere, where the app already owns the whole screen.
+  bool _isFullScreen = false;
+
+  /// True if this screen was the one that went fullscreen, so leaving the
+  /// player restores the window — but a window the user had already made
+  /// fullscreen themselves is left alone.
+  bool _enteredFullScreenHere = false;
+
+  Future<void> _toggleFullScreen() async {
+    if (!kIsDesktop) {
+      return;
+    }
+    try {
+      final next = !await windowManager.isFullScreen();
+      await windowManager.setFullScreen(next);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isFullScreen = next;
+        if (next) {
+          _enteredFullScreenHere = true;
+        }
+      });
+      _resetHideTimer();
+    } catch (_) {
+      // A window that refuses the change is not worth interrupting playback
+      // for; the button simply does nothing.
+    }
+  }
+
+  /// Puts the window back as it was, if this screen is what changed it.
+  Future<void> _restoreWindowOnExit() async {
+    if (!kIsDesktop || !_enteredFullScreenHere) {
+      return;
+    }
+    try {
+      await windowManager.setFullScreen(false);
+    } catch (_) {}
+  }
+
   Widget _buildTopBar(bool isArabic) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
@@ -1471,6 +1515,23 @@ class _PlayerScreenState extends State<PlayerScreen>
             ),
 
           const Spacer(),
+
+          // Desktop only: on a phone or a television the app is already
+          // fullscreen, so there is nothing to toggle.
+          if (kIsDesktop)
+            IconButton(
+              tooltip: _isFullScreen
+                  ? (isArabic ? 'إنهاء ملء الشاشة' : 'Exit full screen')
+                  : (isArabic ? 'ملء الشاشة' : 'Full screen'),
+              icon: Icon(
+                _isFullScreen
+                    ? Icons.fullscreen_exit_rounded
+                    : Icons.fullscreen_rounded,
+                color: Colors.white,
+                size: 26,
+              ),
+              onPressed: _toggleFullScreen,
+            ),
         ],
       ),
     );
