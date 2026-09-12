@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../lib/profile_ownership.php';
 require_once __DIR__ . '/../../lib/rate_limit.php';
 require_once __DIR__ . '/../../lib/datetime_helper.php';
 require_once __DIR__ . '/../../lib/db.php';
+require_once __DIR__ . '/../../lib/profile_watch.php';
 require_once __DIR__ . '/../../config.php';
 
 const HISTORY_VALID_STREAM_TYPES = ['movie', 'series', 'live'];
@@ -92,6 +93,12 @@ $stmt->execute([
     'updated_at' => $updatedAt,
 ]);
 
+// 1 means the row was inserted, 2 that an existing row was updated — the
+// difference between "started something new" and the position updates this
+// endpoint receives every ~30 seconds during playback. Read before the
+// cleanup below, which would otherwise replace the count.
+$startedSomethingNew = $stmt->rowCount() === 1;
+
 // The unique key above is per-episode (stream_id), not per-series, so
 // watching episode 2 then episode 5 previously left both rows sitting in
 // the table forever — every sync pull re-merged the old episode back in
@@ -118,6 +125,30 @@ if ($streamType === 'series' && $seriesId !== null) {
         'stream_id' => $streamId,
         'updated_at' => $updatedAt,
     ]);
+}
+
+// Notify after the app already has its answer. A history save must never wait
+// on a mail server: the app writes one every ~30 seconds during playback.
+// litespeed_finish_request/fastcgi_finish_request close the response first
+// where the host provides them; without either, the 6-second mail timeout in
+// notify_new_history is the cap on how long this can add.
+if ($startedSomethingNew && profile_is_watched($profileId)) {
+    register_shutdown_function(
+        static function () use ($profileId, $title, $streamType): void {
+            if (function_exists('litespeed_finish_request')) {
+                litespeed_finish_request();
+            } elseif (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+            try {
+                notify_new_history($profileId, $title, $streamType);
+            } catch (Throwable $e) {
+                // Never surfaced to the app; the sync already succeeded.
+                error_log('[history/save] notify failed: ' . $e->getMessage());
+            }
+        }
+    );
+    ignore_user_abort(true);
 }
 
 json_success(null);

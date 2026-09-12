@@ -14,6 +14,10 @@ require_once __DIR__ . '/app_settings.php';
  * Certificates are verified. This client sends the SMTP password, so skipping
  * verification would hand it to anything able to intercept the connection.
  * That differs from the reachability probe, which sends nothing secret.
+ *
+ * The timeout is a config key because the two callers need different ones: an
+ * admin pressing "Send test email" can wait, while the path that runs when the
+ * app saves history must give up quickly.
  */
 
 /** Setting names the Servers page reads and writes. */
@@ -40,7 +44,7 @@ function smtp_parse_recipients(string $raw): array
 /**
  * The saved SMTP configuration.
  *
- * @return array{host: string, port: int, secure: string, user: string, pass: string, from: string, to: string[]}
+ * @return array{host: string, port: int, secure: string, user: string, pass: string, from: string, to: string[], timeout: int}
  */
 function smtp_load_config(): array
 {
@@ -53,6 +57,7 @@ function smtp_load_config(): array
         'pass' => $s['smtp_pass'],
         'from' => $s['smtp_from'] !== '' ? $s['smtp_from'] : $s['smtp_user'],
         'to' => smtp_parse_recipients($s['alert_to']),
+        'timeout' => 15,
     ];
 }
 
@@ -82,8 +87,9 @@ function smtp_send(array $cfg, string $subject, string $body): void
         'peer_name' => $host,
         'SNI_enabled' => true,
     ]]);
+    $timeout = max(3, (int) ($cfg['timeout'] ?? 15));
     $remote = ($cfg['secure'] === 'ssl' ? 'ssl://' : 'tcp://') . $host . ':' . $port;
-    $socket = @stream_socket_client($remote, $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $context);
+    $socket = @stream_socket_client($remote, $errno, $errstr, $timeout, STREAM_CLIENT_CONNECT, $context);
     if ($socket === false) {
         $why = $errstr !== '' ? $errstr : 'no answer';
         throw new RuntimeException(
@@ -91,7 +97,7 @@ function smtp_send(array $cfg, string $subject, string $body): void
             . ($cfg['secure'] === 'ssl' ? ' An SSL certificate problem also shows up this way.' : '')
         );
     }
-    stream_set_timeout($socket, 15);
+    stream_set_timeout($socket, $timeout);
 
     try {
         smtp_expect($socket, [220]);

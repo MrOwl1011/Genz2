@@ -217,29 +217,36 @@ CREATE TABLE IF NOT EXISTS monitored_servers (
 -- straight into phpMyAdmin, runs on MySQL and MariaDB alike, and is safe to
 -- run again. Admin-only; nothing in the app reads either table.
 
--- One row per watched server. Kept out of monitored_servers so adding this
--- feature needed no ALTER on an existing table.
-CREATE TABLE IF NOT EXISTS server_monitors (
-  server_id INT UNSIGNED NOT NULL,
-  enabled TINYINT(1) NOT NULL DEFAULT 0,
-  interval_seconds INT UNSIGNED NOT NULL DEFAULT 300,
-  last_up TINYINT(1) NULL,
-  last_code SMALLINT UNSIGNED NULL,
-  last_ms INT UNSIGNED NULL,
-  last_error VARCHAR(255) NULL,
-  last_checked_at DATETIME NULL,
-  next_check_at DATETIME NULL,
-  status_since DATETIME NULL,
-  PRIMARY KEY (server_id),
-  KEY idx_server_monitors_due (enabled, next_check_at),
-  CONSTRAINT fk_server_monitors_server
-    FOREIGN KEY (server_id) REFERENCES monitored_servers (id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Small key/value store for panel settings: SMTP details, alert
--- recipients, and the watcher's heartbeat.
+-- Panel settings: SMTP details and alert recipients.
 CREATE TABLE IF NOT EXISTS app_settings (
   name VARCHAR(64) NOT NULL,
   value TEXT NOT NULL,
   PRIMARY KEY (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- The profiles being watched. One row per profile; removing the profile
+-- removes the watch with it.
+CREATE TABLE IF NOT EXISTS profile_watches (
+  profile_id CHAR(36) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (profile_id),
+  CONSTRAINT fk_profile_watches_profile
+    FOREIGN KEY (profile_id) REFERENCES profiles (profile_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- What was sent, and what failed. Shown on the Notifications page so a
+-- missing email can be told apart from a notification that never fired.
+-- No foreign key: the log should survive a profile being deleted.
+CREATE TABLE IF NOT EXISTS notification_log (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  profile_id CHAR(36) NOT NULL,
+  profile_name VARCHAR(60) NOT NULL DEFAULT '',
+  title VARCHAR(255) NOT NULL,
+  stream_type VARCHAR(10) NOT NULL DEFAULT '',
+  sent TINYINT(1) NOT NULL DEFAULT 0,
+  error VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_notification_log_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
