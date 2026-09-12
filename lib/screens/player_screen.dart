@@ -4,6 +4,7 @@
 // quality display, seek bar, and right-side action buttons.
 
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -1455,6 +1456,16 @@ class _PlayerScreenState extends State<PlayerScreen>
     try {
       final next = !await windowManager.isFullScreen();
       await windowManager.setFullScreen(next);
+      // Windows keeps the caption bar in some setups even once the window is
+      // fullscreen, which leaves a strip of window chrome over the video.
+      // Hiding it explicitly makes fullscreen actually edge to edge, and it
+      // is put back on the way out. macOS and Linux already drop their own
+      // title bar as part of going fullscreen, so this is Windows only.
+      if (Platform.isWindows) {
+        await windowManager.setTitleBarStyle(
+          next ? TitleBarStyle.hidden : TitleBarStyle.normal,
+        );
+      }
       if (!mounted) {
         return;
       }
@@ -1478,6 +1489,9 @@ class _PlayerScreenState extends State<PlayerScreen>
     }
     try {
       await windowManager.setFullScreen(false);
+      if (Platform.isWindows) {
+        await windowManager.setTitleBarStyle(TitleBarStyle.normal);
+      }
     } catch (_) {}
   }
 
