@@ -60,6 +60,15 @@ class PlayerScreen extends StatefulWidget {
 /// every theme, so a token that flips with brightness would be wrong here.
 const Color _playerAccent = Color(0xFF9B3BAF);
 
+/// Pauses before each automatic re-open of a stream that failed to start —
+/// twelve seconds in all before the error screen is shown. See
+/// _handlePlaybackFailure for why a failure to start is retried at all.
+const List<Duration> _openRetryDelays = [
+  Duration(seconds: 2),
+  Duration(seconds: 4),
+  Duration(seconds: 6),
+];
+
 class _PlayerScreenState extends State<PlayerScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // ─── Video Controller ──────────────────────────────────────────────────────
@@ -67,6 +76,24 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _isInitializing = true;
   bool _isBuffering = false;
   String? _errorMessage;
+
+  /// Automatic re-opens used so far for the current item. Reset when playback
+  /// actually begins, for a new item, and on a manual Retry.
+  int _openAttempt = 0;
+
+  /// The pending automatic re-open, kept so leaving the screen can cancel it.
+  Timer? _openRetryTimer;
+
+  /// True for the whole of _initPlayer: the open and, when resuming, the
+  /// play-then-seek that follows it. A failure anywhere in that window is a
+  /// failure to start, even though play() has already been called.
+  bool _openInProgress = false;
+
+  /// Moves on whenever an open starts or is abandoned. An _initPlayer run that
+  /// finds it changed after one of its awaits has been superseded — by a
+  /// retry, an episode switch or leaving the screen — and stops without
+  /// touching the player or the screen's state.
+  int _openGeneration = 0;
   Timer? _historyTimer;
 
   // ─── Stream Subscriptions ─────────────────────────────────────────────────
@@ -256,6 +283,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Future<void> _initPlayer() async {
+    final generation = ++_openGeneration;
+    bool superseded() => generation != _openGeneration || !mounted;
+    _openInProgress = true;
     // Clear the previous item's cached playback state before opening the new
     // one. These only ever get written from backend stream events, so without
     // an explicit reset they still hold the *previous* episode's values here —
@@ -280,13 +310,16 @@ class _PlayerScreenState extends State<PlayerScreen>
     });
 
     try {
-      _backend = createPlayerBackend();
+      // A local reference: _backend can be replaced or nulled while this
+      // run is awaiting, and a superseded run must not act on either.
+      final backend = createPlayerBackend();
+      _backend = backend;
 
       // Subscribe to backend streams for reactive state updates
       _subscribeToBackendStreams();
 
       // Open the media strictly without playing to prevent overriding position
-      await _backend!.open(
+      await backend.open(
         url: _currentStreamUrl,
         httpHeaders: const {'User-Agent': kIptvUserAgent},
         autoPlay: false,
@@ -302,11 +335,12 @@ class _PlayerScreenState extends State<PlayerScreen>
       while (_duration.inMilliseconds == 0 &&
           _position.inMilliseconds == 0 &&
           readyWaits < 100 &&
-          mounted) {
+          !superseded()) {
         await Future.delayed(const Duration(milliseconds: 50));
         readyWaits++;
       }
 
+      if (superseded()) return;
       // Restore exact position for non-live content
       if (!_currentIsLive) {
         int targetPos = 0;
@@ -330,7 +364,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           int durationWaits = 0;
           while (_duration.inMilliseconds == 0 &&
               durationWaits < 100 &&
-              mounted) {
+              !superseded()) {
             await Future.delayed(const Duration(milliseconds: 50));
             durationWaits++;
           }
@@ -339,31 +373,34 @@ class _PlayerScreenState extends State<PlayerScreen>
             '[Player History] Player Initialized: ${_duration.inMilliseconds > 0}',
           );
 
+          if (superseded()) return;
           // CRITICAL FIX FOR ANDROID: Start playing before seeking.
           // If play is false, libmpv/ExoPlayer on Android may ignore the seek command
           // or reset to the first keyframe because the codec is not fully initialized.
-          await _backend!.play();
+          await backend.play();
 
           // Wait until the player actually starts progressing (position > 0)
           // This guarantees that the native engine is fully prepared and actively playing,
           // so it won't reset our seek back to 0.
           int playWaits = 0;
-          while (_backend!.position.inMilliseconds == 0 &&
+          while (backend.position.inMilliseconds == 0 &&
               playWaits < 40 &&
-              mounted) {
+              !superseded()) {
             await Future.delayed(const Duration(milliseconds: 50));
             playWaits++;
           }
 
+          if (superseded()) return;
           // Issue the exact seek
           debugPrint('[Player History] Seek Requested: $targetPos ms');
-          await _backend!.seek(Duration(milliseconds: targetPos));
+          await backend.seek(Duration(milliseconds: targetPos));
           debugPrint('[Player History] Seek Completed: $targetPos ms');
 
+          if (superseded()) return;
           // Strict polling loop to verify the engine actually jumped to the position
           int seekWaits = 0;
-          while (seekWaits < 100 && mounted) {
-            final currentPos = _backend!.position.inMilliseconds;
+          while (seekWaits < 100 && !superseded()) {
+            final currentPos = backend.position.inMilliseconds;
             // Allow a 1.5 second variance (keyframes can snap position slightly)
             if ((currentPos - targetPos).abs() <= 1500 ||
                 currentPos >= targetPos) {
@@ -374,25 +411,32 @@ class _PlayerScreenState extends State<PlayerScreen>
           }
 
           debugPrint(
-            '[Player History] Current Position After Seek: ${_backend!.position.inMilliseconds} ms',
+            '[Player History] Current Position After Seek: ${backend.position.inMilliseconds} ms',
           );
         }
       }
 
+      if (superseded()) return;
       // ONLY start playback after the seek verification completes (safe to call again)
-      await _backend!.play();
+      await backend.play();
 
+      if (superseded()) return;
       _startHideTimer();
 
+      _openInProgress = false;
       if (mounted) setState(() => _isInitializing = false);
     } catch (e) {
       debugPrint('[PlayerScreen] Playback init error: $e');
-      if (mounted) {
-        setState(() {
-          _isInitializing = false;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
-        });
-      }
+      // A run abandoned mid-way throws here too, when the engine it was using
+      // is disposed under it. That is not a new failure, and starting another
+      // retry from it is how two retry chains would end up running at once.
+      if (superseded()) return;
+      // Classified while _openInProgress is still true, so a throw during
+      // the resume seek counts as a failure to start.
+      _handlePlaybackFailure(e.toString().replaceFirst('Exception: ', ''));
+      // The handler supersedes this run when it schedules a retry; the flag
+      // then stays set, keeping saves blocked until the retry opens.
+      if (!superseded()) _openInProgress = false;
     }
   }
 
@@ -409,6 +453,11 @@ class _PlayerScreenState extends State<PlayerScreen>
           // of whether _initPlayer's own setState ran yet.
           if (playing && _isInitializing) {
             _isInitializing = false;
+          }
+          // Playing proves the provider accepted the connection, so a later
+          // failure on this item starts its retries from the beginning.
+          if (playing) {
+            _openAttempt = 0;
           }
           // Similarly, if the engine says "playing" but the buffering
           // flag was never cleared, force-clear it now.
@@ -480,7 +529,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     _errorSubscription = _backend!.errorStream.listen((error) {
       if (error.isNotEmpty && mounted) {
         debugPrint('[PlayerScreen] Playback error: $error');
-        setState(() => _errorMessage = error);
+        _handlePlaybackFailure(error);
       }
     });
 
@@ -527,6 +576,13 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   void _saveCurrentPosition() {
     if (_backend == null || !mounted) return;
+    // Nothing correct can be saved while a stream is still opening or waiting
+    // to be retried. Resuming calls play() before it seeks, so the position
+    // at that moment is a fraction of a second into the file — and saving it
+    // would overwrite the real resume point, sending every retry, and the
+    // next visit, back to the start of the episode. The stored position
+    // already is the resume point throughout that window.
+    if (_openInProgress || (_openRetryTimer?.isActive ?? false)) return;
     if (_currentIsLive ||
         _currentMediaId == null ||
         _currentMediaType == null ||
@@ -576,8 +632,17 @@ class _PlayerScreenState extends State<PlayerScreen>
       return;
     }
 
-    // Save current position before switching
+    // Save the current position before switching — and before the retry
+    // state below is cleared, so the save guard still recognises an open that
+    // never got going and does not write its pre-seek position over the
+    // resume point.
     _saveCurrentPosition();
+
+    // A different item gets its own full set of retries, and any open still
+    // running for the old one is abandoned.
+    _supersedeOpen();
+    _openRetryTimer?.cancel();
+    _openAttempt = 0;
 
     _cancelSubscriptions();
     _historyTimer?.cancel();
@@ -870,7 +935,91 @@ class _PlayerScreenState extends State<PlayerScreen>
     });
   }
 
+  /// Abandons any open still running, so it stops at its next await.
+  void _supersedeOpen() => _openGeneration++;
+
+  /// Decides what a playback failure means before showing it.
+  ///
+  /// A stream that fails to *start* is usually the provider refusing, not the
+  /// stream being broken. Xtream panels cap concurrent connections per account
+  /// — often at one — and keep counting a connection as active for a while
+  /// after the app has closed it. Reopen the same episode soon after leaving
+  /// it, which is exactly what resuming from history does, and the panel
+  /// refuses: the engine reports "Failed to open", and the same request
+  /// succeeds seconds later. That is why waiting, or switching episodes and
+  /// coming back, used to clear it. It showed up identically on ExoPlayer,
+  /// VLCKit and libmpv, which is what points at the provider rather than any
+  /// one engine.
+  ///
+  /// So a failure before playback begins is retried quietly, behind the
+  /// loading spinner, with a growing pause (_openRetryDelays). Only when those
+  /// run out does the error screen appear. A failure after playback has
+  /// started is a different problem — a dropped connection mid-stream — and
+  /// is shown as before.
+  void _handlePlaybackFailure(String message) {
+    if (!mounted) {
+      return;
+    }
+    // Engines can report one failure several times; one pending retry covers
+    // all of them.
+    if (_openRetryTimer?.isActive ?? false) {
+      return;
+    }
+
+    // Resuming from history calls play() and then seeks, and that seek opens
+    // a second request to the provider — which can be the one refused. By
+    // then _isPlaying may already be true, so "is it playing" alone would
+    // misfile exactly the failure this exists for as a mid-stream drop.
+    final startedPlaying =
+        !_openInProgress && (_isPlaying || _position > Duration.zero);
+    if (!startedPlaying && _openAttempt < _openRetryDelays.length) {
+      final delay = _openRetryDelays[_openAttempt];
+      _openAttempt++;
+      debugPrint(
+        '[PlayerScreen] Open failed ($message); '
+        'retry $_openAttempt of ${_openRetryDelays.length} in ${delay.inSeconds}s',
+      );
+      // Stop the failed run where it stands, and silence its engine: while
+      // the retry waits, a failed engine can still report a position (which
+      // would be saved over the resume point) or a play state (which would
+      // hide the spinner).
+      _supersedeOpen();
+      _cancelSubscriptions();
+      setState(() {
+        _errorMessage = null;
+        _isInitializing = true;
+      });
+      _openRetryTimer = Timer(delay, _reopenAfterFailure);
+      return;
+    }
+
+    setState(() {
+      _isInitializing = false;
+      _errorMessage = message;
+    });
+  }
+
+  /// Tears the failed engine down completely before opening again, so a retry
+  /// never adds a second connection of our own on top of the one the provider
+  /// is still counting.
+  Future<void> _reopenAfterFailure() async {
+    _supersedeOpen();
+    _cancelSubscriptions();
+    _historyTimer?.cancel();
+    try {
+      await _backend?.stop();
+      await _backend?.dispose();
+    } catch (_) {}
+    _backend = null;
+    if (mounted) {
+      _initPlayer();
+    }
+  }
+
   void _retryPlayback() async {
+    _supersedeOpen();
+    _openRetryTimer?.cancel();
+    _openAttempt = 0;
     _cancelSubscriptions();
     _historyTimer?.cancel();
     try {
@@ -940,6 +1089,9 @@ class _PlayerScreenState extends State<PlayerScreen>
     _rightSeekTimer?.cancel();
     _seekGraceTimer?.cancel();
     _saveCurrentPosition(); // Save exact position on exit
+    // After the save, so its guard still sees an open that never got going.
+    _supersedeOpen();
+    _openRetryTimer?.cancel();
     await _restoreWindowOnExit();
     _cancelSubscriptions();
     try {
@@ -1952,7 +2104,14 @@ class _PlayerScreenState extends State<PlayerScreen>
             ),
             const SizedBox(height: 20),
             Text(
-              widget.isLive
+              // During an automatic retry (see _handlePlaybackFailure) say so,
+              // with a count: a twelve-second wait behind a plain "Loading"
+              // reads as the app having hung.
+              _openAttempt > 0
+                  ? (isArabic
+                        ? 'جارٍ إعادة الاتصال... ($_openAttempt من ${_openRetryDelays.length})'
+                        : 'Reconnecting... ($_openAttempt of ${_openRetryDelays.length})')
+                  : widget.isLive
                   ? (isArabic
                         ? 'جارٍ الاتصال بالبث...'
                         : 'Connecting to stream...')
@@ -1963,7 +2122,9 @@ class _PlayerScreenState extends State<PlayerScreen>
             // or overloaded channel, a slow panel) with no way to tell how
             // long it'll take — so unlike VOD loading, give an explicit way
             // out here instead of only relying on the remote's back key.
-            if (widget.isLive) ...[
+            // Automatic retries can run for twelve seconds too, so VOD gets
+            // the same way out while one is in progress.
+            if (widget.isLive || _openAttempt > 0) ...[
               const SizedBox(height: 28),
               OutlinedButton.icon(
                 onPressed: () async {
