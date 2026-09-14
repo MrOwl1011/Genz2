@@ -5,6 +5,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import 'player_backend.dart';
+import 'single_connection_proxy.dart';
 
 /// Desktop playback, backed by libmpv via `media_kit`.
 ///
@@ -41,6 +42,12 @@ class MediaKitBackend implements PlayerBackend {
 
   late final Player _player;
   late final VideoController _controller;
+
+  /// Serialises this backend's HTTP connections — see
+  /// [SingleConnectionProxy]. libmpv opens a second connection to seek, which
+  /// a single-connection Xtream account refuses, leaving playback stuck at the
+  /// end of the file; routing through this keeps it to one at a time.
+  final SingleConnectionProxy _proxy = SingleConnectionProxy();
   StreamSubscription<Duration>? _positionWatch;
 
   /// How close to [duration] counts as having reached the end. Generous
@@ -82,7 +89,15 @@ class MediaKitBackend implements PlayerBackend {
     // User-Agent (see kIptvUserAgent).
     _playbackStartedSinceOpen = false;
     _clearPendingSeek();
-    await _player.open(Media(url, httpHeaders: httpHeaders), play: autoPlay);
+    // Play through the proxy so seeking cannot trip the panel's concurrent
+    // connection limit. It declines anything it does not apply to — a
+    // downloaded file, or a listener it could not bind — and playback then
+    // falls back to the URL as given.
+    final proxied = await _proxy.serve(url, httpHeaders);
+    await _player.open(
+      Media(proxied ?? url, httpHeaders: httpHeaders),
+      play: autoPlay,
+    );
     await _makeStreamSeekable();
   }
 
@@ -147,13 +162,20 @@ class MediaKitBackend implements PlayerBackend {
   Future<void> setRate(double rate) => _player.setRate(rate);
 
   @override
-  Future<void> stop() => _player.stop();
+  Future<void> stop() async {
+    await _player.stop();
+    // Release the upstream connection now rather than whenever the socket
+    // times out: on a single-connection account the next episode cannot open
+    // until this one is gone.
+    await _proxy.stop();
+  }
 
   @override
   Future<void> dispose() async {
     await _positionWatch?.cancel();
     _positionWatch = null;
     _clearPendingSeek();
+    await _proxy.stop();
     await _player.dispose();
   }
 
