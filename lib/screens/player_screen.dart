@@ -16,6 +16,7 @@ import '../core/build_flavor.dart' show kIsDesktop, kIsTv, kIsTvRemote;
 import '../providers/user_prefs_provider.dart';
 import '../services/player_backend.dart';
 import '../services/player_backend_factory.dart';
+import '../services/stream_url_fallback.dart';
 import '../theme/app_type.dart';
 
 /// The TV transport row's buttons, left to right — VOD/series only (see
@@ -68,6 +69,11 @@ const List<Duration> _openRetryDelays = [
   Duration(seconds: 4),
   Duration(seconds: 6),
 ];
+
+/// The pause before a retry that switches to the fallback address. Short,
+/// because nothing is waited out: the first address failed because of what it
+/// was, not because of when it was asked for.
+const Duration _fallbackSwitchDelay = Duration(milliseconds: 400);
 
 class _PlayerScreenState extends State<PlayerScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
@@ -940,22 +946,30 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   /// Decides what a playback failure means before showing it.
   ///
-  /// A stream that fails to *start* is usually the provider refusing, not the
-  /// stream being broken. Xtream panels cap concurrent connections per account
-  /// — often at one — and keep counting a connection as active for a while
-  /// after the app has closed it. Reopen the same episode soon after leaving
-  /// it, which is exactly what resuming from history does, and the panel
-  /// refuses: the engine reports "Failed to open", and the same request
-  /// succeeds seconds later. That is why waiting, or switching episodes and
-  /// coming back, used to clear it. It showed up identically on ExoPlayer,
-  /// VLCKit and libmpv, which is what points at the provider rather than any
-  /// one engine.
+  /// A movie or episode that fails to *start* is usually still playable, for
+  /// one of two reasons.
   ///
-  /// So a failure before playback begins is retried quietly, behind the
-  /// loading spinner, with a growing pause (_openRetryDelays). Only when those
-  /// run out does the error screen appear. A failure after playback has
-  /// started is a different problem — a dropped connection mid-stream — and
-  /// is shown as before.
+  /// The address is being answered from a stale cache. Xtream panels commonly
+  /// sit behind Cloudflare, which caches `.mp4` addresses; a brief panel
+  /// failure on one becomes a 404 served to every request for that address
+  /// for several minutes. This is what made resuming some episodes fail: the
+  /// provider catalogues them as `.mp4`, the cached 404 answered every
+  /// attempt, and waiting a few minutes cleared it. Retrying the same address
+  /// cannot help — the cache answers again — so the first retry switches to
+  /// the same file under `.ts`, which is not cached that way. See
+  /// xtreamFallbackStreamUrl. Diagnosed against a live panel, where `.mp4`
+  /// returned a cached 404 while `.ts`, `.mkv` and `.avi` all redirected to the
+  /// real stream.
+  ///
+  /// Or the panel is refusing a second connection. Accounts are often limited
+  /// to one, and a panel can keep counting the previous one for a little while
+  /// after the app has closed it. Waiting is the only remedy there, so the
+  /// remaining retries back off (_openRetryDelays).
+  ///
+  /// So a failure before playback begins is retried quietly behind the loading
+  /// spinner, and only when the retries run out does the error screen appear.
+  /// A failure after playback has started is a dropped connection mid-stream,
+  /// and is shown as before.
   void _handlePlaybackFailure(String message) {
     if (!mounted) {
       return;
@@ -973,7 +987,12 @@ class _PlayerScreenState extends State<PlayerScreen>
     final startedPlaying =
         !_openInProgress && (_isPlaying || _position > Duration.zero);
     if (!startedPlaying && _openAttempt < _openRetryDelays.length) {
-      final delay = _openRetryDelays[_openAttempt];
+      // Switch to the fallback address once, on the first retry; its own
+      // fallback is null, so later retries keep using it.
+      final fallback = xtreamFallbackStreamUrl(_currentStreamUrl);
+      final delay = fallback != null
+          ? _fallbackSwitchDelay
+          : _openRetryDelays[_openAttempt];
       _openAttempt++;
       debugPrint(
         '[PlayerScreen] Open failed ($message); '
@@ -988,6 +1007,10 @@ class _PlayerScreenState extends State<PlayerScreen>
       setState(() {
         _errorMessage = null;
         _isInitializing = true;
+        if (fallback != null) {
+          debugPrint('[PlayerScreen] Switching to fallback address (.ts)');
+          _currentStreamUrl = fallback;
+        }
       });
       _openRetryTimer = Timer(delay, _reopenAfterFailure);
       return;
