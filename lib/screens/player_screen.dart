@@ -974,6 +974,18 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (!mounted) {
       return;
     }
+    // Phone keeps its original behaviour: show the error at once, with no
+    // automatic retry and no .ts address fallback. Both are scoped to the
+    // ten-foot and desktop apps (kIsTv), where the "Failed to open" was
+    // reported; the phone is deliberately left exactly as it was before that
+    // work.
+    if (!kIsTv) {
+      setState(() {
+        _isInitializing = false;
+        _errorMessage = message;
+      });
+      return;
+    }
     // Engines can report one failure several times; one pending retry covers
     // all of them.
     if (_openRetryTimer?.isActive ?? false) {
